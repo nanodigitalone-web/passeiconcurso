@@ -1,0 +1,13 @@
+{
+  "name": "Passei - Concursos Saúde Angola",
+  "short_name": "Passei",
+  "description": "Quizzes e simulados comentados para concursos da saúde em Angola.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f9ff",
+  "theme_color": "#1e6fd9",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "64x64", "type": "image/x-icon" }
+  ]
+}
