@@ -12,6 +12,7 @@ import Quiz from "./pages/Quiz.tsx";
 import Resultado from "./pages/Resultado.tsx";
 import Percurso from "./pages/Percurso.tsx";
 import Ranking from "./pages/Ranking.tsx";
+import { InstallPrompt } from "./components/InstallPrompt.tsx";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/ranking" element={<Ranking />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <InstallPrompt />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
