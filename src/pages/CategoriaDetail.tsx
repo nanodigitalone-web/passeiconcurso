@@ -15,10 +15,6 @@ const CategoriaDetail = () => {
 
   return (
     <AppShell>
-      <Button asChild variant="ghost" size="sm" className="-ml-3 mb-3">
-        <Link to={`/concursos/${concursoId}`}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Link>
-      </Button>
-
       <header className="mb-5 animate-fade-in">
         <h1 className="font-display text-2xl font-bold">{cat.nome}</h1>
         <p className="text-sm text-muted-foreground">{cat.descricao}</p>
