@@ -13,10 +13,6 @@ const ConcursoDetail = () => {
 
   return (
     <AppShell>
-      <Button asChild variant="ghost" size="sm" className="-ml-3 mb-3">
-        <Link to="/concursos"><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Link>
-      </Button>
-
       <Card className="mb-6 overflow-hidden border-0 bg-gradient-hero p-5 text-primary-foreground shadow-elegant">
         <p className="text-xs uppercase tracking-wider opacity-80">{concurso.area} · {concurso.ano}</p>
         <h1 className="mt-1 font-display text-2xl font-bold">{concurso.nome}</h1>
