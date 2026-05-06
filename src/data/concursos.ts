@@ -70,7 +70,7 @@ import { bancoEnfermeiro, bancoTecEnfermagem, bancoFarmaceutico } from "./bancos
 const enfermeiro: Categoria = {
   id: "enfermeiro",
   nome: "Enfermeiro",
-  descricao: "Concurso para Enfermeiro Superior - MINSA (50 questões)",
+  descricao: "Concurso para Enfermeiro Superior - MINSA",
   icon: "HeartPulse",
   disciplinas: ["Fundamentos de Enfermagem", "Saúde Materno-Infantil", "Saúde Pública", "Farmacologia", "Emergências", "Ética"],
   questoes: bancoEnfermeiro,
@@ -79,7 +79,7 @@ const enfermeiro: Categoria = {
 const tecEnfermagem: Categoria = {
   id: "tec-enfermagem",
   nome: "Técnico de Enfermagem",
-  descricao: "Concurso para Técnico Médio de Enfermagem - MINSA (50 questões)",
+  descricao: "Concurso para Técnico Médio de Enfermagem - MINSA",
   icon: "Syringe",
   disciplinas: ["Procedimentos", "Farmacologia", "Saúde Pública", "Emergências", "Ética"],
   questoes: bancoTecEnfermagem,
@@ -88,7 +88,7 @@ const tecEnfermagem: Categoria = {
 const farmaceutico: Categoria = {
   id: "farmaceutico",
   nome: "Farmacêutico",
-  descricao: "Concurso para Farmacêutico - MINSA (50 questões)",
+  descricao: "Concurso para Farmacêutico - MINSA",
   icon: "Pill",
   disciplinas: ["Farmacologia", "Farmacotécnica", "Farmacocinética", "Farmacodinâmica", "Vias de Administração", "Farmácia Hospitalar", "Legislação"],
   questoes: bancoFarmaceutico,

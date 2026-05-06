@@ -18,17 +18,28 @@ const Quiz = () => {
   const [revealed, setRevealed] = useState(false);
   const [seconds, setSeconds] = useState(0);
 
+  // Randomize question order at start; cap at 20 per simulado
+  const questoes = useMemo(() => {
+    if (!cat) return [];
+    const arr = [...cat.questoes];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, Math.min(20, arr.length));
+  }, [cat]);
+
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const questao = useMemo(() => cat?.questoes[idx], [cat, idx]);
+  const questao = questoes[idx];
 
   if (!cat) return <Navigate to="/concursos" replace />;
   if (!questao) return <Navigate to="/concursos" replace />;
 
-  const total = cat.questoes.length;
+  const total = questoes.length;
   const isLast = idx === total - 1;
 
   const confirmar = () => {
@@ -43,7 +54,7 @@ const Quiz = () => {
     setRevealed(false);
 
     if (isLast) {
-      const acertos = novas.reduce((s, e, i) => s + (e === cat.questoes[i].correta ? 1 : 0), 0);
+      const acertos = novas.reduce((s, e, i) => s + (e === questoes[i].correta ? 1 : 0), 0);
       const result: SimuladoResult = {
         id: crypto.randomUUID(),
         concursoId: concursoId!,
@@ -54,10 +65,10 @@ const Quiz = () => {
         acertos,
         tempoSegundos: seconds,
         respostas: novas.map((escolhida, i) => ({
-          questaoId: cat.questoes[i].id,
+          questaoId: questoes[i].id,
           escolhida,
-          correta: cat.questoes[i].correta,
-          disciplina: cat.questoes[i].disciplina,
+          correta: questoes[i].correta,
+          disciplina: questoes[i].disciplina,
         })),
       };
       saveResult(result);

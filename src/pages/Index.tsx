@@ -3,38 +3,37 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { concursos } from "@/data/concursos";
-import { getResults, getUser } from "@/lib/storage";
-import { ArrowRight, BookOpen, Sparkles, Target, TrendingUp } from "lucide-react";
+import { getResults } from "@/lib/storage";
+import { useAuth } from "@/hooks/useAuth";
+import { ArrowRight, BookOpen, Sparkles, Target, TrendingUp, Zap } from "lucide-react";
 
 const Index = () => {
-  const user = getUser();
+  const { profile } = useAuth();
   const results = getResults();
   const totalQ = results.reduce((s, r) => s + r.total, 0);
   const acertos = results.reduce((s, r) => s + r.acertos, 0);
   const taxa = totalQ ? Math.round((acertos / totalQ) * 100) : 0;
+  const nome = profile?.nome?.split(" ")[0] || "Candidato";
 
   return (
     <AppShell>
-      <header className="mb-8 animate-fade-in">
+      <header className="mb-7 animate-fade-in">
         <p className="text-sm text-muted-foreground">Olá,</p>
         <h1 className="font-display text-3xl font-bold tracking-tight">
-          {user.nome} <span className="text-gradient">👋</span>
+          {nome} <span className="text-gradient">👋</span>
         </h1>
         <p className="mt-2 text-muted-foreground">Pronto para mais um simulado hoje?</p>
       </header>
 
       <Card className="relative overflow-hidden border-0 bg-gradient-hero p-6 text-primary-foreground shadow-elegant animate-scale-in">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute -bottom-12 -left-8 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
         <div className="relative">
           <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" /> MINSA 2026
           </div>
-          <h2 className="font-display text-2xl font-bold leading-tight">
-            Concurso Público da Saúde
-          </h2>
+          <h2 className="font-display text-2xl font-bold leading-tight">Concurso Público da Saúde</h2>
           <p className="mt-2 text-sm text-primary-foreground/85">
-            Questões e simulados comentados para todas as categorias profissionais.
+            Questões e simulados comentados para todas as categorias.
           </p>
           <Button asChild variant="secondary" className="mt-5 rounded-full font-semibold">
             <Link to="/concursos/minsa">
@@ -44,16 +43,27 @@ const Index = () => {
         </div>
       </Card>
 
+      <Card className="mt-4 border-2 border-warning/30 bg-warning/5 p-4 shadow-card flex items-center gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-warning to-accent text-white shadow-glow">
+          <Zap className="h-6 w-6" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-display font-bold text-sm">Desafio rápido</p>
+          <p className="text-xs text-muted-foreground">5 questões · ganhe pontos!</p>
+        </div>
+        <Button asChild size="sm" className="rounded-full bg-gradient-to-r from-warning to-accent text-white">
+          <Link to="/aprender">Jogar</Link>
+        </Button>
+      </Card>
+
       <section className="mt-6 grid grid-cols-3 gap-3">
         <StatCard icon={Target} label="Simulados" value={results.length} />
-        <StatCard icon={BookOpen} label="Questões" value={totalQ} />
+        <StatCard icon={BookOpen} label="Pontos" value={profile?.pontos || 0} />
         <StatCard icon={TrendingUp} label="Acertos" value={`${taxa}%`} />
       </section>
 
       <section className="mt-8">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-display text-lg font-semibold">Concursos disponíveis</h3>
-        </div>
+        <h3 className="mb-3 font-display text-lg font-semibold">Concursos disponíveis</h3>
         <div className="space-y-3">
           {concursos.map((c) => (
             <Link key={c.id} to={`/concursos/${c.id}`} className="block">
