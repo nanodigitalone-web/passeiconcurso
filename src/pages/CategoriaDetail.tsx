@@ -11,7 +11,8 @@ const CategoriaDetail = () => {
   const cat = getCategoria(concursoId!, categoriaId!);
   if (!cat) return <Navigate to="/concursos" replace />;
 
-  const tempoMin = Math.max(5, cat.questoes.length * 1.5);
+  const totalQuiz = Math.min(20, cat.questoes.length);
+  const tempoMin = Math.max(5, totalQuiz * 1.5);
 
   return (
     <AppShell>
@@ -21,8 +22,9 @@ const CategoriaDetail = () => {
       </header>
 
       <Card className="mb-5 border-0 bg-gradient-primary p-5 text-primary-foreground shadow-elegant">
-        <p className="text-xs uppercase tracking-wider opacity-80">Simulado completo</p>
-        <h2 className="mt-1 font-display text-xl font-bold">{cat.questoes.length} questões comentadas</h2>
+        <p className="text-xs uppercase tracking-wider opacity-80">Simulado aleatório</p>
+        <h2 className="mt-1 font-display text-xl font-bold">{totalQuiz} questões comentadas</h2>
+        <p className="mt-1 text-xs opacity-90">Cada simulado traz questões diferentes do banco.</p>
         <div className="mt-3 flex items-center gap-4 text-sm opacity-90">
           <span className="inline-flex items-center gap-1"><Clock className="h-4 w-4" /> ~{Math.round(tempoMin)} min</span>
           <span className="inline-flex items-center gap-1"><BookOpen className="h-4 w-4" /> {cat.disciplinas.length} disciplinas</span>
