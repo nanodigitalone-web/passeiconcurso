@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { getRanking } from "@/lib/storage";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Crown, Medal, Trophy } from "lucide-react";
 
@@ -9,7 +10,10 @@ type Periodo = "geral" | "semanal" | "mensal";
 
 const Ranking = () => {
   const [periodo, setPeriodo] = useState<Periodo>("geral");
-  const data = getRanking(periodo);
+  const { profile } = useAuth();
+  const data = getRanking(periodo).map((u) =>
+    u.isUser ? { ...u, nome: (profile?.nome || "Você") + " (você)", pontos: (profile?.pontos || 0) + u.pontos } : u
+  ).sort((a, b) => b.pontos - a.pontos);
 
   return (
     <AppShell>
