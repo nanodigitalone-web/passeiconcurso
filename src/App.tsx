@@ -3,18 +3,26 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Concursos from "./pages/Concursos.tsx";
-import ConcursoDetail from "./pages/ConcursoDetail.tsx";
-import CategoriaDetail from "./pages/CategoriaDetail.tsx";
-import Quiz from "./pages/Quiz.tsx";
-import Resultado from "./pages/Resultado.tsx";
-import Percurso from "./pages/Percurso.tsx";
-import Ranking from "./pages/Ranking.tsx";
-import { InstallPrompt } from "./components/InstallPrompt.tsx";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import Concursos from "./pages/Concursos";
+import ConcursoDetail from "./pages/ConcursoDetail";
+import CategoriaDetail from "./pages/CategoriaDetail";
+import Quiz from "./pages/Quiz";
+import Resultado from "./pages/Resultado";
+import Percurso from "./pages/Percurso";
+import Ranking from "./pages/Ranking";
+import Login from "./pages/Login";
+import Perfil from "./pages/Perfil";
+import Aprender from "./pages/Aprender";
+import AprenderSessao from "./pages/AprenderSessao";
+import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
+
+const P = ({ children }: { children: JSX.Element }) => <ProtectedRoute>{children}</ProtectedRoute>;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -22,18 +30,24 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/concursos" element={<Concursos />} />
-          <Route path="/concursos/:concursoId" element={<ConcursoDetail />} />
-          <Route path="/concursos/:concursoId/:categoriaId" element={<CategoriaDetail />} />
-          <Route path="/quiz/:concursoId/:categoriaId" element={<Quiz />} />
-          <Route path="/resultado/:id" element={<Resultado />} />
-          <Route path="/percurso" element={<Percurso />} />
-          <Route path="/ranking" element={<Ranking />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <InstallPrompt />
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<P><Index /></P>} />
+            <Route path="/concursos" element={<P><Concursos /></P>} />
+            <Route path="/concursos/:concursoId" element={<P><ConcursoDetail /></P>} />
+            <Route path="/concursos/:concursoId/:categoriaId" element={<P><CategoriaDetail /></P>} />
+            <Route path="/quiz/:concursoId/:categoriaId" element={<P><Quiz /></P>} />
+            <Route path="/resultado/:id" element={<P><Resultado /></P>} />
+            <Route path="/percurso" element={<P><Percurso /></P>} />
+            <Route path="/ranking" element={<P><Ranking /></P>} />
+            <Route path="/perfil" element={<P><Perfil /></P>} />
+            <Route path="/aprender" element={<P><Aprender /></P>} />
+            <Route path="/aprender/sessao/:concursoId/:categoriaId" element={<P><AprenderSessao /></P>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <InstallPrompt />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
