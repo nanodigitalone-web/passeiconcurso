@@ -54,7 +54,7 @@ const Quiz = () => {
     setRevealed(false);
 
     if (isLast) {
-      const acertos = novas.reduce((s, e, i) => s + (e === cat.questoes[i].correta ? 1 : 0), 0);
+      const acertos = novas.reduce((s, e, i) => s + (e === questoes[i].correta ? 1 : 0), 0);
       const result: SimuladoResult = {
         id: crypto.randomUUID(),
         concursoId: concursoId!,
@@ -65,10 +65,10 @@ const Quiz = () => {
         acertos,
         tempoSegundos: seconds,
         respostas: novas.map((escolhida, i) => ({
-          questaoId: cat.questoes[i].id,
+          questaoId: questoes[i].id,
           escolhida,
-          correta: cat.questoes[i].correta,
-          disciplina: cat.questoes[i].disciplina,
+          correta: questoes[i].correta,
+          disciplina: questoes[i].disciplina,
         })),
       };
       saveResult(result);
