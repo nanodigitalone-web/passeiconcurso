@@ -30,7 +30,7 @@ const ConcursoDetail = () => {
                   <Icon className="h-5 w-5" />
                 </div>
                 <p className="font-semibold leading-tight">{cat.nome}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{cat.questoes.length} questões</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{cat.disciplinas.length} disciplinas</p>
                 <div className="mt-3 inline-flex items-center text-xs font-medium text-primary">
                   Explorar <ArrowRight className="ml-1 h-3.5 w-3.5 transition-smooth group-hover:translate-x-0.5" />
                 </div>
