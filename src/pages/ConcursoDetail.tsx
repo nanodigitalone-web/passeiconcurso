@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getConcurso } from "@/data/concursos";
 import * as Icons from "lucide-react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 
 const ConcursoDetail = () => {
   const { concursoId } = useParams();
@@ -13,10 +13,17 @@ const ConcursoDetail = () => {
 
   return (
     <AppShell>
-      <Card className="mb-6 overflow-hidden border-0 bg-gradient-hero p-5 text-primary-foreground shadow-elegant">
+      <Card className="mb-5 overflow-hidden border-0 bg-gradient-hero p-5 text-primary-foreground shadow-elegant">
         <p className="text-xs uppercase tracking-wider opacity-80">{concurso.area} · {concurso.ano}</p>
         <h1 className="mt-1 font-display text-2xl font-bold">{concurso.nome}</h1>
         <p className="mt-2 text-sm opacity-90">{concurso.descricao}</p>
+        {concurso.inscricaoUrl && (
+          <Button asChild variant="secondary" className="mt-4 w-full rounded-full font-semibold">
+            <a href={concurso.inscricaoUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-2 h-4 w-4" /> Inscrever-se no concurso
+            </a>
+          </Button>
+        )}
       </Card>
 
       <h2 className="mb-3 font-display text-lg font-semibold">Categorias profissionais</h2>

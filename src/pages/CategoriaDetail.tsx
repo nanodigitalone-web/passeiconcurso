@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getCategoria } from "@/data/concursos";
-import { ArrowLeft, BookOpen, Clock, Play } from "lucide-react";
+import { BookOpen, BookMarked, Clock, Play } from "lucide-react";
 
 const CategoriaDetail = () => {
   const { concursoId, categoriaId } = useParams();
@@ -21,7 +21,7 @@ const CategoriaDetail = () => {
         <p className="text-sm text-muted-foreground">{cat.descricao}</p>
       </header>
 
-      <Card className="mb-5 border-0 bg-gradient-primary p-5 text-primary-foreground shadow-elegant">
+      <Card className="mb-4 border-0 bg-gradient-primary p-5 text-primary-foreground shadow-elegant">
         <p className="text-xs uppercase tracking-wider opacity-80">Simulado aleatório</p>
         <h2 className="mt-1 font-display text-xl font-bold">{totalQuiz} questões comentadas</h2>
         <p className="mt-1 text-xs opacity-90">Cada simulado traz questões diferentes do banco.</p>
@@ -34,6 +34,21 @@ const CategoriaDetail = () => {
             <Play className="mr-2 h-4 w-4" /> Iniciar simulado
           </Link>
         </Button>
+      </Card>
+
+      <Card className="mb-5 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-primary">
+              <BookMarked className="h-4 w-4" /> Tópicos de estudo
+            </div>
+            <p className="mt-1 text-sm font-semibold">Programa oficial MINSA 2026</p>
+            <p className="text-xs text-muted-foreground">{cat.topicos?.length ?? 0} blocos temáticos</p>
+          </div>
+          <Button asChild size="sm" variant="outline" className="rounded-full">
+            <Link to={`/concursos/${concursoId}/${categoriaId}/topicos`}>Ver</Link>
+          </Button>
+        </div>
       </Card>
 
       <h3 className="mb-3 font-display font-semibold">Disciplinas</h3>
