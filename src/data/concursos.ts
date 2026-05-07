@@ -7,6 +7,8 @@ export type Question = {
   disciplina: string;
 };
 
+import type { Topico } from "./topicos";
+
 export type Categoria = {
   id: string;
   nome: string;
@@ -14,6 +16,7 @@ export type Categoria = {
   icon: string;
   disciplinas: string[];
   questoes: Question[];
+  topicos?: Topico[];
 };
 
 export type Concurso = {
@@ -23,6 +26,7 @@ export type Concurso = {
   area: string;
   descricao: string;
   ano: string;
+  inscricaoUrl?: string;
   categorias: Categoria[];
 };
 
