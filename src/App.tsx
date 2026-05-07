@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Concursos from "./pages/Concursos";
 import ConcursoDetail from "./pages/ConcursoDetail";
 import CategoriaDetail from "./pages/CategoriaDetail";
+import Topicos from "./pages/Topicos";
 import Quiz from "./pages/Quiz";
 import Resultado from "./pages/Resultado";
 import Percurso from "./pages/Percurso";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/concursos" element={<P><Concursos /></P>} />
             <Route path="/concursos/:concursoId" element={<P><ConcursoDetail /></P>} />
             <Route path="/concursos/:concursoId/:categoriaId" element={<P><CategoriaDetail /></P>} />
+            <Route path="/concursos/:concursoId/:categoriaId/topicos" element={<P><Topicos /></P>} />
             <Route path="/quiz/:concursoId/:categoriaId" element={<P><Quiz /></P>} />
             <Route path="/resultado/:id" element={<P><Resultado /></P>} />
             <Route path="/percurso" element={<P><Percurso /></P>} />
