@@ -70,13 +70,15 @@ const Perfil = () => {
             <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label htmlFor="avatar">URL do avatar</Label>
-            <Input id="avatar" value={avatar} onChange={(e) => setAvatar(e.target.value)} placeholder="https://..." className="mt-1" />
-          </div>
-          <div>
             <Label htmlFor="bio">Bio</Label>
             <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" placeholder="Conte um pouco sobre você..." />
           </div>
+          {profile?.categoria_nome && (
+            <div className="rounded-xl bg-primary/5 px-3 py-2 text-sm">
+              <span className="text-xs text-muted-foreground">Categoria</span>
+              <p className="font-semibold">{profile.categoria_nome}</p>
+            </div>
+          )}
           <Button onClick={save} disabled={saving} className="w-full rounded-full bg-gradient-primary">
             <Save className="mr-2 h-4 w-4" /> {saving ? "Salvando..." : "Salvar alterações"}
           </Button>

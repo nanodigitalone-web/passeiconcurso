@@ -18,6 +18,9 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          categoria_id: string | null
+          categoria_nome: string | null
+          concurso_id: string | null
           created_at: string
           id: string
           nome: string
@@ -28,6 +31,9 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          categoria_id?: string | null
+          categoria_nome?: string | null
+          concurso_id?: string | null
           created_at?: string
           id: string
           nome?: string
@@ -38,6 +44,9 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          categoria_id?: string | null
+          categoria_nome?: string | null
+          concurso_id?: string | null
           created_at?: string
           id?: string
           nome?: string
