@@ -27,6 +27,7 @@ export type Concurso = {
   descricao: string;
   ano: string;
   inscricaoUrl?: string;
+  documentosInscricao?: string[];
   categorias: Categoria[];
 };
 
@@ -109,6 +110,17 @@ export const concursos: Concurso[] = [
     descricao: "Concurso público de ingresso externo para o SNS de Angola - 2026.",
     ano: "2026",
     inscricaoUrl: "https://recrutamento.minsa.gov.ao",
+    documentosInscricao: [
+      "Bilhete de Identidade (cópia legível)",
+      "Certificado de habilitações literárias autenticado",
+      "Cédula profissional / inscrição na ordem (quando aplicável)",
+      "Curriculum Vitae actualizado",
+      "Certificado de registo criminal",
+      "Atestado médico actualizado",
+      "Comprovativo de NIF",
+      "2 fotografias tipo passe",
+      "Declaração sob compromisso de honra",
+    ],
     categorias: [medico, enfermeiro, tecEnfermagem, farmaceutico, laboratorio, fisioterapeuta, cardio, psicologia],
   },
 ];
