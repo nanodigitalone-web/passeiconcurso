@@ -81,7 +81,7 @@ const Aprender = () => {
                     <div className={cn(
                       "relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 shadow-card transition-smooth",
                       done && "border-success bg-success text-success-foreground",
-                      current && "border-warning bg-gradient-to-br from-warning to-accent text-white animate-pulse-glow",
+                      current && "border-warning bg-gradient-to-br from-warning to-accent text-white animate-pulse",
                       locked && "border-border bg-muted text-muted-foreground",
                     )}>
                       {locked ? <Lock className="h-6 w-6" /> : <Icon className="h-7 w-7" />}
