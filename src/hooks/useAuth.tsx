@@ -9,6 +9,9 @@ export type Profile = {
   bio: string | null;
   pontos: number;
   streak: number;
+  concurso_id: string | null;
+  categoria_id: string | null;
+  categoria_nome: string | null;
 };
 
 type AuthCtx = {
