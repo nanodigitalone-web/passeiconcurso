@@ -43,6 +43,10 @@ const mkQ = (
 import { bancoEnfermeiro, bancoTecEnfermagem, bancoFarmaceutico } from "./bancos";
 import { bancoMedico, bancoLab, bancoFisio, bancoCardio, bancoPsi } from "./bancosExtra";
 import {
+  bancoEnfermeiroExt1, bancoTecEnfermagemExt1, bancoFarmaceuticoExt1,
+  bancoMedicoExt1, bancoLabExt1, bancoFisioExt1, bancoCardioExt1, bancoPsiExt1,
+} from "./bancos2";
+import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
 } from "./topicos";
@@ -52,56 +56,56 @@ const medico: Categoria = {
   descricao: "Médico Geral / Interno de Especialidade - MINSA",
   icon: "Stethoscope",
   disciplinas: ["Clínica Médica", "Saúde Pública", "Medicina Interna", "Cirurgia/Trauma", "G&O", "Pediatria", "Ética"],
-  questoes: bancoMedico, topicos: topicosMedico,
+  questoes: [...bancoMedico, ...bancoMedicoExt1], topicos: topicosMedico,
 };
 
 const enfermeiro: Categoria = {
   id: "enfermeiro", nome: "Enfermeiro",
   descricao: "Enfermeiro Superior - MINSA", icon: "HeartPulse",
   disciplinas: ["Fundamentos", "Saúde Materno-Infantil", "Saúde Pública", "Farmacologia", "Emergências", "Ética"],
-  questoes: bancoEnfermeiro, topicos: topicosEnfermeiro,
+  questoes: [...bancoEnfermeiro, ...bancoEnfermeiroExt1], topicos: topicosEnfermeiro,
 };
 
 const tecEnfermagem: Categoria = {
   id: "tec-enfermagem", nome: "Técnico de Enfermagem",
   descricao: "Técnico Médio de Enfermagem - MINSA", icon: "Syringe",
   disciplinas: ["Procedimentos", "Farmacologia", "Saúde Pública", "Emergências", "Ética"],
-  questoes: bancoTecEnfermagem, topicos: topicosTecEnfermagem,
+  questoes: [...bancoTecEnfermagem, ...bancoTecEnfermagemExt1], topicos: topicosTecEnfermagem,
 };
 
 const farmaceutico: Categoria = {
   id: "farmaceutico", nome: "Farmacêutico",
   descricao: "Farmacêutico - MINSA", icon: "Pill",
   disciplinas: ["Farmacologia", "Farmacotécnica", "Farmacocinética", "Farmácia Hospitalar", "Legislação"],
-  questoes: bancoFarmaceutico, topicos: topicosFarmaceutico,
+  questoes: [...bancoFarmaceutico, ...bancoFarmaceuticoExt1], topicos: topicosFarmaceutico,
 };
 
 const laboratorio: Categoria = {
   id: "laboratorio", nome: "Laboratório (Médio e Superior)",
   descricao: "Análises Clínicas - MINSA", icon: "FlaskConical",
   disciplinas: ["Hematologia", "Microbiologia", "Bioquímica", "Imunohematologia", "Parasitologia"],
-  questoes: bancoLab, topicos: topicosLaboratorio,
+  questoes: [...bancoLab, ...bancoLabExt1], topicos: topicosLaboratorio,
 };
 
 const fisioterapeuta: Categoria = {
   id: "fisioterapeuta", nome: "Fisioterapeuta",
   descricao: "Fisioterapia / Reabilitação - MINSA", icon: "Activity",
   disciplinas: ["Cinesiologia", "Reabilitação", "Avaliação", "Órteses"],
-  questoes: bancoFisio, topicos: topicosFisioterapia,
+  questoes: [...bancoFisio, ...bancoFisioExt1], topicos: topicosFisioterapia,
 };
 
 const cardio: Categoria = {
   id: "cardiopneumologia", nome: "Cardiopneumologia",
   descricao: "Técnico de Cardiopneumologia - MINSA", icon: "HeartPulse",
   disciplinas: ["Electrocardiografia", "Função Pulmonar", "Vascular"],
-  questoes: bancoCardio, topicos: topicosCardio,
+  questoes: [...bancoCardio, ...bancoCardioExt1], topicos: topicosCardio,
 };
 
 const psicologia: Categoria = {
   id: "psicologia", nome: "Psicologia",
   descricao: "Psicólogo Clínico - MINSA", icon: "Brain",
   disciplinas: ["Psicopatologia", "Psicologia da Saúde", "Avaliação", "Ética"],
-  questoes: bancoPsi, topicos: topicosPsicologia,
+  questoes: [...bancoPsi, ...bancoPsiExt1], topicos: topicosPsicologia,
 };
 
 export const concursos: Concurso[] = [
