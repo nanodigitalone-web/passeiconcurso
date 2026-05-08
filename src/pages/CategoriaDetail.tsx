@@ -3,16 +3,35 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getCategoria } from "@/data/concursos";
-import { BookOpen, BookMarked, Clock, Play } from "lucide-react";
+import { getCategoria, getConcurso } from "@/data/concursos";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { BookOpen, BookMarked, Clock, Play, Check, UserCheck } from "lucide-react";
+import { toast } from "sonner";
 
 const CategoriaDetail = () => {
   const { concursoId, categoriaId } = useParams();
   const cat = getCategoria(concursoId!, categoriaId!);
-  if (!cat) return <Navigate to="/concursos" replace />;
+  const concurso = getConcurso(concursoId!);
+  const { user, profile, refreshProfile } = useAuth();
+  if (!cat || !concurso) return <Navigate to="/concursos" replace />;
 
+  const isMinha = profile?.categoria_id === cat.id && profile?.concurso_id === concurso.id;
   const totalQuiz = Math.min(20, cat.questoes.length);
   const tempoMin = Math.max(5, totalQuiz * 1.5);
+
+  const definirCategoria = async () => {
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({
+      concurso_id: concurso.id,
+      categoria_id: cat.id,
+      categoria_nome: cat.nome,
+      updated_at: new Date().toISOString(),
+    }).eq("id", user.id);
+    if (error) return toast.error("Erro ao definir categoria");
+    await refreshProfile();
+    toast.success(`Categoria ${cat.nome} definida!`);
+  };
 
   return (
     <AppShell>
@@ -20,6 +39,15 @@ const CategoriaDetail = () => {
         <h1 className="font-display text-2xl font-bold">{cat.nome}</h1>
         <p className="text-sm text-muted-foreground">{cat.descricao}</p>
       </header>
+
+      <Button
+        onClick={definirCategoria}
+        disabled={isMinha}
+        variant={isMinha ? "secondary" : "default"}
+        className="mb-4 w-full rounded-full font-semibold"
+      >
+        {isMinha ? <><Check className="mr-2 h-4 w-4" /> Esta é a sua categoria</> : <><UserCheck className="mr-2 h-4 w-4" /> Definir como minha categoria</>}
+      </Button>
 
       <Card className="mb-4 border-0 bg-gradient-primary p-5 text-primary-foreground shadow-elegant">
         <p className="text-xs uppercase tracking-wider opacity-80">Simulado aleatório</p>
@@ -40,10 +68,10 @@ const CategoriaDetail = () => {
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-medium text-primary">
-              <BookMarked className="h-4 w-4" /> Tópicos de estudo
+              <BookMarked className="h-4 w-4" /> Tópicos & documentos
             </div>
-            <p className="mt-1 text-sm font-semibold">Programa oficial MINSA 2026</p>
-            <p className="text-xs text-muted-foreground">{cat.topicos?.length ?? 0} blocos temáticos</p>
+            <p className="mt-1 text-sm font-semibold">Programa oficial e inscrição</p>
+            <p className="text-xs text-muted-foreground">{cat.topicos?.length ?? 0} blocos · documentos</p>
           </div>
           <Button asChild size="sm" variant="outline" className="rounded-full">
             <Link to={`/concursos/${concursoId}/${categoriaId}/topicos`}>Ver</Link>
