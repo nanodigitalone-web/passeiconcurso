@@ -7,6 +7,8 @@ import { getCategoria } from "@/data/concursos";
 import { saveResult, SimuladoResult } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { Check, Clock, X } from "lucide-react";
+import { useAccessGate } from "@/hooks/useAccessGate";
+import { AccessGate } from "@/components/AccessGate";
 
 const Quiz = () => {
   const { concursoId, categoriaId } = useParams();
@@ -36,7 +38,18 @@ const Quiz = () => {
 
   const questao = questoes[idx];
 
+  const gate = useAccessGate(concursoId, categoriaId);
+
   if (!cat) return <Navigate to="/concursos" replace />;
+  if (!gate.loading && !gate.hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-soft px-4 pt-10">
+        <AccessGate concursoId={concursoId!} categoriaId={categoriaId!} categoriaNome={cat.nome}>
+          <></>
+        </AccessGate>
+      </div>
+    );
+  }
   if (!questao) return <Navigate to="/concursos" replace />;
 
   const total = questoes.length;
