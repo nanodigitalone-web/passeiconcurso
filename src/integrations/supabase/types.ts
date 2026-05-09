@@ -14,6 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_codes: {
+        Row: {
+          categoria_id: string
+          code: string
+          concurso_id: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["access_code_status"]
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          categoria_id: string
+          code: string
+          concurso_id: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["access_code_status"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          categoria_id?: string
+          code?: string
+          concurso_id?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["access_code_status"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      category_access: {
+        Row: {
+          activated_at: string
+          categoria_id: string
+          code: string | null
+          concurso_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          categoria_id: string
+          code?: string | null
+          concurso_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          categoria_id?: string
+          code?: string | null
+          concurso_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_requests: {
+        Row: {
+          categoria_id: string
+          categoria_nome: string | null
+          comprovativo_url: string | null
+          concurso_id: string
+          created_at: string
+          email: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["payment_request_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria_id: string
+          categoria_nome?: string | null
+          comprovativo_url?: string | null
+          concurso_id: string
+          created_at?: string
+          email: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["payment_request_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria_id?: string
+          categoria_nome?: string | null
+          comprovativo_url?: string | null
+          concurso_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["payment_request_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -61,10 +163,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      activate_access_code: {
+        Args: { _cat: string; _code: string; _conc: string }
+        Returns: Json
+      }
+      has_category_access: {
+        Args: { _cat: string; _conc: string; _user: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      access_code_status: "available" | "used" | "revoked"
+      payment_request_status:
+        | "pending"
+        | "awaiting_review"
+        | "approved"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -191,6 +305,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      access_code_status: ["available", "used", "revoked"],
+      payment_request_status: [
+        "pending",
+        "awaiting_review",
+        "approved",
+        "rejected",
+      ],
+    },
   },
 } as const
