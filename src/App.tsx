@@ -19,6 +19,7 @@ import Login from "./pages/Login";
 import Perfil from "./pages/Perfil";
 import Aprender from "./pages/Aprender";
 import AprenderSessao from "./pages/AprenderSessao";
+import Acesso from "./pages/Acesso";
 import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/perfil" element={<P><Perfil /></P>} />
             <Route path="/aprender" element={<P><Aprender /></P>} />
             <Route path="/aprender/sessao/:concursoId/:categoriaId" element={<P><AprenderSessao /></P>} />
+            <Route path="/acesso/:concursoId/:categoriaId" element={<P><Acesso /></P>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <InstallPrompt />

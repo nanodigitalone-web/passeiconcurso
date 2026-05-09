@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Check, Flame, Heart, Trophy, X, Zap } from "lucide-react";
+import { useAccessGate } from "@/hooks/useAccessGate";
+import { AccessGate } from "@/components/AccessGate";
 
 const SESSION_SIZE = 5;
 const POINTS_PER_HIT = 10;
@@ -52,7 +54,18 @@ const AprenderSessao = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
+  const gate = useAccessGate(concursoId, categoriaId);
+
   if (!cat) return <Navigate to="/aprender" replace />;
+  if (!gate.loading && !gate.hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-soft px-4 pt-10">
+        <AccessGate concursoId={concursoId!} categoriaId={categoriaId!} categoriaNome={cat.nome}>
+          <></>
+        </AccessGate>
+      </div>
+    );
+  }
   if (questoes.length === 0) return <Navigate to="/aprender" replace />;
 
   const q = questoes[idx];
