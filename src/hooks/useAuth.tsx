@@ -12,12 +12,16 @@ export type Profile = {
   concurso_id: string | null;
   categoria_id: string | null;
   categoria_nome: string | null;
+  blocked?: boolean;
+  hidden?: boolean;
+  email?: string | null;
 };
 
 type AuthCtx = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  isAdmin: boolean;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
