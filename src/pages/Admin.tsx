@@ -214,7 +214,7 @@ const CodesTab = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Select value={conc} onValueChange={v => { setConc(v); const c = concursos.find(x => x.id === v); setCat(c?.categorias?.[0]?.id ?? ""); }}>
           <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)]"><SelectValue /></SelectTrigger>
-          <SelectContent>{concursos.map(c => <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>)}</SelectContent>
+          <SelectContent>{concursos.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={cat} onValueChange={setCat}>
           <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)]"><SelectValue /></SelectTrigger>
