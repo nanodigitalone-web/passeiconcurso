@@ -74,6 +74,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          read: boolean
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          read?: boolean
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          read?: boolean
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payment_requests: {
         Row: {
           categoria_id: string
@@ -120,10 +150,13 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          blocked: boolean
           categoria_id: string | null
           categoria_nome: string | null
           concurso_id: string | null
           created_at: string
+          email: string | null
+          hidden: boolean
           id: string
           nome: string
           pontos: number
@@ -133,10 +166,13 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          blocked?: boolean
           categoria_id?: string | null
           categoria_nome?: string | null
           concurso_id?: string | null
           created_at?: string
+          email?: string | null
+          hidden?: boolean
           id: string
           nome?: string
           pontos?: number
@@ -146,15 +182,39 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          blocked?: boolean
           categoria_id?: string | null
           categoria_nome?: string | null
           concurso_id?: string | null
           created_at?: string
+          email?: string | null
+          hidden?: boolean
           id?: string
           nome?: string
           pontos?: number
           streak?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -167,13 +227,26 @@ export type Database = {
         Args: { _cat: string; _code: string; _conc: string }
         Returns: Json
       }
+      admin_generate_codes: {
+        Args: { _cat: string; _conc: string; _count: number }
+        Returns: number
+      }
       has_category_access: {
         Args: { _cat: string; _conc: string; _user: string }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       access_code_status: "available" | "used" | "revoked"
+      app_role: "admin" | "user"
       payment_request_status:
         | "pending"
         | "awaiting_review"
@@ -307,6 +380,7 @@ export const Constants = {
   public: {
     Enums: {
       access_code_status: ["available", "used", "revoked"],
+      app_role: ["admin", "user"],
       payment_request_status: [
         "pending",
         "awaiting_review",

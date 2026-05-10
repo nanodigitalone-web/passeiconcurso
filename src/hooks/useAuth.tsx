@@ -12,12 +12,16 @@ export type Profile = {
   concurso_id: string | null;
   categoria_id: string | null;
   categoria_nome: string | null;
+  blocked?: boolean;
+  hidden?: boolean;
+  email?: string | null;
 };
 
 type AuthCtx = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  isAdmin: boolean;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -29,11 +33,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (uid: string) => {
     const { data } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
     if (data) setProfile(data as Profile);
+    const { data: roles } = await supabase.from("user_roles" as any).select("role").eq("user_id", uid);
+    setIsAdmin(!!roles?.some((r: any) => r.role === "admin"));
   };
 
   const refreshProfile = async () => {
@@ -48,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTimeout(() => fetchProfile(s.user.id), 0);
       } else {
         setProfile(null);
+        setIsAdmin(false);
       }
     });
     supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -64,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <Ctx.Provider value={{ session, user, profile, loading, refreshProfile, signOut }}>
+    <Ctx.Provider value={{ session, user, profile, isAdmin, loading, refreshProfile, signOut }}>
       {children}
     </Ctx.Provider>
   );

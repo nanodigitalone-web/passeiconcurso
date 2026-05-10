@@ -66,6 +66,11 @@ const Login = () => {
           <p className="mt-4 text-center text-xs opacity-75">
             Ao continuar, você aceita os termos de uso da plataforma.
           </p>
+          <p className="mt-6 text-center">
+            <a href="/admin" className="text-[10px] font-light tracking-wide opacity-50 hover:opacity-100 transition-opacity">
+              Nano Digital One
+            </a>
+          </p>
         </div>
       </div>
     </div>
