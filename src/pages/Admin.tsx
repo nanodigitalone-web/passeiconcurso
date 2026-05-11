@@ -104,6 +104,12 @@ const Admin = () => {
 const StatsTab = () => {
   const [s, setS] = useState({ users: 0, blocked: 0, hidden: 0, paid: 0, codesUsed: 0, codesAvail: 0, payments: 0 });
 
+  // Questões disponíveis na plataforma (calculado dos dados locais)
+  const totalQuestoes = concursos.reduce((acc, c) => acc + c.categorias.reduce((a, cat) => a + cat.questoes.length, 0), 0);
+  const totalCategorias = concursos.reduce((acc, c) => acc + c.categorias.length, 0);
+  const porCategoria = concursos.flatMap(c => c.categorias.map(cat => ({ nome: cat.nome, n: cat.questoes.length })))
+    .sort((a, b) => b.n - a.n);
+
   useEffect(() => {
     (async () => {
       const [u, b, h, p, cu, ca, pr] = await Promise.all([
@@ -122,24 +128,71 @@ const StatsTab = () => {
     })();
   }, []);
 
-  const items = [
-    { label: "Usuários", value: s.users },
-    { label: "Bloqueados", value: s.blocked },
-    { label: "Ocultos", value: s.hidden },
-    { label: "Acessos pagos", value: s.paid },
-    { label: "Códigos usados", value: s.codesUsed },
-    { label: "Códigos disponíveis", value: s.codesAvail },
-    { label: "Pagamentos pendentes", value: s.payments },
+  const groups: { title: string; items: { label: string; value: number; tone?: string }[] }[] = [
+    {
+      title: "Conteúdo da plataforma",
+      items: [
+        { label: "Questões disponíveis", value: totalQuestoes, tone: "text-emerald-300" },
+        { label: "Categorias", value: totalCategorias },
+        { label: "Concursos", value: concursos.length },
+      ],
+    },
+    {
+      title: "Usuários",
+      items: [
+        { label: "Total de usuários", value: s.users },
+        { label: "Bloqueados", value: s.blocked, tone: "text-red-300" },
+        { label: "Ocultos", value: s.hidden, tone: "text-amber-300" },
+        { label: "Acessos pagos activos", value: s.paid, tone: "text-emerald-300" },
+      ],
+    },
+    {
+      title: "Códigos & Pagamentos",
+      items: [
+        { label: "Códigos disponíveis", value: s.codesAvail, tone: "text-emerald-300" },
+        { label: "Códigos usados", value: s.codesUsed },
+        { label: "Pagamentos pendentes", value: s.payments, tone: "text-amber-300" },
+      ],
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-4">
-      {items.map(i => (
-        <Card key={i.label} className={`${PANEL} p-4`}>
-          <p className="text-xs text-white/60">{i.label}</p>
-          <p className="text-3xl font-bold mt-1">{i.value}</p>
-        </Card>
+    <div className="mt-4 space-y-6">
+      {groups.map(g => (
+        <section key={g.title}>
+          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-2">{g.title}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {g.items.map(i => (
+              <Card key={i.label} className={`${PANEL} p-4`}>
+                <p className="text-xs text-white/60">{i.label}</p>
+                <p className={`text-3xl font-bold mt-1 ${i.tone ?? "text-white"}`}>{i.value.toLocaleString("pt-PT")}</p>
+              </Card>
+            ))}
+          </div>
+        </section>
       ))}
+
+      <section>
+        <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-2">Questões por categoria</h2>
+        <Card className={`${PANEL} p-4`}>
+          <div className="space-y-2">
+            {porCategoria.map(c => {
+              const pct = Math.min(100, Math.round((c.n / 1000) * 100));
+              return (
+                <div key={c.nome}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-white/90">{c.nome}</span>
+                    <span className="text-white/60 tabular-nums">{c.n} <span className="text-white/30">/ 1000</span></span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-[hsl(220_45%_22%)] overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-sky-400 to-emerald-400" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      </section>
     </div>
   );
 };
