@@ -72,7 +72,7 @@ const tecEnfermagem: Categoria = {
   id: "tec-enfermagem", nome: "Técnico de Enfermagem",
   descricao: "Técnico Médio de Enfermagem - MINSA", icon: "Syringe",
   disciplinas: ["Procedimentos", "Farmacologia", "Saúde Pública", "Emergências", "Ética"],
-  questoes: [...bancoTecEnfermagem, ...bancoTecEnfermagemExt1], topicos: topicosTecEnfermagem,
+  questoes: [...bancoTecEnfermagem, ...bancoTecEnfermagemExt1, ...bancoTecEnfermagemExt2], topicos: topicosTecEnfermagem,
 };
 
 const farmaceutico: Categoria = {
