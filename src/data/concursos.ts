@@ -46,6 +46,7 @@ import {
   bancoEnfermeiroExt1, bancoTecEnfermagemExt1, bancoFarmaceuticoExt1,
   bancoMedicoExt1, bancoLabExt1, bancoFisioExt1, bancoCardioExt1, bancoPsiExt1,
 } from "./bancos2";
+import { bancoLabExt2 } from "./bancosLab50";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
