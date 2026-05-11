@@ -83,11 +83,11 @@ const Admin = () => {
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Tabs defaultValue="stats">
-          <TabsList className="bg-[hsl(220_55%_14%)] border border-[hsl(220_45%_22%)]">
-            <TabsTrigger value="stats"><BarChart3 className="h-4 w-4 mr-1" />Estatísticas</TabsTrigger>
-            <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" />Usuários</TabsTrigger>
-            <TabsTrigger value="codes"><KeyRound className="h-4 w-4 mr-1" />Códigos</TabsTrigger>
-            <TabsTrigger value="notifs"><Bell className="h-4 w-4 mr-1" />Notificações</TabsTrigger>
+          <TabsList className="bg-[hsl(220_55%_14%)] border border-[hsl(220_45%_22%)] p-1 h-auto flex-wrap">
+            <TabsTrigger value="stats" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><BarChart3 className="h-4 w-4 mr-1" />Estatísticas</TabsTrigger>
+            <TabsTrigger value="users" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><Users className="h-4 w-4 mr-1" />Usuários</TabsTrigger>
+            <TabsTrigger value="codes" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><KeyRound className="h-4 w-4 mr-1" />Códigos</TabsTrigger>
+            <TabsTrigger value="notifs" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><Bell className="h-4 w-4 mr-1" />Notificações</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats"><StatsTab /></TabsContent>
