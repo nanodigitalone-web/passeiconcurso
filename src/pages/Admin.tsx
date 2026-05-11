@@ -319,17 +319,28 @@ const CodesTab = () => {
         <p className="text-xs text-white/50">Cada código tem 6 dígitos e é único para a categoria selecionada.</p>
       </Card>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant={showUsed ? "secondary" : "default"} onClick={() => setShowUsed(false)}>Disponíveis</Button>
         <Button size="sm" variant={showUsed ? "default" : "secondary"} onClick={() => setShowUsed(true)}>Usados</Button>
+        <span className="ml-auto text-xs text-white/60">{list.length} {showUsed ? "usados" : "disponíveis"} listados</span>
+        <Button size="sm" variant="secondary" onClick={() => {
+          const txt = list.map((c: any) => c.code).join("\n");
+          navigator.clipboard.writeText(txt);
+          toast.success("Códigos copiados");
+        }}>Copiar todos</Button>
       </div>
 
-      <Card className={`${PANEL} p-3`}>
-        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-[400px] overflow-y-auto">
+      <Card className={`${PANEL} p-4`}>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-[420px] overflow-y-auto">
           {list.map((c: any) => (
-            <div key={c.code} className="font-mono text-sm bg-[hsl(220_55%_16%)] rounded px-2 py-1 text-center">{c.code}</div>
+            <div
+              key={c.code}
+              className="font-mono font-semibold text-base tracking-widest text-center px-2 py-2 rounded-md bg-white text-[hsl(220_70%_10%)] border border-[hsl(220_45%_22%)] shadow-sm select-all"
+            >
+              {c.code}
+            </div>
           ))}
-          {list.length === 0 && <p className="text-sm text-white/50 col-span-full">Sem códigos.</p>}
+          {list.length === 0 && <p className="text-sm text-white/60 col-span-full text-center py-6">Sem códigos para mostrar.</p>}
         </div>
       </Card>
     </div>
