@@ -47,6 +47,7 @@ import {
   bancoMedicoExt1, bancoLabExt1, bancoFisioExt1, bancoCardioExt1, bancoPsiExt1,
 } from "./bancos2";
 import { bancoLabExt2 } from "./bancosLab50";
+import { bancoMedicoExt2, bancoTecEnfermagemExt2 } from "./bancosExt3";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -57,7 +58,7 @@ const medico: Categoria = {
   descricao: "Médico Geral / Interno de Especialidade - MINSA",
   icon: "Stethoscope",
   disciplinas: ["Clínica Médica", "Saúde Pública", "Medicina Interna", "Cirurgia/Trauma", "G&O", "Pediatria", "Ética"],
-  questoes: [...bancoMedico, ...bancoMedicoExt1], topicos: topicosMedico,
+  questoes: [...bancoMedico, ...bancoMedicoExt1, ...bancoMedicoExt2], topicos: topicosMedico,
 };
 
 const enfermeiro: Categoria = {
@@ -71,7 +72,7 @@ const tecEnfermagem: Categoria = {
   id: "tec-enfermagem", nome: "Técnico de Enfermagem",
   descricao: "Técnico Médio de Enfermagem - MINSA", icon: "Syringe",
   disciplinas: ["Procedimentos", "Farmacologia", "Saúde Pública", "Emergências", "Ética"],
-  questoes: [...bancoTecEnfermagem, ...bancoTecEnfermagemExt1], topicos: topicosTecEnfermagem,
+  questoes: [...bancoTecEnfermagem, ...bancoTecEnfermagemExt1, ...bancoTecEnfermagemExt2], topicos: topicosTecEnfermagem,
 };
 
 const farmaceutico: Categoria = {
