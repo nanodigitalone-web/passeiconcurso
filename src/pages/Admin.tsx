@@ -293,11 +293,11 @@ const CodesTab = () => {
     <div className="mt-4 space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Select value={conc} onValueChange={v => { setConc(v); const c = concursos.find(x => x.id === v); setCat(c?.categorias?.[0]?.id ?? ""); }}>
-          <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white"><SelectValue /></SelectTrigger>
           <SelectContent>{concursos.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={cat} onValueChange={setCat}>
-          <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white"><SelectValue /></SelectTrigger>
           <SelectContent>{cats.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
         </Select>
       </div>
@@ -367,7 +367,7 @@ const NotifsTab = () => {
       <Card className={`${PANEL} p-4 space-y-3`}>
         <p className="font-semibold">Nova notificação</p>
         <Select value={target} onValueChange={setTarget}>
-          <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os usuários</SelectItem>
             {users.map(u => <SelectItem key={u.id} value={u.id}>{u.nome} · {u.email}</SelectItem>)}
