@@ -46,6 +46,7 @@ import {
   bancoEnfermeiroExt1, bancoTecEnfermagemExt1, bancoFarmaceuticoExt1,
   bancoMedicoExt1, bancoLabExt1, bancoFisioExt1, bancoCardioExt1, bancoPsiExt1,
 } from "./bancos2";
+import { bancoLabExt2 } from "./bancosLab50";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -84,7 +85,7 @@ const laboratorio: Categoria = {
   id: "laboratorio", nome: "Laboratório (Médio e Superior)",
   descricao: "Análises Clínicas - MINSA", icon: "FlaskConical",
   disciplinas: ["Hematologia", "Microbiologia", "Bioquímica", "Imunohematologia", "Parasitologia"],
-  questoes: [...bancoLab, ...bancoLabExt1], topicos: topicosLaboratorio,
+  questoes: [...bancoLab, ...bancoLabExt1, ...bancoLabExt2], topicos: topicosLaboratorio,
 };
 
 const fisioterapeuta: Categoria = {
