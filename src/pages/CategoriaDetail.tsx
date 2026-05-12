@@ -81,7 +81,7 @@ const CategoriaDetail = () => {
           </div>
         </Card>
 
-        <h3 className="mb-3 font-display font-semibold">Disciplinas</h3>
+        <h3 className="mb-3 font-display font-semibold">Tópicos</h3>
         <div className="flex flex-wrap gap-2">
           {cat.disciplinas.map((d) => (
             <Badge key={d} variant="secondary" className="rounded-full px-3 py-1.5 text-xs font-medium">
