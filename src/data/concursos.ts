@@ -48,6 +48,7 @@ import {
 } from "./bancos2";
 import { bancoLabExt2 } from "./bancosLab50";
 import { bancoMedicoExt2, bancoTecEnfermagemExt2 } from "./bancosExt3";
+import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./bancosTopicos50";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
