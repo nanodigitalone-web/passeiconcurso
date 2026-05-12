@@ -87,7 +87,7 @@ const laboratorio: Categoria = {
   id: "laboratorio", nome: "Laboratório (Médio e Superior)",
   descricao: "Análises Clínicas - MINSA", icon: "FlaskConical",
   disciplinas: ["Hematologia", "Microbiologia", "Bioquímica", "Imunohematologia", "Parasitologia"],
-  questoes: [...bancoLab, ...bancoLabExt1, ...bancoLabExt2], topicos: topicosLaboratorio,
+  questoes: [...bancoLab, ...bancoLabExt1, ...bancoLabExt2, ...bancoLabTop50], topicos: topicosLaboratorio,
 };
 
 const fisioterapeuta: Categoria = {
