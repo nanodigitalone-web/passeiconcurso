@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, BookOpen, Trophy, Target } from "lucide-react";
 import { toast } from "sonner";
+import { LegalModal } from "@/components/LegalModal";
 
 const Login = () => {
   const { user, loading } = useAuth();
@@ -64,7 +65,17 @@ const Login = () => {
             Entrar com Google
           </Button>
           <p className="mt-4 text-center text-xs opacity-75">
-            Ao continuar, você aceita os termos de uso da plataforma.
+            Ao continuar, você aceita os{" "}
+            <LegalModal
+              defaultTab="termos"
+              trigger={<button type="button" className="underline underline-offset-2 hover:opacity-100">termos de uso</button>}
+            />{" "}
+            e a{" "}
+            <LegalModal
+              defaultTab="privacidade"
+              trigger={<button type="button" className="underline underline-offset-2 hover:opacity-100">política de privacidade</button>}
+            />{" "}
+            da plataforma.
           </p>
           <p className="mt-6 text-center">
             <a href="/admin" className="text-[10px] font-light tracking-wide opacity-50 hover:opacity-100 transition-opacity">
