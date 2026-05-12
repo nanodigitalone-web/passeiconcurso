@@ -48,6 +48,7 @@ import {
 } from "./bancos2";
 import { bancoLabExt2 } from "./bancosLab50";
 import { bancoMedicoExt2, bancoTecEnfermagemExt2 } from "./bancosExt3";
+import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./bancosTopicos50";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -58,7 +59,7 @@ const medico: Categoria = {
   descricao: "Médico Geral / Interno de Especialidade - MINSA",
   icon: "Stethoscope",
   disciplinas: ["Clínica Médica", "Saúde Pública", "Medicina Interna", "Cirurgia/Trauma", "G&O", "Pediatria", "Ética"],
-  questoes: [...bancoMedico, ...bancoMedicoExt1, ...bancoMedicoExt2], topicos: topicosMedico,
+  questoes: [...bancoMedico, ...bancoMedicoExt1, ...bancoMedicoExt2, ...bancoMedicoTop50], topicos: topicosMedico,
 };
 
 const enfermeiro: Categoria = {
@@ -72,7 +73,7 @@ const tecEnfermagem: Categoria = {
   id: "tec-enfermagem", nome: "Técnico de Enfermagem",
   descricao: "Técnico Médio de Enfermagem - MINSA", icon: "Syringe",
   disciplinas: ["Procedimentos", "Farmacologia", "Saúde Pública", "Emergências", "Ética"],
-  questoes: [...bancoTecEnfermagem, ...bancoTecEnfermagemExt1, ...bancoTecEnfermagemExt2], topicos: topicosTecEnfermagem,
+  questoes: [...bancoTecEnfermagem, ...bancoTecEnfermagemExt1, ...bancoTecEnfermagemExt2, ...bancoTecEnfermagemTop50], topicos: topicosTecEnfermagem,
 };
 
 const farmaceutico: Categoria = {
@@ -86,7 +87,7 @@ const laboratorio: Categoria = {
   id: "laboratorio", nome: "Laboratório (Médio e Superior)",
   descricao: "Análises Clínicas - MINSA", icon: "FlaskConical",
   disciplinas: ["Hematologia", "Microbiologia", "Bioquímica", "Imunohematologia", "Parasitologia"],
-  questoes: [...bancoLab, ...bancoLabExt1, ...bancoLabExt2], topicos: topicosLaboratorio,
+  questoes: [...bancoLab, ...bancoLabExt1, ...bancoLabExt2, ...bancoLabTop50], topicos: topicosLaboratorio,
 };
 
 const fisioterapeuta: Categoria = {
