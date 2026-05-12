@@ -59,7 +59,7 @@ const medico: Categoria = {
   descricao: "Médico Geral / Interno de Especialidade - MINSA",
   icon: "Stethoscope",
   disciplinas: ["Clínica Médica", "Saúde Pública", "Medicina Interna", "Cirurgia/Trauma", "G&O", "Pediatria", "Ética"],
-  questoes: [...bancoMedico, ...bancoMedicoExt1, ...bancoMedicoExt2], topicos: topicosMedico,
+  questoes: [...bancoMedico, ...bancoMedicoExt1, ...bancoMedicoExt2, ...bancoMedicoTop50], topicos: topicosMedico,
 };
 
 const enfermeiro: Categoria = {
