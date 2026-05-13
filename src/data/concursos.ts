@@ -49,6 +49,7 @@ import {
 import { bancoLabExt2 } from "./bancosLab50";
 import { bancoMedicoExt2, bancoTecEnfermagemExt2 } from "./bancosExt3";
 import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./bancosTopicos50";
+import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -111,6 +112,14 @@ const psicologia: Categoria = {
   questoes: [...bancoPsi, ...bancoPsiExt1], topicos: topicosPsicologia,
 };
 
+const uanMedicina: Categoria = {
+  id: "medicina", nome: "Faculdade de Medicina",
+  descricao: "Exame de acesso à Faculdade de Medicina - UAN",
+  icon: "Stethoscope",
+  disciplinas: ["Língua Portuguesa", "Biologia", "Matemática", "Química"],
+  questoes: questoesMedicinaUAN, topicos: topicosMedicinaUAN,
+};
+
 export const concursos: Concurso[] = [
   {
     id: "minsa", nome: "Ministério da Saúde", sigla: "MINSA", area: "Saúde",
@@ -130,7 +139,24 @@ export const concursos: Concurso[] = [
     ],
     categorias: [medico, enfermeiro, tecEnfermagem, farmaceutico, laboratorio, fisioterapeuta, cardio, psicologia],
   },
+  {
+    id: "uan", nome: "Universidade Agostinho Neto", sigla: "UAN", area: "Ensino Superior",
+    descricao: "Exames de acesso à Universidade Agostinho Neto - 2026.",
+    ano: "2026",
+    inscricaoUrl: "https://www.uan.ao",
+    documentosInscricao: [
+      "Bilhete de Identidade (ou Passaporte para estrangeiros)",
+      "Certificado de habilitações do Ensino Médio com notas descritivas",
+      "Fotografia tipo passe (formato digital)",
+      "Comprovativo de pagamento da taxa de inscrição (5.000 Kz por curso)",
+      "Declaração de serviço (apenas para trabalhadores)",
+      "Guia de recenseamento militar (candidatos masculinos em idade militar)",
+      "Documento de identificação policial (apenas membros da polícia/forças armadas)",
+    ],
+    categorias: [uanMedicina],
+  },
 ];
+
 
 export const getConcurso = (id: string) => concursos.find((c) => c.id === id);
 export const getCategoria = (concursoId: string, catId: string) =>
