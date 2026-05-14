@@ -329,6 +329,12 @@ const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: Ac
         user_id: user.id, concurso_id: conc, categoria_id: cat, code,
       });
       if (e2 && !String(e2.message).includes("duplicate")) throw e2;
+      const catName = catNome(conc, cat);
+      await supabase.from("notifications" as any).insert({
+        user_id: user.id,
+        title: "Conta activada ✅",
+        body: `O seu acesso a ${catName} foi activado pela equipa. Código: ${code}. Bons estudos!`,
+      } as any);
       toast.success(`Acesso activado (código ${code})`);
       onChanged();
     } catch (e: any) {

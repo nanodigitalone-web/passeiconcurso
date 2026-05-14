@@ -65,6 +65,11 @@ const Acesso = () => {
       if (error) throw error;
 
       setRequestId(data.id);
+      await supabase.from("notifications" as any).insert({
+        user_id: user.id,
+        title: "Comprovativo recebido",
+        body: `Recebemos o seu comprovativo para ${cat.nome} (${concurso.sigla}). A nossa equipa analisa em até 24h e enviará o código de activação.`,
+      } as any);
       toast.success("Comprovativo enviado! Aguarde até 24h pelo seu código.");
       setStep("codigo");
     } catch (e: any) {
@@ -91,6 +96,11 @@ const Acesso = () => {
         return;
       }
       toast.success("Acesso activado!");
+      await supabase.from("notifications" as any).insert({
+        user_id: user.id,
+        title: "Conta activada ✅",
+        body: `O seu acesso a ${cat.nome} (${concurso.sigla}) foi activado com sucesso. Bons estudos!`,
+      } as any);
       await refreshProfile();
       setStep("concluido");
     } catch (e: any) {
