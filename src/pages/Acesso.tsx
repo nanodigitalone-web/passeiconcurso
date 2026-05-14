@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { getCategoria, getConcurso } from "@/data/concursos";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Phone, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Phone, Upload, Loader2, Landmark, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 const TELEFONE = "931153086";
+const IBAN = "AO06005900000251657910155";
+const TITULAR = "NANODIGITALONE CONSULT E PREST DE SERV";
 const VALOR = "1.000 Kz";
 
 type Step = "instrucoes" | "comprovativo" | "codigo" | "concluido";
@@ -128,43 +130,76 @@ const Acesso = () => {
 
       {step === "instrucoes" && (
         <Card className="p-5">
-          <h2 className="font-display text-lg font-bold">1. Faça a transferência</h2>
+          <h2 className="font-display text-lg font-bold">1. Faça o pagamento</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Use o <strong>Multicaixa Express</strong> para transferir <strong>{VALOR}</strong> para o contacto abaixo.
-            Na <strong>mensagem da transferência</strong>, escreva o seu e-mail de cadastro.
+            Escolha uma das opções abaixo para pagar <strong>{VALOR}</strong>. Na <strong>descrição/mensagem</strong> da
+            transferência, escreva o seu <strong>e-mail de cadastro</strong> para identificarmos rapidamente.
           </p>
 
-          <div className="mt-4 space-y-3">
-            <div className="rounded-2xl border bg-muted/40 p-3">
-              <div className="text-xs text-muted-foreground">Contacto Multicaixa Express</div>
-              <div className="mt-0.5 flex items-center justify-between">
-                <div className="flex items-center gap-2 font-mono text-lg font-bold">
-                  <Phone className="h-4 w-4" /> {TELEFONE}
+          {/* Multicaixa Express */}
+          <div className="mt-4 rounded-2xl border bg-muted/40 p-4">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Smartphone className="h-4 w-4 text-primary" /> Opção A — Multicaixa Express
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Contacto</div>
+                  <div className="font-mono text-base font-bold">{TELEFONE}</div>
                 </div>
                 <Button size="sm" variant="outline" onClick={() => copiar(TELEFONE)}>
                   <Copy className="mr-1 h-3.5 w-3.5" /> Copiar
                 </Button>
               </div>
             </div>
+          </div>
 
-            <div className="rounded-2xl border bg-muted/40 p-3">
-              <div className="text-xs text-muted-foreground">Mensagem da transferência (seu e-mail)</div>
-              <div className="mt-0.5 flex items-center justify-between gap-2">
-                <div className="truncate font-mono text-sm font-semibold">{user.email}</div>
-                <Button size="sm" variant="outline" onClick={() => copiar(user.email ?? "")}>
+          {/* Transferência Bancária */}
+          <div className="mt-3 rounded-2xl border bg-muted/40 p-4">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Landmark className="h-4 w-4 text-primary" /> Opção B — Transferência Bancária
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">IBAN</div>
+                  <div className="break-all font-mono text-sm font-bold">{IBAN}</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => copiar(IBAN)}>
+                  <Copy className="mr-1 h-3.5 w-3.5" /> Copiar
+                </Button>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Titular</div>
+                  <div className="text-sm font-semibold">{TITULAR}</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => copiar(TITULAR)}>
                   <Copy className="mr-1 h-3.5 w-3.5" /> Copiar
                 </Button>
               </div>
             </div>
+          </div>
 
+          {/* Mensagem + Valor */}
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border bg-muted/40 p-3">
-              <div className="text-xs text-muted-foreground">Valor</div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Mensagem (seu e-mail)</div>
+              <div className="mt-0.5 flex items-center justify-between gap-2">
+                <div className="truncate font-mono text-sm font-semibold">{user.email}</div>
+                <Button size="sm" variant="outline" onClick={() => copiar(user.email ?? "")}>
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-2xl border bg-muted/40 p-3">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Valor</div>
               <div className="mt-0.5 font-mono text-lg font-bold">{VALOR}</div>
             </div>
           </div>
 
           <Button onClick={() => setStep("comprovativo")} className="mt-5 w-full rounded-full font-semibold">
-            Confirmar <ArrowRight className="ml-2 h-4 w-4" />
+            Já paguei, enviar comprovativo <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <button
             onClick={() => setStep("codigo")}
