@@ -12,10 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { concursos } from "@/data/concursos";
 import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban, CheckCircle2, RefreshCw,
+  ShieldCheck, Unlock, Lock,
 } from "lucide-react";
 
 const ADMIN_BG = "bg-[hsl(220_70%_8%)] text-[hsl(210_40%_96%)]";
@@ -198,13 +203,22 @@ const StatsTab = () => {
 };
 
 /* ---------------- Users ---------------- */
+type AccessRow = { id: string; concurso_id: string; categoria_id: string; code: string | null; activated_at: string };
+
 const UsersTab = () => {
   const [rows, setRows] = useState<any[]>([]);
+  const [accessMap, setAccessMap] = useState<Record<string, AccessRow[]>>({});
   const [q, setQ] = useState("");
 
   const load = async () => {
     const { data } = await supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(500);
     setRows(data ?? []);
+    const { data: acc } = await supabase.from("category_access").select("*").limit(2000);
+    const map: Record<string, AccessRow[]> = {};
+    (acc ?? []).forEach((a: any) => {
+      (map[a.user_id] ||= []).push(a);
+    });
+    setAccessMap(map);
   };
   useEffect(() => { load(); }, []);
 
@@ -218,6 +232,9 @@ const UsersTab = () => {
     if (error) toast.error(error.message); else { toast.success("Eliminado"); load(); }
   };
 
+  const catNome = (concId: string, catId: string) =>
+    concursos.find(c => c.id === concId)?.categorias.find(x => x.id === catId)?.nome ?? catId;
+
   const filtered = rows.filter(r =>
     !q || r.nome?.toLowerCase().includes(q.toLowerCase()) || r.email?.toLowerCase().includes(q.toLowerCase())
   );
@@ -227,28 +244,164 @@ const UsersTab = () => {
       <Input placeholder="Procurar por nome ou email" value={q} onChange={e => setQ(e.target.value)}
         className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white placeholder:text-white/40" />
       <div className="space-y-2">
-        {filtered.map(r => (
-          <Card key={r.id} className={`${PANEL} p-3 flex flex-wrap items-center gap-3`}>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold truncate">{r.nome} {r.blocked && <Badge variant="destructive" className="ml-1">Bloqueado</Badge>} {r.hidden && <Badge variant="secondary" className="ml-1">Oculto</Badge>}</p>
-              <p className="text-xs text-white/60 truncate">{r.email} · {r.pontos ?? 0} pts · {r.categoria_nome ?? "-"}</p>
-            </div>
-            <div className="flex gap-1">
-              <Button size="sm" variant="secondary" onClick={() => update(r.id, { blocked: !r.blocked })}>
-                {r.blocked ? <CheckCircle2 className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => update(r.id, { hidden: !r.hidden })}>
-                {r.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => del(r.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {filtered.map(r => {
+          const access = accessMap[r.id] ?? [];
+          return (
+            <Card key={r.id} className={`${PANEL} p-3`}>
+              <div className="flex flex-wrap items-center gap-3">
+                <Avatar className="h-11 w-11 ring-2 ring-white/10">
+                  <AvatarImage src={r.avatar_url || undefined} />
+                  <AvatarFallback className="bg-[hsl(220_70%_18%)] text-white font-bold">
+                    {r.nome?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate flex items-center gap-2">
+                    {r.nome}
+                    {r.blocked && <Badge variant="destructive">Bloqueado</Badge>}
+                    {r.hidden && <Badge variant="secondary">Oculto</Badge>}
+                    {access.length > 0 ? (
+                      <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">{access.length} plano{access.length > 1 ? "s" : ""} activo{access.length > 1 ? "s" : ""}</Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-white/20 text-white/60">Sem plano</Badge>
+                    )}
+                  </p>
+                  <p className="text-xs text-white/60 truncate">{r.email} · {r.pontos ?? 0} pts</p>
+                  {access.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {access.map(a => (
+                        <span key={a.id} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[11px] text-emerald-200">
+                          <ShieldCheck className="h-3 w-3" />
+                          {catNome(a.concurso_id, a.categoria_id)}
+                          {a.code && <span className="font-mono text-emerald-300/70">· {a.code}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <ManageAccessDialog user={r} access={access} onChanged={load} />
+                  <Button size="sm" variant="secondary" title={r.blocked ? "Desbloquear" : "Bloquear"} onClick={() => update(r.id, { blocked: !r.blocked })}>
+                    {r.blocked ? <CheckCircle2 className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                  </Button>
+                  <Button size="sm" variant="secondary" title={r.hidden ? "Mostrar" : "Ocultar"} onClick={() => update(r.id, { hidden: !r.hidden })}>
+                    {r.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </Button>
+                  <Button size="sm" variant="destructive" title="Eliminar" onClick={() => del(r.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
         {filtered.length === 0 && <p className="text-sm text-white/50">Nenhum usuário.</p>}
       </div>
     </div>
+  );
+};
+
+/* ---------------- Manage Access Dialog ---------------- */
+const genCode = () => Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join("");
+
+const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: AccessRow[]; onChanged: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const [conc, setConc] = useState(concursos[0]?.id ?? "");
+  const [cat, setCat] = useState(concursos[0]?.categorias?.[0]?.id ?? "");
+  const [busy, setBusy] = useState(false);
+
+  const concurso = concursos.find(c => c.id === conc);
+  const cats = concurso?.categorias ?? [];
+
+  const activate = async () => {
+    if (!conc || !cat) return;
+    setBusy(true);
+    try {
+      const code = genCode();
+      // 1) registar código já usado por este utilizador
+      const { error: e1 } = await supabase.from("access_codes").insert({
+        concurso_id: conc, categoria_id: cat, code,
+        status: "used", used_by: user.id, used_at: new Date().toISOString(),
+      } as any);
+      if (e1 && !String(e1.message).includes("duplicate")) throw e1;
+      // 2) garantir o acesso
+      const { error: e2 } = await supabase.from("category_access").insert({
+        user_id: user.id, concurso_id: conc, categoria_id: cat, code,
+      });
+      if (e2 && !String(e2.message).includes("duplicate")) throw e2;
+      toast.success(`Acesso activado (código ${code})`);
+      onChanged();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao activar");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deactivate = async (a: AccessRow) => {
+    if (!confirm(`Desactivar acesso a "${a.categoria_id}"?`)) return;
+    const { error } = await supabase.from("category_access").delete().eq("id", a.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Acesso desactivado"); onChanged(); }
+  };
+
+  const catNome = (cid: string, catId: string) =>
+    concursos.find(c => c.id === cid)?.categorias.find(x => x.id === catId)?.nome ?? catId;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="secondary" title="Gerir acessos"><KeyRound className="h-4 w-4" /></Button>
+      </DialogTrigger>
+      <DialogContent className="bg-[hsl(220_55%_12%)] border-[hsl(220_45%_22%)] text-white">
+        <DialogHeader>
+          <DialogTitle>Gerir acessos · {user.nome}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-white/60 mb-2">Acessos activos</p>
+            {access.length === 0 ? (
+              <p className="text-sm text-white/50">Nenhum acesso activo.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {access.map(a => (
+                  <div key={a.id} className="flex items-center justify-between gap-2 rounded-md border border-[hsl(220_45%_22%)] bg-[hsl(220_55%_14%)] px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">{catNome(a.concurso_id, a.categoria_id)}</p>
+                      <p className="text-xs text-white/50 font-mono">
+                        {a.code ?? "—"} · {new Date(a.activated_at).toLocaleDateString("pt-PT")}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="destructive" onClick={() => deactivate(a)}>
+                      <Lock className="h-3.5 w-3.5 mr-1" /> Desactivar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-[hsl(220_45%_22%)] pt-3">
+            <p className="text-xs uppercase tracking-wider text-white/60 mb-2">Activar nova categoria</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Select value={conc} onValueChange={v => { setConc(v); const c = concursos.find(x => x.id === v); setCat(c?.categorias?.[0]?.id ?? ""); }}>
+                <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white"><SelectValue /></SelectTrigger>
+                <SelectContent>{concursos.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={cat} onValueChange={setCat}>
+                <SelectTrigger className="bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white"><SelectValue /></SelectTrigger>
+                <SelectContent>{cats.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <Button onClick={activate} disabled={busy} className="mt-2 w-full">
+              <Unlock className="h-4 w-4 mr-1" /> {busy ? "A activar…" : "Activar acesso (gera código)"}
+            </Button>
+            <p className="mt-1.5 text-[11px] text-white/50">Será gerado um código de 6 dígitos automaticamente e marcado como usado por este utilizador.</p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
