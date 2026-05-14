@@ -3,6 +3,7 @@ import { ArrowLeft, Flame } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "./NotificationBell";
 
 const ROOT_ROUTES = ["/", "/concursos", "/percurso", "/ranking", "/aprender"];
 
@@ -37,6 +38,7 @@ export const TopBar = () => {
               <Flame className="h-3.5 w-3.5" /> {profile.pontos} pts
             </span>
           )}
+          <NotificationBell />
           <Link to="/perfil" aria-label="Perfil">
             <Avatar className="h-9 w-9 ring-2 ring-primary/20 hover:ring-primary/50 transition-smooth">
               <AvatarImage src={profile?.avatar_url || undefined} />
