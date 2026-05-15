@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { concursos } from "@/data/concursos";
 import { getResults } from "@/lib/storage";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,23 +26,35 @@ const Index = () => {
         <p className="mt-2 text-muted-foreground">Pronto para mais um simulado hoje?</p>
       </header>
 
-      <Card className="relative overflow-hidden border-0 bg-gradient-hero p-6 text-primary-foreground shadow-elegant animate-scale-in">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5" /> MINSA 2026
-          </div>
-          <h2 className="font-display text-2xl font-bold leading-tight">Concurso Público da Saúde</h2>
-          <p className="mt-2 text-sm text-primary-foreground/85">
-            Questões e simulados comentados para todas as categorias.
-          </p>
-          <Button asChild variant="secondary" className="mt-5 rounded-full font-semibold">
-            <Link to="/concursos/minsa">
-              Começar agora <ArrowRight className="ml-1 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </Card>
+      <Carousel opts={{ loop: true, align: "start" }} className="animate-scale-in">
+        <CarouselContent>
+          {concursos.map((c) => (
+            <CarouselItem key={c.id}>
+              <Card className="relative overflow-hidden border-0 bg-gradient-hero p-6 text-primary-foreground shadow-elegant">
+                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+                <div className="relative">
+                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur">
+                    <Sparkles className="h-3.5 w-3.5" /> {c.sigla} {c.ano}
+                  </div>
+                  <h2 className="font-display text-2xl font-bold leading-tight">{c.nome}</h2>
+                  <p className="mt-2 text-sm text-primary-foreground/85 line-clamp-2">{c.descricao}</p>
+                  <Button asChild variant="secondary" className="mt-5 rounded-full font-semibold">
+                    <Link to={`/concursos/${c.id}`}>
+                      Começar agora <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </Card>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        {concursos.length > 1 && (
+          <>
+            <CarouselPrevious className="left-2 bg-white/30 text-primary-foreground border-0 hover:bg-white/50" />
+            <CarouselNext className="right-2 bg-white/30 text-primary-foreground border-0 hover:bg-white/50" />
+          </>
+        )}
+      </Carousel>
 
       <Card className="mt-4 border-2 border-warning/30 bg-warning/5 p-4 shadow-card flex items-center gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-warning to-accent text-white shadow-glow">
