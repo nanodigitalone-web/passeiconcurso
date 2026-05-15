@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { concursos } from "@/data/concursos";
 import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban, CheckCircle2, RefreshCw,
-  ShieldCheck, Unlock, Lock,
+  ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock,
 } from "lucide-react";
 
 const ADMIN_BG = "bg-[hsl(220_70%_8%)] text-[hsl(210_40%_96%)]";
@@ -93,12 +93,14 @@ const Admin = () => {
             <TabsTrigger value="users" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><Users className="h-4 w-4 mr-1" />Usuários</TabsTrigger>
             <TabsTrigger value="codes" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><KeyRound className="h-4 w-4 mr-1" />Códigos</TabsTrigger>
             <TabsTrigger value="notifs" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><Bell className="h-4 w-4 mr-1" />Notificações</TabsTrigger>
+            <TabsTrigger value="comprovativos" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><FileText className="h-4 w-4 mr-1" />Comprovativos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats"><StatsTab /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="codes"><CodesTab /></TabsContent>
           <TabsContent value="notifs"><NotifsTab /></TabsContent>
+          <TabsContent value="comprovativos"><ComprovativosTab /></TabsContent>
         </Tabs>
       </main>
     </div>
