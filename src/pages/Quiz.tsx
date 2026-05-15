@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { Check, Clock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const Quiz = () => {
   const { concursoId, categoriaId } = useParams();
@@ -35,6 +37,24 @@ const Quiz = () => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Notifica em caso de simulado abandonado a meio
+  const { user } = useAuth();
+  const finishedRef = useRef(false);
+  const progressRef = useRef({ idx: 0, total: 0, nome: cat?.nome ?? "" });
+  progressRef.current = { idx, total: questoes.length, nome: cat?.nome ?? "" };
+  useEffect(() => {
+    return () => {
+      const { idx: i, total: t, nome } = progressRef.current;
+      if (!finishedRef.current && user && i > 0 && i < t) {
+        supabase.from("notifications" as any).insert({
+          user_id: user.id,
+          title: "Simulado interrompido ⏸",
+          body: `Saíste do simulado de ${nome} na questão ${i + 1}/${t}. Volta quando puderes para terminar!`,
+        } as any);
+      }
+    };
+  }, [user?.id]);
 
   const questao = questoes[idx];
 
@@ -85,6 +105,7 @@ const Quiz = () => {
         })),
       };
       saveResult(result);
+      finishedRef.current = true;
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
       setIdx((i) => i + 1);
