@@ -15,6 +15,7 @@ const TELEFONE = "931153086";
 const IBAN = "AO06005900000251657910155";
 const TITULAR = "NANODIGITALONE CONSULT E PREST DE SERV";
 const VALOR = "1.000 Kz";
+const VALOR_NORMAL = "3.700 Kz";
 
 type Step = "instrucoes" | "comprovativo" | "codigo" | "concluido";
 
@@ -119,7 +120,12 @@ const Acesso = () => {
       <header className="mb-4">
         <p className="text-xs uppercase tracking-wider text-muted-foreground">{concurso.sigla} · {cat.nome}</p>
         <h1 className="font-display text-2xl font-bold">Obter acesso completo</h1>
-        <p className="text-sm text-muted-foreground">{VALOR} · acesso vitalício à categoria</p>
+        <p className="text-sm text-muted-foreground">
+          <span className="line-through opacity-60 mr-1">{VALOR_NORMAL}</span>
+          <span className="font-semibold text-foreground">{VALOR}</span>
+          <span className="ml-1 inline-flex items-center rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">PROMO</span>
+          {" "}· 4 meses de acesso à categoria
+        </p>
       </header>
 
       {/* Stepper */}
