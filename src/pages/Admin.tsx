@@ -574,4 +574,140 @@ const NotifsTab = () => {
   );
 };
 
+
+/* ---------------- Helpers ---------------- */
+const formatRelative = (iso: string) => {
+  const d = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (d < 60) return "agora mesmo";
+  if (d < 3600) return `há ${Math.floor(d / 60)} min`;
+  if (d < 86400) return `há ${Math.floor(d / 3600)} h`;
+  if (d < 7 * 86400) return `há ${Math.floor(d / 86400)} d`;
+  return new Date(iso).toLocaleDateString("pt-PT");
+};
+
+/* ---------------- Comprovativos ---------------- */
+const ComprovativosTab = () => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const [filter, setFilter] = useState<"all" | "awaiting_review" | "approved" | "rejected">("awaiting_review");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = async () => {
+    let q = supabase.from("payment_requests").select("*").order("created_at", { ascending: false }).limit(200);
+    if (filter !== "all") q = q.eq("status", filter as any);
+    const { data } = await q;
+    setRows(data ?? []);
+    const ids = Array.from(new Set((data ?? []).map((r: any) => r.user_id)));
+    if (ids.length) {
+      const { data: ps } = await supabase.from("profiles").select("id, nome, email, avatar_url").in("id", ids);
+      const map: Record<string, any> = {};
+      (ps ?? []).forEach((p: any) => { map[p.id] = p; });
+      setProfiles(map);
+    }
+  };
+  useEffect(() => { load(); }, [filter]);
+
+  const openComprovativo = async (path: string) => {
+    const { data, error } = await supabase.storage.from("comprovativos").createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) return toast.error("Não foi possível abrir o comprovativo");
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const aprovar = async (r: any) => {
+    setBusy(r.id);
+    try {
+      const code = genCode();
+      const { error: e1 } = await supabase.from("access_codes").insert({
+        concurso_id: r.concurso_id, categoria_id: r.categoria_id, code,
+        status: "used", used_by: r.user_id, used_at: new Date().toISOString(),
+      } as any);
+      if (e1 && !String(e1.message).includes("duplicate")) throw e1;
+      const { error: e2 } = await supabase.from("category_access").insert({
+        user_id: r.user_id, concurso_id: r.concurso_id, categoria_id: r.categoria_id, code,
+        expires_at: new Date(Date.now() + 4 * 30 * 86400000).toISOString(),
+      });
+      if (e2 && !String(e2.message).includes("duplicate")) throw e2;
+      await supabase.from("payment_requests").update({ status: "approved" as any }).eq("id", r.id);
+      await supabase.from("notifications" as any).insert({
+        user_id: r.user_id,
+        title: "Conta activada ✅",
+        body: `O seu acesso a ${r.categoria_nome ?? r.categoria_id} foi activado por 4 meses. Código: ${code}.`,
+      } as any);
+      toast.success("Aprovado e activado");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao aprovar");
+    } finally { setBusy(null); }
+  };
+
+  const rejeitar = async (r: any) => {
+    if (!confirm("Rejeitar este comprovativo?")) return;
+    await supabase.from("payment_requests").update({ status: "rejected" as any }).eq("id", r.id);
+    await supabase.from("notifications" as any).insert({
+      user_id: r.user_id,
+      title: "Comprovativo recusado",
+      body: `O comprovativo enviado para ${r.categoria_nome ?? r.categoria_id} não foi validado. Verifique e envie novamente.`,
+    } as any);
+    toast.success("Rejeitado");
+    load();
+  };
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {(["awaiting_review", "approved", "rejected", "all"] as const).map(f => (
+          <Button key={f} size="sm" variant={filter === f ? "default" : "secondary"} onClick={() => setFilter(f)}>
+            {f === "awaiting_review" ? "Por verificar" : f === "approved" ? "Aprovados" : f === "rejected" ? "Rejeitados" : "Todos"}
+          </Button>
+        ))}
+      </div>
+
+      {rows.length === 0 && <p className="text-sm text-white/50">Nenhum comprovativo.</p>}
+
+      {rows.map(r => {
+        const p = profiles[r.user_id];
+        return (
+          <Card key={r.id} className={`${PANEL} p-3`}>
+            <div className="flex flex-wrap items-start gap-3">
+              <Avatar className="h-11 w-11 ring-2 ring-white/10">
+                <AvatarImage src={p?.avatar_url || undefined} />
+                <AvatarFallback className="bg-[hsl(220_70%_18%)] text-white font-bold">
+                  {(p?.nome || r.email)?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{p?.nome ?? "—"}</p>
+                <p className="text-xs text-white/60 truncate">{r.email}</p>
+                <p className="text-xs text-white/70 mt-1">
+                  {r.categoria_nome ?? r.categoria_id} · <span className="text-white/50">{r.concurso_id}</span>
+                </p>
+                <p className="text-[11px] text-white/40 mt-0.5">
+                  Enviado {formatRelative(r.created_at)} · status: <span className="font-semibold text-white/70">{r.status}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {r.comprovativo_url && (
+                  <Button size="sm" variant="secondary" onClick={() => openComprovativo(r.comprovativo_url)}>
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ver
+                  </Button>
+                )}
+                {r.status === "awaiting_review" && (
+                  <>
+                    <Button size="sm" disabled={busy === r.id} onClick={() => aprovar(r)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Aprovar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => rejeitar(r)}>
+                      <Ban className="h-3.5 w-3.5 mr-1" /> Rejeitar
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
 export default Admin;
