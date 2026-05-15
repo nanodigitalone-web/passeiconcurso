@@ -213,7 +213,7 @@ const UsersTab = () => {
   const [q, setQ] = useState("");
 
   const load = async () => {
-    const { data } = await supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(500);
+    const { data } = await supabase.from("profiles").select("*").order("last_seen", { ascending: false, nullsFirst: false }).limit(500);
     setRows(data ?? []);
     const { data: acc } = await supabase.from("category_access").select("*").limit(2000);
     const map: Record<string, AccessRow[]> = {};
@@ -268,7 +268,13 @@ const UsersTab = () => {
                       <Badge variant="outline" className="border-white/20 text-white/60">Sem plano</Badge>
                     )}
                   </p>
-                  <p className="text-xs text-white/60 truncate">{r.email} · {r.pontos ?? 0} pts</p>
+                  <p className="text-xs text-white/60 truncate">
+                    {r.email} · {r.pontos ?? 0} pts
+                    <span className="ml-2 inline-flex items-center gap-1 text-white/50">
+                      <Clock className="h-3 w-3" />
+                      {r.last_seen ? `online ${formatRelative(r.last_seen)}` : "nunca entrou"}
+                    </span>
+                  </p>
                   {access.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {access.map(a => (
