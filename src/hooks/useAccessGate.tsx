@@ -34,12 +34,15 @@ export const useAccessGate = (concursoId?: string, categoriaId?: string): GateSt
       let paid = false;
       const { data } = await supabase
         .from("category_access")
-        .select("id")
+        .select("id, expires_at")
         .eq("user_id", user.id)
         .eq("concurso_id", concursoId)
         .eq("categoria_id", categoriaId)
         .maybeSingle();
-      paid = !!data;
+      if (data) {
+        const exp = (data as any).expires_at ? new Date((data as any).expires_at).getTime() : Infinity;
+        paid = exp > Date.now();
+      }
 
       if (!active) return;
       setState({

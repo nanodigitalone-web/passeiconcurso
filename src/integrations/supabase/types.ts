@@ -53,6 +53,7 @@ export type Database = {
           categoria_id: string
           code: string | null
           concurso_id: string
+          expires_at: string | null
           id: string
           user_id: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           categoria_id: string
           code?: string | null
           concurso_id: string
+          expires_at?: string | null
           id?: string
           user_id: string
         }
@@ -69,6 +71,7 @@ export type Database = {
           categoria_id?: string
           code?: string | null
           concurso_id?: string
+          expires_at?: string | null
           id?: string
           user_id?: string
         }
@@ -158,6 +161,7 @@ export type Database = {
           email: string | null
           hidden: boolean
           id: string
+          last_seen: string | null
           nome: string
           pontos: number
           streak: number
@@ -174,6 +178,7 @@ export type Database = {
           email?: string | null
           hidden?: boolean
           id: string
+          last_seen?: string | null
           nome?: string
           pontos?: number
           streak?: number
@@ -190,6 +195,7 @@ export type Database = {
           email?: string | null
           hidden?: boolean
           id?: string
+          last_seen?: string | null
           nome?: string
           pontos?: number
           streak?: number
