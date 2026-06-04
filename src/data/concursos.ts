@@ -50,6 +50,7 @@ import { bancoLabExt2 } from "./bancosLab50";
 import { bancoMedicoExt2, bancoTecEnfermagemExt2 } from "./bancosExt3";
 import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./bancosTopicos50";
 import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
+import { topicosCirurgiaGeral, questoesCirurgiaGeral } from "./cirurgia";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -120,6 +121,21 @@ const uanMedicina: Categoria = {
   questoes: questoesMedicinaUAN, topicos: topicosMedicinaUAN,
 };
 
+const cirurgiaGeral: Categoria = {
+  id: "cirurgia-geral", nome: "Cirurgia Geral",
+  descricao: "Exame Final de Cirurgia Geral (PROFIM) - obtenção do grau de Médico",
+  icon: "Scissors",
+  disciplinas: [
+    "Sintomas do TGI", "Choque Hemorrágico", "Queimaduras", "ATLS",
+    "Trauma Torácico", "Trauma Abdominal", "TCE", "Trauma de Extremidades",
+    "Infecções de Partes Moles", "Abdómen Agudo", "Hérnias", "Peritonites",
+    "Toracocentese", "Pericardiocentese", "Suturas", "Incisão e Drenagem", "Imobilização de Fraturas",
+  ],
+  questoes: questoesCirurgiaGeral, topicos: topicosCirurgiaGeral,
+};
+
+
+
 export const concursos: Concurso[] = [
   {
     id: "minsa", nome: "Ministério da Saúde", sigla: "MINSA", area: "Saúde",
@@ -154,6 +170,17 @@ export const concursos: Concurso[] = [
       "Documento de identificação policial (apenas membros da polícia/forças armadas)",
     ],
     categorias: [uanMedicina],
+  },
+  {
+    id: "licenciatura-medicina", nome: "Licenciatura em Medicina", sigla: "MED", area: "Ensino Superior",
+    descricao: "Exames finais da Licenciatura em Medicina - preparação para as provas da faculdade e internato.",
+    ano: "2026",
+    documentosInscricao: [
+      "Cartão de estudante / Bilhete de Identidade",
+      "Comprovativo de matrícula no curso de Medicina",
+      "Comprovativo de pagamento da taxa de exame (quando aplicável)",
+    ],
+    categorias: [cirurgiaGeral],
   },
 ];
 
