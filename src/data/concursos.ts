@@ -50,6 +50,7 @@ import { bancoLabExt2 } from "./bancosLab50";
 import { bancoMedicoExt2, bancoTecEnfermagemExt2 } from "./bancosExt3";
 import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./bancosTopicos50";
 import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
+import { topicosCirurgiaGeral, questoesCirurgiaGeral } from "./cirurgia";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
