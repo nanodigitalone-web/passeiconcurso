@@ -171,6 +171,17 @@ export const concursos: Concurso[] = [
     ],
     categorias: [uanMedicina],
   },
+  {
+    id: "licenciatura-medicina", nome: "Licenciatura em Medicina", sigla: "MED", area: "Ensino Superior",
+    descricao: "Exames finais da Licenciatura em Medicina - preparação para as provas da faculdade e internato.",
+    ano: "2026",
+    documentosInscricao: [
+      "Cartão de estudante / Bilhete de Identidade",
+      "Comprovativo de matrícula no curso de Medicina",
+      "Comprovativo de pagamento da taxa de exame (quando aplicável)",
+    ],
+    categorias: [cirurgiaGeral],
+  },
 ];
 
 
