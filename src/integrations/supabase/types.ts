@@ -237,6 +237,16 @@ export type Database = {
         Args: { _cat: string; _conc: string; _count: number }
         Returns: number
       }
+      get_ranking: {
+        Args: { _categoria?: string }
+        Returns: {
+          avatar_url: string
+          categoria_nome: string
+          id: string
+          nome: string
+          pontos: number
+        }[]
+      }
       has_category_access: {
         Args: { _cat: string; _conc: string; _user: string }
         Returns: boolean

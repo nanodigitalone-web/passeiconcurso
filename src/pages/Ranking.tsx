@@ -24,23 +24,13 @@ const Ranking = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let q = supabase
-      .from("profiles")
-      .select("id, nome, avatar_url, pontos, categoria_nome")
-      .order("pontos", { ascending: false })
-      .limit(100);
-    if (filtro === "minha" && profile?.categoria_id) {
-      q = supabase
-        .from("profiles")
-        .select("id, nome, avatar_url, pontos, categoria_nome")
-        .eq("categoria_id", profile.categoria_id)
-        .order("pontos", { ascending: false })
-        .limit(100);
-    }
-    q.then(({ data }) => {
-      setRows((data ?? []) as RankRow[]);
-      setLoading(false);
-    });
+    const _categoria = filtro === "minha" && profile?.categoria_id ? profile.categoria_id : null;
+    supabase
+      .rpc("get_ranking", { _categoria })
+      .then(({ data }) => {
+        setRows((data ?? []) as RankRow[]);
+        setLoading(false);
+      });
   }, [filtro, profile?.categoria_id]);
 
   const data = rows;
