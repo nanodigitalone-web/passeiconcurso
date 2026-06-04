@@ -121,6 +121,21 @@ const uanMedicina: Categoria = {
   questoes: questoesMedicinaUAN, topicos: topicosMedicinaUAN,
 };
 
+const cirurgiaGeral: Categoria = {
+  id: "cirurgia-geral", nome: "Cirurgia Geral",
+  descricao: "Exame Final de Cirurgia Geral (PROFIM) - obtenção do grau de Médico",
+  icon: "Scissors",
+  disciplinas: [
+    "Sintomas do TGI", "Choque Hemorrágico", "Queimaduras", "ATLS",
+    "Trauma Torácico", "Trauma Abdominal", "TCE", "Trauma de Extremidades",
+    "Infecções de Partes Moles", "Abdómen Agudo", "Hérnias", "Peritonites",
+    "Toracocentese", "Pericardiocentese", "Suturas", "Incisão e Drenagem", "Imobilização de Fraturas",
+  ],
+  questoes: questoesCirurgiaGeral, topicos: topicosCirurgiaGeral,
+};
+
+
+
 export const concursos: Concurso[] = [
   {
     id: "minsa", nome: "Ministério da Saúde", sigla: "MINSA", area: "Saúde",
