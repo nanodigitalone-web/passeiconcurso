@@ -79,24 +79,18 @@ const Acesso = () => {
     if (clean.length !== 6) return toast.error("O código tem 6 dígitos");
     setActivating(true);
     try {
-      const { data, error } = await supabase.rpc("activate_access_code", {
-        _code: clean,
-        _conc: concurso.id,
-        _cat: cat.id,
-      });
-      if (error) throw error;
-      const res = data as { ok: boolean; error?: string };
+      const res = await paymentsService.activateAccessCode(clean, concurso.id, cat.id);
       if (!res.ok) {
         toast.error(res.error === "invalid_or_used" ? "Código inválido ou já usado" : "Erro ao activar");
         return;
       }
       toast.success("Acesso activado!");
       clearAccessCache(user.id);
-      await supabase.from("notifications" as any).insert({
-        user_id: user.id,
+      await notificationsService.create({
+        userId: user.id,
         title: "Conta activada ✅",
         body: `O seu acesso a ${cat.nome} (${concurso.sigla}) foi activado com sucesso. Bons estudos!`,
-      } as any);
+      });
       await refreshProfile();
       setStep("concluido");
     } catch (e: any) {
