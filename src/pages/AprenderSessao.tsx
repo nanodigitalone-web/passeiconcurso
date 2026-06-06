@@ -24,12 +24,12 @@ const shuffle = <T,>(arr: T[]): T[] => {
 
 const AprenderSessao = () => {
   const { concursoId, categoriaId } = useParams();
-  const cat = getCategoria(concursoId!, categoriaId!);
+  const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
 
   const questoes = useMemo<Question[]>(
-    () => (cat ? shuffle(cat.questoes).slice(0, SESSION_SIZE) : []),
+    () => (cat ? quizService.getSimuladoQuestions(concursoId!, categoriaId!, SESSION_SIZE) : []),
     [cat]
   );
 
@@ -44,10 +44,8 @@ const AprenderSessao = () => {
   useEffect(() => {
     if (done && user) {
       const pontosGanhos = hits * POINTS_PER_HIT + (hits === SESSION_SIZE ? 20 : 0);
-      supabase
-        .from("profiles")
-        .update({ pontos: (profile?.pontos || 0) + pontosGanhos })
-        .eq("id", user.id)
+      authService
+        .addPoints(user.id, profile?.pontos || 0, pontosGanhos)
         .then(() => refreshProfile());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
