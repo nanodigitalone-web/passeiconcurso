@@ -117,7 +117,7 @@ const Percurso = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => { clearResults(); setTick((t) => t + 1); }}
+          onClick={() => { resultsService.clearResults(); setTick((t) => t + 1); }}
           className="w-full text-muted-foreground hover:text-destructive"
         >
           <Trash2 className="mr-2 h-4 w-4" /> Limpar histórico
