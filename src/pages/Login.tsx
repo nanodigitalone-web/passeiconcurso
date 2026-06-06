@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { lovable } from "@/integrations/lovable";
+import { authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, BookOpen, Trophy, Target } from "lucide-react";
 import { toast } from "sonner";
