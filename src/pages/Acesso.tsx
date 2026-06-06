@@ -187,7 +187,7 @@ const Acesso = () => {
             </div>
             <div className="rounded-2xl border bg-muted/40 p-3">
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Valor</div>
-              <div className="mt-0.5 font-mono text-lg font-bold">{VALOR}</div>
+              <div className="mt-0.5 font-mono text-lg font-bold">{pricing.valorLabel}</div>
             </div>
           </div>
 
