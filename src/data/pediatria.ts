@@ -52,6 +52,13 @@ export const topicosPediatria: Topico[] = [
     "Manifestações clínicas, diagnóstico e complicações (meningite, CID, choque)",
     "Antibioterapia empírica e de 2.ª linha",
   ]},
+  { titulo: "Classificação do RN: termo, pré-termo e PIG/AIG/GIG", itens: [
+    "Classificação por idade gestacional (Ballard/Capurro): pré-termo <37s, termo 37-41s, pós-termo ≥42s",
+    "Classificação por peso/IG: PIG (<P10), AIG (P10-P90), GIG (>P90); baixo peso <2500g",
+    "PIG simétrico vs assimétrico; restrição de crescimento intrauterino (RCIU)",
+    "Critérios de diagnóstico e riscos: hipoglicemia, hipotermia, policitemia, asfixia",
+    "Conduta no contexto angolano: cuidados ao RN de baixo peso, método canguru, prevenção de hipotermia e amamentação precoce",
+  ]},
   { titulo: "Síndromes e Diagnóstico Diferencial", itens: [
     "Síndrome febril, circulatório, de condensação pulmonar e disentérico",
     "Síndrome de aspiração meconial e SIRS",
