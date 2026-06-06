@@ -20,8 +20,8 @@ type Step = "instrucoes" | "comprovativo" | "codigo" | "concluido";
 
 const Acesso = () => {
   const { concursoId, categoriaId } = useParams();
-  const cat = getCategoria(concursoId!, categoriaId!);
-  const concurso = getConcurso(concursoId!);
+  const cat = quizService.getCategoria(concursoId!, categoriaId!);
+  const concurso = quizService.getConcurso(concursoId!);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
@@ -48,28 +48,23 @@ const Acesso = () => {
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("comprovativos").upload(path, file);
-      if (upErr) throw upErr;
+      const path = await paymentsService.uploadComprovativo(user.id, file);
 
-      const { data, error } = await supabase.from("payment_requests").insert({
-        user_id: user.id,
+      const id = await paymentsService.createPaymentRequest({
+        userId: user.id,
         email: user.email ?? "",
-        concurso_id: concurso.id,
-        categoria_id: cat.id,
-        categoria_nome: cat.nome,
-        comprovativo_url: path,
-        status: "awaiting_review",
-      }).select("id").single();
-      if (error) throw error;
+        concursoId: concurso.id,
+        categoriaId: cat.id,
+        categoriaNome: cat.nome,
+        comprovativoPath: path,
+      });
 
-      setRequestId(data.id);
-      await supabase.from("notifications" as any).insert({
-        user_id: user.id,
+      setRequestId(id);
+      await notificationsService.create({
+        userId: user.id,
         title: "Comprovativo recebido",
         body: `Recebemos o seu comprovativo para ${cat.nome} (${concurso.sigla}). A nossa equipa analisa em até 24h e enviará o código de activação.`,
-      } as any);
+      });
       toast.success("Comprovativo enviado! Aguarde até 24h pelo seu código.");
       setStep("codigo");
     } catch (e: any) {
