@@ -13,14 +13,7 @@ import { AccessGate } from "@/components/AccessGate";
 const SESSION_SIZE = 5;
 const POINTS_PER_HIT = 10;
 
-const shuffle = <T,>(arr: T[]): T[] => {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
+
 
 const AprenderSessao = () => {
   const { concursoId, categoriaId } = useParams();
