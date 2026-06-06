@@ -52,6 +52,7 @@ import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./banc
 import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
 import { topicosCirurgiaGeral, questoesCirurgiaGeral } from "./cirurgia";
 import { topicosMedicinaInterna, questoesMedicinaInterna } from "./medicinaInterna";
+import { topicosPediatria, questoesPediatria } from "./pediatria";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -147,6 +148,20 @@ const medicinaInterna: Categoria = {
   questoes: questoesMedicinaInterna, topicos: topicosMedicinaInterna,
 };
 
+const pediatria: Categoria = {
+  id: "pediatria", nome: "Pediatria",
+  descricao: "Pediatria e Neonatologia - puericultura, imunizações, RN, sepse neonatal e desnutrição (perfil de Angola) - obtenção do grau de Médico",
+  icon: "Baby",
+  disciplinas: [
+    "Exame Neurológico", "Puericultura", "Imunizações", "Alimentação",
+    "Desnutrição (DEP/DAS)", "Recém-Nascido Normal", "Recém-Nascido Pré-Termo",
+    "Sepse Neonatal", "Síndromes e Diagnóstico Diferencial",
+  ],
+  questoes: questoesPediatria, topicos: topicosPediatria,
+};
+
+
+
 
 
 
@@ -194,7 +209,7 @@ export const concursos: Concurso[] = [
       "Comprovativo de matrícula no curso de Medicina",
       "Comprovativo de pagamento da taxa de exame (quando aplicável)",
     ],
-    categorias: [cirurgiaGeral, medicinaInterna],
+    categorias: [cirurgiaGeral, medicinaInterna, pediatria],
   },
 ];
 
