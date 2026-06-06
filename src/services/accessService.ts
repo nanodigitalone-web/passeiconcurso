@@ -22,6 +22,19 @@ export const clearAccessCache = (user?: string) => {
 export const accessService = {
   clearCache: clearAccessCache,
 
+  /** Whether the user has at least one active paid category access. */
+  async hasAnyPaidAccess(userId: string): Promise<boolean> {
+    const { data } = await supabase
+      .from("category_access")
+      .select("expires_at")
+      .eq("user_id", userId);
+    if (!data) return false;
+    const now = Date.now();
+    return (data as any[]).some(
+      (r) => !r.expires_at || new Date(r.expires_at).getTime() > now
+    );
+  },
+
   async getAccess(userId: string, concursoId: string, categoriaId: string): Promise<AccessInfo> {
     const key = keyOf(userId, concursoId, categoriaId);
     const cached = cache.get(key);
