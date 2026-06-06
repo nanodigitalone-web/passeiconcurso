@@ -109,12 +109,17 @@ const Acesso = () => {
         <p className="text-xs uppercase tracking-wider text-muted-foreground">{concurso.sigla} · {cat.nome}</p>
         <h1 className="font-display text-2xl font-bold">Obter acesso completo</h1>
         <p className="text-sm text-muted-foreground">
-          <span className="line-through opacity-60 mr-1">{VALOR_NORMAL}</span>
-          <span className="font-semibold text-foreground">{VALOR}</span>
-          <span className="ml-1 inline-flex items-center rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">PROMO</span>
+          {pricing.isPromo && pricing.normalLabel && (
+            <span className="line-through opacity-60 mr-1">{pricing.normalLabel}</span>
+          )}
+          <span className="font-semibold text-foreground">{pricing.valorLabel}</span>
+          {pricing.isPromo && (
+            <span className="ml-1 inline-flex items-center rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">PROMO</span>
+          )}
           {" "}· 4 meses de acesso à categoria
         </p>
       </header>
+
 
       {/* Stepper */}
       <div className="mb-5 flex items-center gap-2 text-xs">
