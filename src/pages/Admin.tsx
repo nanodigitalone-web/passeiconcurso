@@ -414,26 +414,22 @@ const CodesTab = () => {
 
   const load = async () => {
     if (!conc || !cat) return;
-    const [a, u] = await Promise.all([
-      supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("concurso_id", conc).eq("categoria_id", cat).eq("status", "available"),
-      supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("concurso_id", conc).eq("categoria_id", cat).eq("status", "used"),
-    ]);
-    setStats({ available: a.count ?? 0, used: u.count ?? 0 });
-    const { data } = await supabase.from("access_codes")
-      .select("code, status, used_at, used_by")
-      .eq("concurso_id", conc).eq("categoria_id", cat)
-      .eq("status", showUsed ? "used" : "available")
-      .order("created_at", { ascending: false }).limit(300);
-    setList(data ?? []);
+    setStats(await adminService.getCodeStats(conc, cat));
+    setList(await adminService.listCodes(conc, cat, showUsed ? "used" : "available", 300));
   };
   useEffect(() => { load(); }, [conc, cat, showUsed]);
 
   const generate = async () => {
     setBusy(true);
-    const { data, error } = await supabase.rpc("admin_generate_codes" as any, { _conc: conc, _cat: cat, _count: count });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else { toast.success(`${data} códigos gerados`); load(); }
+    try {
+      const n = await adminService.generateCodes(conc, cat, count);
+      toast.success(`${n} códigos gerados`);
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao gerar");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
