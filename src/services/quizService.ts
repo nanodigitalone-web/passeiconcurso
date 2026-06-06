@@ -1,0 +1,88 @@
+// quizService — single source of truth for quiz content and quiz logic.
+//
+// Today the questions come from local bundled data (src/data). Tomorrow this
+// module can fetch from Supabase (or any API) WITHOUT any UI change: the UI only
+// ever talks to quizService. To migrate, swap the bodies of the functions below.
+
+import {
+  concursos as localConcursos,
+  getConcurso as localGetConcurso,
+  getCategoria as localGetCategoria,
+  type Concurso,
+  type Categoria,
+  type Question,
+} from "@/data/concursos";
+import type { QuizAnswer, QuizAttempt } from "./types";
+
+export type { Concurso, Categoria, Question };
+
+const shuffle = <T,>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+export const quizService = {
+  /** All available concursos. */
+  getConcursos(): Concurso[] {
+    return localConcursos;
+  },
+
+  getConcurso(concursoId: string): Concurso | undefined {
+    return localGetConcurso(concursoId);
+  },
+
+  getCategoria(concursoId: string, categoriaId: string): Categoria | undefined {
+    return localGetCategoria(concursoId, categoriaId);
+  },
+
+  /** Full question bank for a category. */
+  getQuestions(concursoId: string, categoriaId: string): Question[] {
+    return localGetCategoria(concursoId, categoriaId)?.questoes ?? [];
+  },
+
+  /** A randomized, capped set of questions for a single quiz session. */
+  getSimuladoQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {
+    const all = this.getQuestions(concursoId, categoriaId);
+    return shuffle(all).slice(0, Math.min(limit, all.length));
+  },
+
+  /** Build a normalized attempt object from the raw quiz interaction. */
+  buildAttempt(params: {
+    userId: string | null;
+    concursoId: string;
+    categoriaId: string;
+    categoriaNome: string;
+    questoes: Question[];
+    escolhidas: number[];
+    startedAt: number;
+    finishedAt?: number;
+  }): QuizAttempt {
+    const { userId, concursoId, categoriaId, categoriaNome, questoes, escolhidas, startedAt } = params;
+    const answers: QuizAnswer[] = questoes.map((q, i) => ({
+      questaoId: q.id,
+      escolhida: escolhidas[i] ?? -1,
+      correta: q.correta,
+      disciplina: q.disciplina,
+    }));
+    return {
+      id: crypto.randomUUID(),
+      userId,
+      quizId: `${concursoId}/${categoriaId}`,
+      concursoId,
+      categoriaId,
+      categoriaNome,
+      answers,
+      startedAt,
+      finishedAt: params.finishedAt ?? Date.now(),
+    };
+  },
+
+  /** Number of correct answers in an attempt. */
+  scoreAttempt(attempt: QuizAttempt): number {
+    return attempt.answers.reduce((s, a) => s + (a.escolhida === a.correta ? 1 : 0), 0);
+  },
+};
