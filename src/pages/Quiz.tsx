@@ -67,7 +67,47 @@ const Quiz = () => {
       </div>
     );
   }
+
+  const disponiveis = quizService.getQuestions(concursoId!, categoriaId!).length;
+
+  // Length selection screen (20 / 50 / 100) shown before the simulado starts.
+  if (count === null) {
+    const start = (n: number) => {
+      startedAtRef.current = Date.now();
+      setSeconds(0);
+      setCount(n);
+    };
+    return (
+      <div className="min-h-screen bg-gradient-soft">
+        <div className="mx-auto max-w-2xl px-4 pb-10 pt-6">
+          <header className="mb-4 flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>Sair</Button>
+          </header>
+          <h1 className="font-display text-2xl font-bold">{cat.nome}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Quantas questões quer no simulado? Priorizamos questões novas e as que você errou.
+          </p>
+          <div className="mt-6 space-y-3">
+            {COUNT_OPTIONS.map((n) => (
+              <button
+                key={n}
+                onClick={() => start(n)}
+                className="flex w-full items-center justify-between rounded-2xl border-2 border-border/60 bg-card p-5 text-left shadow-card transition-smooth hover:border-primary/50"
+              >
+                <span className="font-display text-xl font-bold">{n} questões</span>
+                <span className="text-xs text-muted-foreground">
+                  {n > disponiveis ? `${disponiveis} disponíveis · repetições aleatórias` : "selecção inteligente"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!questao) return <Navigate to="/concursos" replace />;
+
 
   const total = questoes.length;
   const isLast = idx === total - 1;
