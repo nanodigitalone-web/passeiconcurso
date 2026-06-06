@@ -3,35 +3,29 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { getCategoria } from "@/data/concursos";
-import { saveResult, SimuladoResult } from "@/lib/storage";
+import { quizService, resultsService, notificationsService } from "@/services";
 import { cn } from "@/lib/utils";
 import { Check, Clock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 
 const Quiz = () => {
   const { concursoId, categoriaId } = useParams();
-  const cat = getCategoria(concursoId!, categoriaId!);
+  const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const navigate = useNavigate();
   const [idx, setIdx] = useState(0);
   const [respostas, setRespostas] = useState<number[]>([]);
   const [escolhida, setEscolhida] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const startedAtRef = useRef(Date.now());
 
   // Randomize question order at start; cap at 20 per simulado
-  const questoes = useMemo(() => {
-    if (!cat) return [];
-    const arr = [...cat.questoes];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr.slice(0, Math.min(20, arr.length));
-  }, [cat]);
+  const questoes = useMemo(
+    () => (cat ? quizService.getSimuladoQuestions(concursoId!, categoriaId!, 20) : []),
+    [cat]
+  );
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
