@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { notificationsService } from "@/services";
 
 export const NotificationBell = () => {
   const { user } = useAuth();
@@ -11,28 +11,17 @@ export const NotificationBell = () => {
 
   const load = async () => {
     if (!user) return;
-    const { count } = await supabase
-      .from("notifications" as any)
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("read", false);
-    setUnread(count ?? 0);
+    setUnread(await notificationsService.getUnreadCount(user.id));
   };
 
   useEffect(() => {
     if (!user) return;
     load();
-    const ch = supabase
-      .channel("notif-bell-" + user.id)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => load()
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const unsub = notificationsService.subscribeForUser(user.id, () => load(), { tag: "bell" });
+    return unsub;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
 
   if (!user) return null;
 
