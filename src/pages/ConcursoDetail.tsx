@@ -2,13 +2,13 @@ import { Link, useParams, Navigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getConcurso } from "@/data/concursos";
+import { quizService } from "@/services";
 import * as Icons from "lucide-react";
 import { ArrowRight, ExternalLink } from "lucide-react";
 
 const ConcursoDetail = () => {
   const { concursoId } = useParams();
-  const concurso = getConcurso(concursoId!);
+  const concurso = quizService.getConcurso(concursoId!);
   if (!concurso) return <Navigate to="/concursos" replace />;
 
   return (
