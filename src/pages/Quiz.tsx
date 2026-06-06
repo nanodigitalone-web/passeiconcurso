@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { quizService, resultsService, notificationsService } from "@/services";
+import { quizService, notificationsService } from "@/services";
 import { cn } from "@/lib/utils";
 import { Check, Clock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
