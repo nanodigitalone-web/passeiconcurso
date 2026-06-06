@@ -97,6 +97,7 @@ const Acesso = () => {
         return;
       }
       toast.success("Acesso activado!");
+      clearAccessCache(user.id);
       await supabase.from("notifications" as any).insert({
         user_id: user.id,
         title: "Conta activada ✅",
