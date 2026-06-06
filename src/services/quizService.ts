@@ -47,7 +47,7 @@ export const quizService = {
   /** A randomized, capped set of questions for a single quiz session. */
   getSimuladoQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {
     const all = this.getQuestions(concursoId, categoriaId);
-    return shuffle(all).slice(0, Math.min(limit, all.length));
+    return shuffle<Question>(all).slice(0, Math.min(limit, all.length));
   },
 
   /** Build a normalized attempt object from the raw quiz interaction. */
