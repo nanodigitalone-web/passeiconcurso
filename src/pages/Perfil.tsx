@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { authService, accessService } from "@/services";
-import { EyeOff, Lock, LogOut, Save } from "lucide-react";
+import { authService, accessService, quizService } from "@/services";
+import { CreditCard, EyeOff, Lock, LogOut, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 
