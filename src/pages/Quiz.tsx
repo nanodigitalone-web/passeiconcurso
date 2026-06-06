@@ -41,11 +41,11 @@ const Quiz = () => {
     return () => {
       const { idx: i, total: t, nome } = progressRef.current;
       if (!finishedRef.current && user && i > 0 && i < t) {
-        supabase.from("notifications" as any).insert({
-          user_id: user.id,
+        notificationsService.create({
+          userId: user.id,
           title: "Simulado interrompido ⏸",
           body: `Saíste do simulado de ${nome} na questão ${i + 1}/${t}. Volta quando puderes para terminar!`,
-        } as any);
+        });
       }
     };
   }, [user?.id]);
@@ -81,24 +81,16 @@ const Quiz = () => {
     setRevealed(false);
 
     if (isLast) {
-      const acertos = novas.reduce((s, e, i) => s + (e === questoes[i].correta ? 1 : 0), 0);
-      const result: SimuladoResult = {
-        id: crypto.randomUUID(),
+      const attempt = quizService.buildAttempt({
+        userId: user?.id ?? null,
         concursoId: concursoId!,
         categoriaId: categoriaId!,
         categoriaNome: cat.nome,
-        data: Date.now(),
-        total,
-        acertos,
-        tempoSegundos: seconds,
-        respostas: novas.map((escolhida, i) => ({
-          questaoId: questoes[i].id,
-          escolhida,
-          correta: questoes[i].correta,
-          disciplina: questoes[i].disciplina,
-        })),
-      };
-      saveResult(result);
+        questoes,
+        escolhidas: novas,
+        startedAt: startedAtRef.current,
+      });
+      const result = resultsService.saveAttempt(attempt);
       finishedRef.current = true;
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
