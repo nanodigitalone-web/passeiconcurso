@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { authService, accessService } from "@/services";
-import { EyeOff, Lock, LogOut, Save } from "lucide-react";
+import { authService, accessService, quizService } from "@/services";
+import { CreditCard, EyeOff, Lock, LogOut, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -23,6 +23,9 @@ const Perfil = () => {
   const [hidden, setHidden] = useState(false);
   const [canHide, setCanHide] = useState(false);
   const [togglingHide, setTogglingHide] = useState(false);
+  const [plans, setPlans] = useState<
+    { concursoId: string; categoriaId: string; nome: string; expiresAt: number | null }[]
+  >([]);
 
   useEffect(() => {
     if (profile) {
@@ -36,6 +39,25 @@ const Perfil = () => {
   useEffect(() => {
     if (user) accessService.hasAnyPaidAccess(user.id).then(setCanHide);
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    accessService.getMyPlans(user.id).then((rows) => {
+      setPlans(
+        rows.map((r) => ({
+          ...r,
+          nome:
+            quizService.getCategoria(r.concursoId, r.categoriaId)?.nome ??
+            r.categoriaId,
+        }))
+      );
+    });
+  }, [user]);
+
+  const fmtDate = (ms: number | null) =>
+    ms === null
+      ? "Vitalício"
+      : new Date(ms).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" });
 
   const save = async () => {
     if (!user) return;
@@ -115,6 +137,40 @@ const Perfil = () => {
           <p className="text-xs text-muted-foreground">Sequência</p>
         </div>
       </Card>
+
+      <Card className="mb-6 p-4 shadow-card border-border/60">
+        <div className="mb-3 flex items-center gap-2 font-semibold">
+          <CreditCard className="h-4 w-4 text-primary" /> Os meus planos
+        </div>
+        {plans.length === 0 ? (
+          <div className="rounded-xl bg-muted/40 px-3 py-3 text-sm text-muted-foreground">
+            Ainda não tem nenhum plano pago activo.
+            <Button asChild variant="link" size="sm" className="px-1">
+              <Link to="/concursos">Ver concursos</Link>
+            </Button>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {plans.map((p) => (
+              <li
+                key={`${p.concursoId}/${p.categoriaId}`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-primary/5 px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{p.nome}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Expira em {fmtDate(p.expiresAt)}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-medium text-success">
+                  Activo
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
 
       <Card className="mb-6 p-4 shadow-card border-border/60">
         <div className="flex items-start justify-between gap-3">
