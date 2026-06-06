@@ -3,16 +3,9 @@ import { Navigate } from "react-router-dom";
 import { Bell, CheckCheck, Inbox } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { notificationsService, type NotificationRow } from "@/services";
 
-type Notif = {
-  id: string;
-  title: string;
-  body: string;
-  read: boolean;
-  user_id: string | null;
-  created_at: string;
-};
+type Notif = NotificationRow;
 
 const fmtDate = (d: string) => {
   const dt = new Date(d);
