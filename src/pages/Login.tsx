@@ -16,9 +16,7 @@ const Login = () => {
   }, [user, loading, navigate]);
 
   const signInGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
+    const result = await authService.signInWithGoogle(window.location.origin);
     if (result.error) {
       toast.error("Erro ao iniciar sessão. Tente novamente.");
       return;
