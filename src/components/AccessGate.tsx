@@ -15,6 +15,8 @@ type Props = {
 
 export const AccessGate = ({ concursoId, categoriaId, categoriaNome, children }: Props) => {
   const gate = useAccessGate(concursoId, categoriaId);
+  const pricing = paymentsService.getPricing(concursoId);
+
 
   if (gate.loading) {
     return (
