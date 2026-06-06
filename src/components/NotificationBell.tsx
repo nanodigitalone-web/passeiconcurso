@@ -26,7 +26,7 @@ export const NotificationBell = () => {
       .channel("notif-bell-" + user.id)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "notifications" },
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
         () => load()
       )
       .subscribe();

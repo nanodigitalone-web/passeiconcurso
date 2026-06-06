@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { getCategoria, getConcurso } from "@/data/concursos";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { clearAccessCache } from "@/hooks/useAccessGate";
 import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Phone, Upload, Loader2, Landmark, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
@@ -97,6 +98,7 @@ const Acesso = () => {
         return;
       }
       toast.success("Acesso activado!");
+      clearAccessCache(user.id);
       await supabase.from("notifications" as any).insert({
         user_id: user.id,
         title: "Conta activada ✅",

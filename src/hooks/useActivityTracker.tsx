@@ -14,12 +14,15 @@ export const useActivityTracker = () => {
 
   useEffect(() => {
     if (!user) return;
-    const beat = async () => {
-      await supabase.from("profiles").update({ last_seen: new Date().toISOString() }).eq("id", user.id);
+    const beat = async (force = false) => {
+      const last = Number(localStorage.getItem(LAST_KEY) || 0);
+      // Throttle: no máximo 1 escrita por minuto (evita spam ao alternar abas).
+      if (!force && Date.now() - last < 60 * 1000) return;
       localStorage.setItem(LAST_KEY, String(Date.now()));
+      await supabase.from("profiles").update({ last_seen: new Date().toISOString() }).eq("id", user.id);
     };
-    beat();
-    const t = setInterval(beat, 2 * 60 * 1000);
+    beat(true);
+    const t = setInterval(() => beat(), 2 * 60 * 1000);
     const onVis = () => { if (!document.hidden) beat(); };
     document.addEventListener("visibilitychange", onVis);
 
