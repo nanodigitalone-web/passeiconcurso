@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getCategoria } from "@/data/concursos";
+import { quizService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Zap, Flame, Star, Lock, Trophy, BookMarked, Target, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
