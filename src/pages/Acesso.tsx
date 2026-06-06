@@ -32,6 +32,8 @@ const Acesso = () => {
   if (!cat || !concurso) return <Navigate to="/concursos" replace />;
   if (!user) return <Navigate to="/login" replace />;
 
+  const pricing = paymentsService.getPricing(concurso.id);
+
   const copiar = async (txt: string) => {
     await navigator.clipboard.writeText(txt);
     toast.success("Copiado");
