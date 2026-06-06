@@ -500,18 +500,21 @@ const NotifsTab = () => {
   const [recent, setRecent] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase.from("profiles").select("id, nome, email").order("created_at", { ascending: false }).limit(500).then(({ data }) => setUsers(data ?? []));
+    adminService.listUsersBasic(500).then(setUsers);
     loadRecent();
   }, []);
   const loadRecent = async () => {
-    const { data } = await supabase.from("notifications" as any).select("*").order("created_at", { ascending: false }).limit(20);
-    setRecent(data as any[] ?? []);
+    setRecent(await adminService.listRecentNotifications(20));
   };
 
   const send = async () => {
     if (!title || !body) return toast.error("Preencha título e mensagem");
-    const payload: any = { title, body, created_by: user?.id, user_id: target === "all" ? null : target };
-    const { error } = await supabase.from("notifications" as any).insert(payload);
+    const { error } = await adminService.sendNotification({
+      title,
+      body,
+      createdBy: user?.id,
+      userId: target === "all" ? null : target,
+    });
     if (error) toast.error(error.message);
     else { toast.success("Enviada"); setTitle(""); setBody(""); loadRecent(); }
   };
