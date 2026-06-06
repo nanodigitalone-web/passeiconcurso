@@ -21,10 +21,9 @@ export const NotificationToaster = () => {
       .channel("notif-toast-" + user.id)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
         (payload: any) => {
           const n = payload.new;
-          if (n.user_id && n.user_id !== user.id) return;
           // não interromper durante o quiz
           if (pathRef.current.startsWith("/quiz/")) return;
           toast(n.title, {
