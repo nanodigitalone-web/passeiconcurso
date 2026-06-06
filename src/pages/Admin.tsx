@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { adminService, authService, quizService, notificationsService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,11 +16,12 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { concursos } from "@/data/concursos";
 import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban, CheckCircle2, RefreshCw,
   ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock,
 } from "lucide-react";
+
+const concursos = quizService.getConcursos();
 
 const ADMIN_BG = "bg-[hsl(220_70%_8%)] text-[hsl(210_40%_96%)]";
 const PANEL = "bg-[hsl(220_55%_12%)] border-[hsl(220_45%_22%)]";
@@ -30,7 +30,7 @@ const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
 
   const signInGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/admin" });
+    const result = await authService.signInWithGoogle(window.location.origin + "/admin");
     if (result.error) toast.error("Erro ao iniciar sessão");
   };
 
@@ -118,22 +118,9 @@ const StatsTab = () => {
     .sort((a, b) => b.n - a.n);
 
   useEffect(() => {
-    (async () => {
-      const [u, b, h, p, cu, ca, pr] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("blocked", true),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("hidden", true),
-        supabase.from("category_access").select("id", { count: "exact", head: true }),
-        supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("status", "used"),
-        supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("status", "available"),
-        supabase.from("payment_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      ]);
-      setS({
-        users: u.count ?? 0, blocked: b.count ?? 0, hidden: h.count ?? 0,
-        paid: p.count ?? 0, codesUsed: cu.count ?? 0, codesAvail: ca.count ?? 0, payments: pr.count ?? 0,
-      });
-    })();
+    adminService.getStats().then(setS);
   }, []);
+
 
   const groups: { title: string; items: { label: string; value: number; tone?: string }[] }[] = [
     {
@@ -213,9 +200,8 @@ const UsersTab = () => {
   const [q, setQ] = useState("");
 
   const load = async () => {
-    const { data } = await supabase.from("profiles").select("*").order("last_seen", { ascending: false, nullsFirst: false }).limit(500);
-    setRows(data ?? []);
-    const { data: acc } = await supabase.from("category_access").select("*").limit(2000);
+    const [profiles, acc] = await Promise.all([adminService.listProfiles(500), adminService.listAllAccess(2000)]);
+    setRows(profiles);
     const map: Record<string, AccessRow[]> = {};
     (acc ?? []).forEach((a: any) => {
       (map[a.user_id] ||= []).push(a);
@@ -225,12 +211,12 @@ const UsersTab = () => {
   useEffect(() => { load(); }, []);
 
   const update = async (id: string, patch: any) => {
-    const { error } = await supabase.from("profiles").update(patch).eq("id", id);
+    const { error } = await adminService.updateProfile(id, patch);
     if (error) toast.error(error.message); else { toast.success("Atualizado"); load(); }
   };
   const del = async (id: string) => {
     if (!confirm("Eliminar usuário definitivamente?")) return;
-    const { error } = await supabase.from("profiles").delete().eq("id", id);
+    const { error } = await adminService.deleteProfile(id);
     if (error) toast.error(error.message); else { toast.success("Eliminado"); load(); }
   };
 
@@ -310,7 +296,7 @@ const UsersTab = () => {
 };
 
 /* ---------------- Manage Access Dialog ---------------- */
-const genCode = () => Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join("");
+
 
 const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: AccessRow[]; onChanged: () => void }) => {
   const [open, setOpen] = useState(false);
@@ -325,24 +311,18 @@ const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: Ac
     if (!conc || !cat) return;
     setBusy(true);
     try {
-      const code = genCode();
-      // 1) registar código já usado por este utilizador
-      const { error: e1 } = await supabase.from("access_codes").insert({
-        concurso_id: conc, categoria_id: cat, code,
-        status: "used", used_by: user.id, used_at: new Date().toISOString(),
-      } as any);
-      if (e1 && !String(e1.message).includes("duplicate")) throw e1;
-      // 2) garantir o acesso
-      const { error: e2 } = await supabase.from("category_access").insert({
-        user_id: user.id, concurso_id: conc, categoria_id: cat, code,
-      });
-      if (e2 && !String(e2.message).includes("duplicate")) throw e2;
       const catName = catNome(conc, cat);
-      await supabase.from("notifications" as any).insert({
-        user_id: user.id,
+      const code = await adminService.grantAccess({
+        userId: user.id,
+        concursoId: conc,
+        categoriaId: cat,
+        categoriaNome: catName,
+      });
+      await notificationsService.create({
+        userId: user.id,
         title: "Conta activada ✅",
         body: `O seu acesso a ${catName} foi activado pela equipa. Código: ${code}. Bons estudos!`,
-      } as any);
+      });
       toast.success(`Acesso activado (código ${code})`);
       onChanged();
     } catch (e: any) {
@@ -354,7 +334,7 @@ const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: Ac
 
   const deactivate = async (a: AccessRow) => {
     if (!confirm(`Desactivar acesso a "${a.categoria_id}"?`)) return;
-    const { error } = await supabase.from("category_access").delete().eq("id", a.id);
+    const { error } = await adminService.deactivateAccess(a.id);
     if (error) toast.error(error.message);
     else { toast.success("Acesso desactivado"); onChanged(); }
   };
@@ -434,26 +414,22 @@ const CodesTab = () => {
 
   const load = async () => {
     if (!conc || !cat) return;
-    const [a, u] = await Promise.all([
-      supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("concurso_id", conc).eq("categoria_id", cat).eq("status", "available"),
-      supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("concurso_id", conc).eq("categoria_id", cat).eq("status", "used"),
-    ]);
-    setStats({ available: a.count ?? 0, used: u.count ?? 0 });
-    const { data } = await supabase.from("access_codes")
-      .select("code, status, used_at, used_by")
-      .eq("concurso_id", conc).eq("categoria_id", cat)
-      .eq("status", showUsed ? "used" : "available")
-      .order("created_at", { ascending: false }).limit(300);
-    setList(data ?? []);
+    setStats(await adminService.getCodeStats(conc, cat));
+    setList(await adminService.listCodes(conc, cat, showUsed ? "used" : "available", 300));
   };
   useEffect(() => { load(); }, [conc, cat, showUsed]);
 
   const generate = async () => {
     setBusy(true);
-    const { data, error } = await supabase.rpc("admin_generate_codes" as any, { _conc: conc, _cat: cat, _count: count });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else { toast.success(`${data} códigos gerados`); load(); }
+    try {
+      const n = await adminService.generateCodes(conc, cat, count);
+      toast.success(`${n} códigos gerados`);
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao gerar");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -524,18 +500,21 @@ const NotifsTab = () => {
   const [recent, setRecent] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase.from("profiles").select("id, nome, email").order("created_at", { ascending: false }).limit(500).then(({ data }) => setUsers(data ?? []));
+    adminService.listUsersBasic(500).then(setUsers);
     loadRecent();
   }, []);
   const loadRecent = async () => {
-    const { data } = await supabase.from("notifications" as any).select("*").order("created_at", { ascending: false }).limit(20);
-    setRecent(data as any[] ?? []);
+    setRecent(await adminService.listRecentNotifications(20));
   };
 
   const send = async () => {
     if (!title || !body) return toast.error("Preencha título e mensagem");
-    const payload: any = { title, body, created_by: user?.id, user_id: target === "all" ? null : target };
-    const { error } = await supabase.from("notifications" as any).insert(payload);
+    const { error } = await adminService.sendNotification({
+      title,
+      body,
+      createdBy: user?.id,
+      userId: target === "all" ? null : target,
+    });
     if (error) toast.error(error.message);
     else { toast.success("Enviada"); setTitle(""); setBody(""); loadRecent(); }
   };
@@ -593,46 +572,36 @@ const ComprovativosTab = () => {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    let q = supabase.from("payment_requests").select("*").order("created_at", { ascending: false }).limit(200);
-    if (filter !== "all") q = q.eq("status", filter as any);
-    const { data } = await q;
-    setRows(data ?? []);
-    const ids = Array.from(new Set((data ?? []).map((r: any) => r.user_id)));
+    const data = await adminService.listPaymentRequests(filter, 200);
+    setRows(data);
+    const ids = Array.from(new Set(data.map((r: any) => r.user_id)));
     if (ids.length) {
-      const { data: ps } = await supabase.from("profiles").select("id, nome, email, avatar_url").in("id", ids);
+      const ps = await adminService.listProfilesByIds(ids as string[]);
       const map: Record<string, any> = {};
-      (ps ?? []).forEach((p: any) => { map[p.id] = p; });
+      ps.forEach((p: any) => { map[p.id] = p; });
       setProfiles(map);
     }
   };
   useEffect(() => { load(); }, [filter]);
 
   const openComprovativo = async (path: string) => {
-    const { data, error } = await supabase.storage.from("comprovativos").createSignedUrl(path, 60 * 10);
-    if (error || !data?.signedUrl) return toast.error("Não foi possível abrir o comprovativo");
-    window.open(data.signedUrl, "_blank");
+    try {
+      const url = await adminService.getComprovativoUrl(path);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Não foi possível abrir o comprovativo");
+    }
   };
 
   const aprovar = async (r: any) => {
     setBusy(r.id);
     try {
-      const code = genCode();
-      const { error: e1 } = await supabase.from("access_codes").insert({
-        concurso_id: r.concurso_id, categoria_id: r.categoria_id, code,
-        status: "used", used_by: r.user_id, used_at: new Date().toISOString(),
-      } as any);
-      if (e1 && !String(e1.message).includes("duplicate")) throw e1;
-      const { error: e2 } = await supabase.from("category_access").insert({
-        user_id: r.user_id, concurso_id: r.concurso_id, categoria_id: r.categoria_id, code,
-        expires_at: new Date(Date.now() + 4 * 30 * 86400000).toISOString(),
-      });
-      if (e2 && !String(e2.message).includes("duplicate")) throw e2;
-      await supabase.from("payment_requests").update({ status: "approved" as any }).eq("id", r.id);
-      await supabase.from("notifications" as any).insert({
-        user_id: r.user_id,
+      const code = await adminService.approvePayment(r);
+      await notificationsService.create({
+        userId: r.user_id,
         title: "Conta activada ✅",
         body: `O seu acesso a ${r.categoria_nome ?? r.categoria_id} foi activado por 4 meses. Código: ${code}.`,
-      } as any);
+      });
       toast.success("Aprovado e activado");
       load();
     } catch (e: any) {
@@ -642,12 +611,12 @@ const ComprovativosTab = () => {
 
   const rejeitar = async (r: any) => {
     if (!confirm("Rejeitar este comprovativo?")) return;
-    await supabase.from("payment_requests").update({ status: "rejected" as any }).eq("id", r.id);
-    await supabase.from("notifications" as any).insert({
-      user_id: r.user_id,
+    await adminService.rejectPayment(r.id);
+    await notificationsService.create({
+      userId: r.user_id,
       title: "Comprovativo recusado",
       body: `O comprovativo enviado para ${r.categoria_nome ?? r.categoria_id} não foi validado. Verifique e envie novamente.`,
-    } as any);
+    });
     toast.success("Rejeitado");
     load();
   };

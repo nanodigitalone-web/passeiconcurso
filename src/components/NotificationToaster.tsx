@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { notificationsService } from "@/services";
 
 /**
  * Escuta novas notificações em tempo real e mostra um pop-up (toast)
@@ -17,25 +17,23 @@ export const NotificationToaster = () => {
 
   useEffect(() => {
     if (!user) return;
-    const ch = supabase
-      .channel("notif-toast-" + user.id)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        (payload: any) => {
-          const n = payload.new;
-          // não interromper durante o quiz
-          if (pathRef.current.startsWith("/quiz/")) return;
-          toast(n.title, {
-            description: n.body,
-            icon: <Bell className="h-4 w-4" />,
-            duration: 6000,
-          });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const unsub = notificationsService.subscribeForUser(
+      user.id,
+      (payload: any) => {
+        const n = payload.new;
+        // não interromper durante o quiz
+        if (pathRef.current.startsWith("/quiz/")) return;
+        toast(n.title, {
+          description: n.body,
+          icon: <Bell className="h-4 w-4" />,
+          duration: 6000,
+        });
+      },
+      { tag: "toast", event: "INSERT" }
+    );
+    return unsub;
   }, [user?.id]);
 
   return null;
 };
+

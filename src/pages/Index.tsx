@@ -3,14 +3,14 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { concursos } from "@/data/concursos";
-import { getResults } from "@/lib/storage";
+import { quizService, resultsService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRight, BookOpen, Sparkles, Target, TrendingUp, Zap } from "lucide-react";
 
 const Index = () => {
   const { profile } = useAuth();
-  const results = getResults();
+  const concursos = quizService.getConcursos();
+  const results = resultsService.getResults();
   const totalQ = results.reduce((s, r) => s + r.total, 0);
   const acertos = results.reduce((s, r) => s + r.acertos, 0);
   const taxa = totalQ ? Math.round((acertos / totalQ) * 100) : 0;

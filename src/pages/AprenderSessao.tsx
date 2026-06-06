@@ -3,9 +3,8 @@ import { Navigate, useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { getCategoria, Question } from "@/data/concursos";
+import { quizService, authService, type Question } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Check, Flame, Heart, Trophy, X, Zap } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
@@ -14,23 +13,16 @@ import { AccessGate } from "@/components/AccessGate";
 const SESSION_SIZE = 5;
 const POINTS_PER_HIT = 10;
 
-const shuffle = <T,>(arr: T[]): T[] => {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
+
 
 const AprenderSessao = () => {
   const { concursoId, categoriaId } = useParams();
-  const cat = getCategoria(concursoId!, categoriaId!);
+  const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
 
   const questoes = useMemo<Question[]>(
-    () => (cat ? shuffle(cat.questoes).slice(0, SESSION_SIZE) : []),
+    () => (cat ? quizService.getSimuladoQuestions(concursoId!, categoriaId!, SESSION_SIZE) : []),
     [cat]
   );
 
@@ -45,10 +37,8 @@ const AprenderSessao = () => {
   useEffect(() => {
     if (done && user) {
       const pontosGanhos = hits * POINTS_PER_HIT + (hits === SESSION_SIZE ? 20 : 0);
-      supabase
-        .from("profiles")
-        .update({ pontos: (profile?.pontos || 0) + pontosGanhos })
-        .eq("id", user.id)
+      authService
+        .addPoints(user.id, profile?.pontos || 0, pontosGanhos)
         .then(() => refreshProfile());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

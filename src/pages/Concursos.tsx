@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { concursos } from "@/data/concursos";
+import { quizService } from "@/services";
 import { ArrowRight, Search } from "lucide-react";
 
 const Concursos = () => {
   const [q, setQ] = useState("");
+  const concursos = quizService.getConcursos();
   const lista = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return concursos;

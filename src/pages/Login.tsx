@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { lovable } from "@/integrations/lovable";
+import { authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, BookOpen, Trophy, Target } from "lucide-react";
 import { toast } from "sonner";
@@ -16,9 +16,7 @@ const Login = () => {
   }, [user, loading, navigate]);
 
   const signInGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
+    const result = await authService.signInWithGoogle(window.location.origin);
     if (result.error) {
       toast.error("Erro ao iniciar sessão. Tente novamente.");
       return;

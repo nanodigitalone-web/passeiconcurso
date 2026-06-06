@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getCategoria } from "@/data/concursos";
+import { quizService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Zap, Flame, Star, Lock, Trophy, BookMarked, Target, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ const STAGES = [
 const Aprender = () => {
   const { profile } = useAuth();
   const cat = profile?.concurso_id && profile?.categoria_id
-    ? getCategoria(profile.concurso_id, profile.categoria_id)
+    ? quizService.getCategoria(profile.concurso_id, profile.categoria_id)
     : null;
 
   // Each stage costs 50 points to unlock

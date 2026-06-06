@@ -2,15 +2,15 @@ import { useParams, Navigate, Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getCategoria, getConcurso } from "@/data/concursos";
+import { quizService } from "@/services";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookMarked, Play, FileText, ExternalLink, FileCheck2 } from "lucide-react";
 import { AccessGate } from "@/components/AccessGate";
 
 const Topicos = () => {
   const { concursoId, categoriaId } = useParams();
-  const cat = getCategoria(concursoId!, categoriaId!);
-  const concurso = getConcurso(concursoId!);
+  const cat = quizService.getCategoria(concursoId!, categoriaId!);
+  const concurso = quizService.getConcurso(concursoId!);
   if (!cat || !concurso) return <Navigate to="/concursos" replace />;
   const topicos = cat.topicos ?? [];
   const docs = concurso.documentosInscricao ?? [];

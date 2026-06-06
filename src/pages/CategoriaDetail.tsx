@@ -3,17 +3,16 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getCategoria, getConcurso } from "@/data/concursos";
+import { quizService, authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, BookMarked, Clock, Play, Check, UserCheck } from "lucide-react";
 import { AccessGate } from "@/components/AccessGate";
 import { toast } from "sonner";
 
 const CategoriaDetail = () => {
   const { concursoId, categoriaId } = useParams();
-  const cat = getCategoria(concursoId!, categoriaId!);
-  const concurso = getConcurso(concursoId!);
+  const cat = quizService.getCategoria(concursoId!, categoriaId!);
+  const concurso = quizService.getConcurso(concursoId!);
   const { user, profile, refreshProfile } = useAuth();
   if (!cat || !concurso) return <Navigate to="/concursos" replace />;
 
@@ -23,12 +22,7 @@ const CategoriaDetail = () => {
 
   const definirCategoria = async () => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({
-      concurso_id: concurso.id,
-      categoria_id: cat.id,
-      categoria_nome: cat.nome,
-      updated_at: new Date().toISOString(),
-    }).eq("id", user.id);
+    const { error } = await authService.setCategoria(user.id, concurso.id, cat.id, cat.nome);
     if (error) return toast.error("Erro ao definir categoria");
     await refreshProfile();
     toast.success(`Categoria ${cat.nome} definida!`);

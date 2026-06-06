@@ -5,10 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCategoria, getConcurso } from "@/data/concursos";
+import { quizService, paymentsService, notificationsService, clearAccessCache } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { clearAccessCache } from "@/hooks/useAccessGate";
 import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Phone, Upload, Loader2, Landmark, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,8 +20,8 @@ type Step = "instrucoes" | "comprovativo" | "codigo" | "concluido";
 
 const Acesso = () => {
   const { concursoId, categoriaId } = useParams();
-  const cat = getCategoria(concursoId!, categoriaId!);
-  const concurso = getConcurso(concursoId!);
+  const cat = quizService.getCategoria(concursoId!, categoriaId!);
+  const concurso = quizService.getConcurso(concursoId!);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
@@ -50,28 +48,23 @@ const Acesso = () => {
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("comprovativos").upload(path, file);
-      if (upErr) throw upErr;
+      const path = await paymentsService.uploadComprovativo(user.id, file);
 
-      const { data, error } = await supabase.from("payment_requests").insert({
-        user_id: user.id,
+      const id = await paymentsService.createPaymentRequest({
+        userId: user.id,
         email: user.email ?? "",
-        concurso_id: concurso.id,
-        categoria_id: cat.id,
-        categoria_nome: cat.nome,
-        comprovativo_url: path,
-        status: "awaiting_review",
-      }).select("id").single();
-      if (error) throw error;
+        concursoId: concurso.id,
+        categoriaId: cat.id,
+        categoriaNome: cat.nome,
+        comprovativoPath: path,
+      });
 
-      setRequestId(data.id);
-      await supabase.from("notifications" as any).insert({
-        user_id: user.id,
+      setRequestId(id);
+      await notificationsService.create({
+        userId: user.id,
         title: "Comprovativo recebido",
         body: `Recebemos o seu comprovativo para ${cat.nome} (${concurso.sigla}). A nossa equipa analisa em até 24h e enviará o código de activação.`,
-      } as any);
+      });
       toast.success("Comprovativo enviado! Aguarde até 24h pelo seu código.");
       setStep("codigo");
     } catch (e: any) {
@@ -86,24 +79,18 @@ const Acesso = () => {
     if (clean.length !== 6) return toast.error("O código tem 6 dígitos");
     setActivating(true);
     try {
-      const { data, error } = await supabase.rpc("activate_access_code", {
-        _code: clean,
-        _conc: concurso.id,
-        _cat: cat.id,
-      });
-      if (error) throw error;
-      const res = data as { ok: boolean; error?: string };
+      const res = await paymentsService.activateAccessCode(clean, concurso.id, cat.id);
       if (!res.ok) {
         toast.error(res.error === "invalid_or_used" ? "Código inválido ou já usado" : "Erro ao activar");
         return;
       }
       toast.success("Acesso activado!");
       clearAccessCache(user.id);
-      await supabase.from("notifications" as any).insert({
-        user_id: user.id,
+      await notificationsService.create({
+        userId: user.id,
         title: "Conta activada ✅",
         body: `O seu acesso a ${cat.nome} (${concurso.sigla}) foi activado com sucesso. Bons estudos!`,
-      } as any);
+      });
       await refreshProfile();
       setStep("concluido");
     } catch (e: any) {

@@ -1,21 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { authService, type Profile } from "@/services";
 import type { Session, User } from "@supabase/supabase-js";
 
-export type Profile = {
-  id: string;
-  nome: string;
-  avatar_url: string | null;
-  bio: string | null;
-  pontos: number;
-  streak: number;
-  concurso_id: string | null;
-  categoria_id: string | null;
-  categoria_nome: string | null;
-  blocked?: boolean;
-  hidden?: boolean;
-  email?: string | null;
-};
+export type { Profile };
 
 type AuthCtx = {
   session: Session | null;
@@ -37,10 +24,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (uid: string) => {
-    const { data } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
-    if (data) setProfile(data as Profile);
-    const { data: roles } = await supabase.from("user_roles" as any).select("role").eq("user_id", uid);
-    setIsAdmin(!!roles?.some((r: any) => r.role === "admin"));
+    const [p, admin] = await Promise.all([authService.getProfile(uid), authService.isAdmin(uid)]);
+    if (p) setProfile(p);
+    setIsAdmin(admin);
   };
 
   const refreshProfile = async () => {
@@ -48,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = authService.onAuthStateChange((_e, s) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
@@ -58,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAdmin(false);
       }
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    authService.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) fetchProfile(s.user.id);
@@ -68,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authService.signOut();
   };
 
   return (

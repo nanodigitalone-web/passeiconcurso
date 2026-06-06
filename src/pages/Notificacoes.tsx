@@ -3,16 +3,9 @@ import { Navigate } from "react-router-dom";
 import { Bell, CheckCheck, Inbox } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { notificationsService, type NotificationRow } from "@/services";
 
-type Notif = {
-  id: string;
-  title: string;
-  body: string;
-  read: boolean;
-  user_id: string | null;
-  created_at: string;
-};
+type Notif = NotificationRow;
 
 const fmtDate = (d: string) => {
   const dt = new Date(d);
@@ -31,32 +24,17 @@ const Notificacoes = () => {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("notifications" as any)
-      .select("*")
-      .or(`user_id.eq.${user.id},user_id.is.null`)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    setItems((data as any) ?? []);
+    setItems(await notificationsService.listForUser(user.id, 100));
     setLoading(false);
   };
 
   useEffect(() => {
     if (!user) return;
     load();
-    const ch = supabase
-      .channel("notif-page-" + user.id)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => load())
-      .subscribe();
+    const unsub = notificationsService.subscribeAll("page-" + user.id, () => load());
     // mark all unread as read
-    (async () => {
-      await supabase
-        .from("notifications" as any)
-        .update({ read: true } as any)
-        .eq("user_id", user.id)
-        .eq("read", false);
-    })();
-    return () => { supabase.removeChannel(ch); };
+    notificationsService.markAllRead(user.id);
+    return unsub;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 

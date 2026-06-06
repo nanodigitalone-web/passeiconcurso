@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { authService } from "@/services";
 import { LogOut, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -31,10 +31,7 @@ const Perfil = () => {
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ nome, bio, avatar_url: avatar || null, updated_at: new Date().toISOString() })
-      .eq("id", user.id);
+    const { error } = await authService.updateProfile(user.id, { nome, bio, avatar_url: avatar || null });
     setSaving(false);
     if (error) return toast.error("Erro ao salvar perfil");
     await refreshProfile();
