@@ -5,10 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCategoria, getConcurso } from "@/data/concursos";
+import { quizService, paymentsService, notificationsService, clearAccessCache } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { clearAccessCache } from "@/hooks/useAccessGate";
 import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Phone, Upload, Loader2, Landmark, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
