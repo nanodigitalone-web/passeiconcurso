@@ -81,7 +81,7 @@ const Quiz = () => {
     setRevealed(false);
 
     if (isLast) {
-      const attempt = quizService.buildAttempt({
+      const result = quizService.submitAnswers({
         userId: user?.id ?? null,
         concursoId: concursoId!,
         categoriaId: categoriaId!,
@@ -90,7 +90,6 @@ const Quiz = () => {
         escolhidas: novas,
         startedAt: startedAtRef.current,
       });
-      const result = resultsService.saveAttempt(attempt);
       finishedRef.current = true;
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
