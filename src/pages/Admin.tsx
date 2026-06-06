@@ -572,46 +572,36 @@ const ComprovativosTab = () => {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    let q = supabase.from("payment_requests").select("*").order("created_at", { ascending: false }).limit(200);
-    if (filter !== "all") q = q.eq("status", filter as any);
-    const { data } = await q;
-    setRows(data ?? []);
-    const ids = Array.from(new Set((data ?? []).map((r: any) => r.user_id)));
+    const data = await adminService.listPaymentRequests(filter, 200);
+    setRows(data);
+    const ids = Array.from(new Set(data.map((r: any) => r.user_id)));
     if (ids.length) {
-      const { data: ps } = await supabase.from("profiles").select("id, nome, email, avatar_url").in("id", ids);
+      const ps = await adminService.listProfilesByIds(ids as string[]);
       const map: Record<string, any> = {};
-      (ps ?? []).forEach((p: any) => { map[p.id] = p; });
+      ps.forEach((p: any) => { map[p.id] = p; });
       setProfiles(map);
     }
   };
   useEffect(() => { load(); }, [filter]);
 
   const openComprovativo = async (path: string) => {
-    const { data, error } = await supabase.storage.from("comprovativos").createSignedUrl(path, 60 * 10);
-    if (error || !data?.signedUrl) return toast.error("Não foi possível abrir o comprovativo");
-    window.open(data.signedUrl, "_blank");
+    try {
+      const url = await adminService.getComprovativoUrl(path);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Não foi possível abrir o comprovativo");
+    }
   };
 
   const aprovar = async (r: any) => {
     setBusy(r.id);
     try {
-      const code = genCode();
-      const { error: e1 } = await supabase.from("access_codes").insert({
-        concurso_id: r.concurso_id, categoria_id: r.categoria_id, code,
-        status: "used", used_by: r.user_id, used_at: new Date().toISOString(),
-      } as any);
-      if (e1 && !String(e1.message).includes("duplicate")) throw e1;
-      const { error: e2 } = await supabase.from("category_access").insert({
-        user_id: r.user_id, concurso_id: r.concurso_id, categoria_id: r.categoria_id, code,
-        expires_at: new Date(Date.now() + 4 * 30 * 86400000).toISOString(),
-      });
-      if (e2 && !String(e2.message).includes("duplicate")) throw e2;
-      await supabase.from("payment_requests").update({ status: "approved" as any }).eq("id", r.id);
-      await supabase.from("notifications" as any).insert({
-        user_id: r.user_id,
+      const code = await adminService.approvePayment(r);
+      await notificationsService.create({
+        userId: r.user_id,
         title: "Conta activada ✅",
         body: `O seu acesso a ${r.categoria_nome ?? r.categoria_id} foi activado por 4 meses. Código: ${code}.`,
-      } as any);
+      });
       toast.success("Aprovado e activado");
       load();
     } catch (e: any) {
@@ -621,12 +611,12 @@ const ComprovativosTab = () => {
 
   const rejeitar = async (r: any) => {
     if (!confirm("Rejeitar este comprovativo?")) return;
-    await supabase.from("payment_requests").update({ status: "rejected" as any }).eq("id", r.id);
-    await supabase.from("notifications" as any).insert({
-      user_id: r.user_id,
+    await adminService.rejectPayment(r.id);
+    await notificationsService.create({
+      userId: r.user_id,
       title: "Comprovativo recusado",
       body: `O comprovativo enviado para ${r.categoria_nome ?? r.categoria_id} não foi validado. Verifique e envie novamente.`,
-    } as any);
+    });
     toast.success("Rejeitado");
     load();
   };
