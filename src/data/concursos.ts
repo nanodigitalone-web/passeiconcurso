@@ -148,6 +148,20 @@ const medicinaInterna: Categoria = {
   questoes: questoesMedicinaInterna, topicos: topicosMedicinaInterna,
 };
 
+const pediatria: Categoria = {
+  id: "pediatria", nome: "Pediatria",
+  descricao: "Pediatria e Neonatologia - puericultura, imunizações, RN, sepse neonatal e desnutrição (perfil de Angola) - obtenção do grau de Médico",
+  icon: "Baby",
+  disciplinas: [
+    "Exame Neurológico", "Puericultura", "Imunizações", "Alimentação",
+    "Desnutrição (DEP/DAS)", "Recém-Nascido Normal", "Recém-Nascido Pré-Termo",
+    "Sepse Neonatal", "Síndromes e Diagnóstico Diferencial",
+  ],
+  questoes: questoesPediatria, topicos: topicosPediatria,
+};
+
+
+
 
 
 
