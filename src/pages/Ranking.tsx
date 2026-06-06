@@ -2,18 +2,10 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
+import { rankingService, type RankRow } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Crown, Medal, Trophy } from "lucide-react";
-
-type RankRow = {
-  id: string;
-  nome: string;
-  avatar_url: string | null;
-  pontos: number;
-  categoria_nome: string | null;
-};
 
 type Filtro = "todos" | "minha";
 
@@ -25,12 +17,10 @@ const Ranking = () => {
 
   useEffect(() => {
     const _categoria = filtro === "minha" && profile?.categoria_id ? profile.categoria_id : null;
-    supabase
-      .rpc("get_ranking", { _categoria })
-      .then(({ data }) => {
-        setRows((data ?? []) as RankRow[]);
-        setLoading(false);
-      });
+    rankingService.getRanking(_categoria).then((data) => {
+      setRows(data);
+      setLoading(false);
+    });
   }, [filtro, profile?.categoria_id]);
 
   const data = rows;
