@@ -118,22 +118,9 @@ const StatsTab = () => {
     .sort((a, b) => b.n - a.n);
 
   useEffect(() => {
-    (async () => {
-      const [u, b, h, p, cu, ca, pr] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("blocked", true),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("hidden", true),
-        supabase.from("category_access").select("id", { count: "exact", head: true }),
-        supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("status", "used"),
-        supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("status", "available"),
-        supabase.from("payment_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      ]);
-      setS({
-        users: u.count ?? 0, blocked: b.count ?? 0, hidden: h.count ?? 0,
-        paid: p.count ?? 0, codesUsed: cu.count ?? 0, codesAvail: ca.count ?? 0, payments: pr.count ?? 0,
-      });
-    })();
+    adminService.getStats().then(setS);
   }, []);
+
 
   const groups: { title: string; items: { label: string; value: number; tone?: string }[] }[] = [
     {
