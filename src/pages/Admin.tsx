@@ -200,9 +200,8 @@ const UsersTab = () => {
   const [q, setQ] = useState("");
 
   const load = async () => {
-    const { data } = await supabase.from("profiles").select("*").order("last_seen", { ascending: false, nullsFirst: false }).limit(500);
-    setRows(data ?? []);
-    const { data: acc } = await supabase.from("category_access").select("*").limit(2000);
+    const [profiles, acc] = await Promise.all([adminService.listProfiles(500), adminService.listAllAccess(2000)]);
+    setRows(profiles);
     const map: Record<string, AccessRow[]> = {};
     (acc ?? []).forEach((a: any) => {
       (map[a.user_id] ||= []).push(a);
@@ -212,12 +211,12 @@ const UsersTab = () => {
   useEffect(() => { load(); }, []);
 
   const update = async (id: string, patch: any) => {
-    const { error } = await supabase.from("profiles").update(patch).eq("id", id);
+    const { error } = await adminService.updateProfile(id, patch);
     if (error) toast.error(error.message); else { toast.success("Atualizado"); load(); }
   };
   const del = async (id: string) => {
     if (!confirm("Eliminar usuário definitivamente?")) return;
-    const { error } = await supabase.from("profiles").delete().eq("id", id);
+    const { error } = await adminService.deleteProfile(id);
     if (error) toast.error(error.message); else { toast.success("Eliminado"); load(); }
   };
 
