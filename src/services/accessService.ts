@@ -22,6 +22,26 @@ export const clearAccessCache = (user?: string) => {
 export const accessService = {
   clearCache: clearAccessCache,
 
+  /** Active paid plans of a user, with their expiry date (null = lifetime). */
+  async getMyPlans(userId: string): Promise<
+    { concursoId: string; categoriaId: string; expiresAt: number | null }[]
+  > {
+    const { data } = await supabase
+      .from("category_access")
+      .select("concurso_id, categoria_id, expires_at")
+      .eq("user_id", userId);
+    if (!data) return [];
+    const now = Date.now();
+    return (data as any[])
+      .map((r) => ({
+        concursoId: r.concurso_id,
+        categoriaId: r.categoria_id,
+        expiresAt: r.expires_at ? new Date(r.expires_at).getTime() : null,
+      }))
+      .filter((r) => r.expiresAt === null || r.expiresAt > now)
+      .sort((a, b) => (a.expiresAt ?? Infinity) - (b.expiresAt ?? Infinity));
+  },
+
   /** Whether the user has at least one active paid category access. */
   async hasAnyPaidAccess(userId: string): Promise<boolean> {
     const { data } = await supabase
