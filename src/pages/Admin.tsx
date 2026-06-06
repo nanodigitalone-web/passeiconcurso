@@ -16,11 +16,12 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { concursos } from "@/data/concursos";
 import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban, CheckCircle2, RefreshCw,
   ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock,
 } from "lucide-react";
+
+const concursos = quizService.getConcursos();
 
 const ADMIN_BG = "bg-[hsl(220_70%_8%)] text-[hsl(210_40%_96%)]";
 const PANEL = "bg-[hsl(220_55%_12%)] border-[hsl(220_45%_22%)]";
@@ -29,7 +30,7 @@ const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
 
   const signInGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/admin" });
+    const result = await authService.signInWithGoogle(window.location.origin + "/admin");
     if (result.error) toast.error("Erro ao iniciar sessão");
   };
 
