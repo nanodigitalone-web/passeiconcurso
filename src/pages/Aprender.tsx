@@ -19,7 +19,7 @@ const STAGES = [
 const Aprender = () => {
   const { profile } = useAuth();
   const cat = profile?.concurso_id && profile?.categoria_id
-    ? getCategoria(profile.concurso_id, profile.categoria_id)
+    ? quizService.getCategoria(profile.concurso_id, profile.categoria_id)
     : null;
 
   // Each stage costs 50 points to unlock
