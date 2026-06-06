@@ -12,7 +12,8 @@ import {
   type Categoria,
   type Question,
 } from "@/data/concursos";
-import type { QuizAnswer, QuizAttempt } from "./types";
+import type { QuizAnswer, QuizAttempt, QuizResult } from "./types";
+import { resultsService } from "./resultsService";
 
 export type { Concurso, Categoria, Question };
 
@@ -84,5 +85,33 @@ export const quizService = {
   /** Number of correct answers in an attempt. */
   scoreAttempt(attempt: QuizAttempt): number {
     return attempt.answers.reduce((s, a) => s + (a.escolhida === a.correta ? 1 : 0), 0);
+  },
+
+  /**
+   * Build the attempt from the raw quiz interaction AND persist it, returning the
+   * derived result. This is the single entry point the UI uses to finish a quiz,
+   * so it never has to orchestrate persistence itself.
+   */
+  submitAnswers(params: {
+    userId: string | null;
+    concursoId: string;
+    categoriaId: string;
+    categoriaNome: string;
+    questoes: Question[];
+    escolhidas: number[];
+    startedAt: number;
+    finishedAt?: number;
+  }): QuizResult {
+    const attempt = this.buildAttempt(params);
+    return resultsService.saveAttempt(attempt);
+  },
+
+  /** Past quiz results (delegates to resultsService). */
+  getResults(): QuizResult[] {
+    return resultsService.getResults();
+  },
+
+  getResultById(id: string): QuizResult | undefined {
+    return resultsService.getResultById(id);
   },
 };

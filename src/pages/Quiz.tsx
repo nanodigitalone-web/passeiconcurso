@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { quizService, resultsService, notificationsService } from "@/services";
+import { quizService, notificationsService } from "@/services";
 import { cn } from "@/lib/utils";
 import { Check, Clock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
@@ -81,7 +81,7 @@ const Quiz = () => {
     setRevealed(false);
 
     if (isLast) {
-      const attempt = quizService.buildAttempt({
+      const result = quizService.submitAnswers({
         userId: user?.id ?? null,
         concursoId: concursoId!,
         categoriaId: categoriaId!,
@@ -90,7 +90,6 @@ const Quiz = () => {
         escolhidas: novas,
         startedAt: startedAtRef.current,
       });
-      const result = resultsService.saveAttempt(attempt);
       finishedRef.current = true;
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
