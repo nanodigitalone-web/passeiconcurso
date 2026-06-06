@@ -40,6 +40,25 @@ const Perfil = () => {
     if (user) accessService.hasAnyPaidAccess(user.id).then(setCanHide);
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    accessService.getMyPlans(user.id).then((rows) => {
+      setPlans(
+        rows.map((r) => ({
+          ...r,
+          nome:
+            quizService.getCategoria(r.concursoId, r.categoriaId)?.nome ??
+            r.categoriaId,
+        }))
+      );
+    });
+  }, [user]);
+
+  const fmtDate = (ms: number | null) =>
+    ms === null
+      ? "Vitalício"
+      : new Date(ms).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" });
+
   const save = async () => {
     if (!user) return;
     setSaving(true);
