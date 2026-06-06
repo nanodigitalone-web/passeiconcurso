@@ -51,6 +51,7 @@ import { bancoMedicoExt2, bancoTecEnfermagemExt2 } from "./bancosExt3";
 import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./bancosTopicos50";
 import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
 import { topicosCirurgiaGeral, questoesCirurgiaGeral } from "./cirurgia";
+import { topicosMedicinaInterna, questoesMedicinaInterna } from "./medicinaInterna";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -134,6 +135,19 @@ const cirurgiaGeral: Categoria = {
   questoes: questoesCirurgiaGeral, topicos: topicosCirurgiaGeral,
 };
 
+const medicinaInterna: Categoria = {
+  id: "medicina-interna", nome: "Medicina Interna",
+  descricao: "Abordagem sindrómica de Medicina Interna adaptada ao perfil epidemiológico de Angola - obtenção do grau de Médico",
+  icon: "Stethoscope",
+  disciplinas: [
+    "Síndromes Circulatórias", "Síndromes Respiratórias", "Síndromes Urinárias",
+    "Síndromes Hemolinfopoiéticas", "Síndromes Endócrino-Metabólicas",
+    "Síndromes Neurológicas", "Síndromes Digestivas", "Síndrome Febril e Doenças Endémicas",
+  ],
+  questoes: questoesMedicinaInterna, topicos: topicosMedicinaInterna,
+};
+
+
 
 
 export const concursos: Concurso[] = [
@@ -180,7 +194,7 @@ export const concursos: Concurso[] = [
       "Comprovativo de matrícula no curso de Medicina",
       "Comprovativo de pagamento da taxa de exame (quando aplicável)",
     ],
-    categorias: [cirurgiaGeral],
+    categorias: [cirurgiaGeral, medicinaInterna],
   },
 ];
 
