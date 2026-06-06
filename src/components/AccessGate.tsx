@@ -51,9 +51,13 @@ export const AccessGate = ({ concursoId, categoriaId, categoriaNome, children }:
       <p className="mt-1 text-sm opacity-90">
         O período de teste de 2 dias terminou. Adquira o acesso completo a{" "}
         <span className="font-semibold">{categoriaNome ?? "esta categoria"}</span> por apenas{" "}
-        <span className="line-through opacity-70">3.700 Kz</span>{" "}
-        <span className="font-semibold">1.000 Kz</span> (promo) · 4 meses.
+        {pricing.isPromo && pricing.normalLabel && (
+          <span className="line-through opacity-70">{pricing.normalLabel}</span>
+        )}{" "}
+        <span className="font-semibold">{pricing.valorLabel}</span>
+        {pricing.isPromo ? " (promo)" : ""} · 4 meses.
       </p>
+
       <ul className="mt-3 space-y-1 text-sm opacity-90">
         <li>• Simulados ilimitados</li>
         <li>• Aprender (trilha) e tópicos</li>
