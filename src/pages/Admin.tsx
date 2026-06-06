@@ -296,7 +296,7 @@ const UsersTab = () => {
 };
 
 /* ---------------- Manage Access Dialog ---------------- */
-const genCode = () => Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join("");
+
 
 const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: AccessRow[]; onChanged: () => void }) => {
   const [open, setOpen] = useState(false);
