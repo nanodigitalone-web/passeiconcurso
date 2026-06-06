@@ -23,6 +23,9 @@ const Perfil = () => {
   const [hidden, setHidden] = useState(false);
   const [canHide, setCanHide] = useState(false);
   const [togglingHide, setTogglingHide] = useState(false);
+  const [plans, setPlans] = useState<
+    { concursoId: string; categoriaId: string; nome: string; expiresAt: number | null }[]
+  >([]);
 
   useEffect(() => {
     if (profile) {
