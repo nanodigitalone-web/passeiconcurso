@@ -22,12 +22,7 @@ const CategoriaDetail = () => {
 
   const definirCategoria = async () => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({
-      concurso_id: concurso.id,
-      categoria_id: cat.id,
-      categoria_nome: cat.nome,
-      updated_at: new Date().toISOString(),
-    }).eq("id", user.id);
+    const { error } = await authService.setCategoria(user.id, concurso.id, cat.id, cat.nome);
     if (error) return toast.error("Erro ao definir categoria");
     await refreshProfile();
     toast.success(`Categoria ${cat.nome} definida!`);
