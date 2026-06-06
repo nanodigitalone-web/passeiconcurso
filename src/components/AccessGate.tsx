@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, Sparkles } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
+import { paymentsService } from "@/services";
 
 type Props = {
   concursoId: string;
