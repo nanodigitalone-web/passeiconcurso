@@ -52,6 +52,7 @@ import { bancoMedicoTop50, bancoTecEnfermagemTop50, bancoLabTop50 } from "./banc
 import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
 import { topicosCirurgiaGeral, questoesCirurgiaGeral } from "./cirurgia";
 import { topicosMedicinaInterna, questoesMedicinaInterna } from "./medicinaInterna";
+import { topicosPediatria, questoesPediatria } from "./pediatria";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
