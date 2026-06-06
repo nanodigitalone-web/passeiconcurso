@@ -10,10 +10,13 @@ import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
 
+const COUNT_OPTIONS = [20, 50, 100];
+
 const Quiz = () => {
   const { concursoId, categoriaId } = useParams();
   const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const navigate = useNavigate();
+  const [count, setCount] = useState<number | null>(null);
   const [idx, setIdx] = useState(0);
   const [respostas, setRespostas] = useState<number[]>([]);
   const [escolhida, setEscolhida] = useState<number | null>(null);
@@ -21,10 +24,10 @@ const Quiz = () => {
   const [seconds, setSeconds] = useState(0);
   const startedAtRef = useRef(Date.now());
 
-  // Randomize question order at start; cap at 20 per simulado
+  // Smart selection (prioritizes unseen/wrong) once the user picks a length.
   const questoes = useMemo(
-    () => (cat ? quizService.getSimuladoQuestions(concursoId!, categoriaId!, 20) : []),
-    [cat]
+    () => (cat && count ? quizService.getSmartQuestions(concursoId!, categoriaId!, count) : []),
+    [cat, count]
   );
 
   useEffect(() => {
