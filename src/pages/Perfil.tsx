@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { authService } from "@/services";
-import { LogOut, Save } from "lucide-react";
+import { authService, accessService } from "@/services";
+import { EyeOff, Lock, LogOut, Save } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Perfil = () => {
   const { profile, user, refreshProfile, signOut } = useAuth();
@@ -19,14 +20,22 @@ const Perfil = () => {
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
   const [saving, setSaving] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [canHide, setCanHide] = useState(false);
+  const [togglingHide, setTogglingHide] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setNome(profile.nome);
       setBio(profile.bio || "");
       setAvatar(profile.avatar_url || "");
+      setHidden(!!profile.hidden);
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (user) accessService.hasAnyPaidAccess(user.id).then(setCanHide);
+  }, [user]);
 
   const save = async () => {
     if (!user) return;
@@ -36,6 +45,20 @@ const Perfil = () => {
     if (error) return toast.error("Erro ao salvar perfil");
     await refreshProfile();
     toast.success("Perfil atualizado!");
+  };
+
+  const toggleHidden = async (value: boolean) => {
+    if (!user) return;
+    setTogglingHide(true);
+    setHidden(value);
+    const { error } = await authService.updateProfile(user.id, { hidden: value });
+    setTogglingHide(false);
+    if (error) {
+      setHidden(!value);
+      return toast.error("Erro ao atualizar privacidade");
+    }
+    await refreshProfile();
+    toast.success(value ? "A sua conta está oculta no ranking" : "A sua conta voltou a ser pública");
   };
 
   const handleSignOut = async () => {
@@ -92,6 +115,35 @@ const Perfil = () => {
           <p className="text-xs text-muted-foreground">Sequência</p>
         </div>
       </Card>
+
+      <Card className="mb-6 p-4 shadow-card border-border/60">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 font-semibold">
+              <EyeOff className="h-4 w-4 text-primary" /> Ocultar a minha conta
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Quando activo, o seu perfil deixa de aparecer no ranking para os outros utilizadores. Continuará visível apenas para si.
+            </p>
+            {!canHide && (
+              <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-warning">
+                <Lock className="h-3 w-3" /> Funcionalidade exclusiva para contas com acesso pago.
+              </p>
+            )}
+          </div>
+          <Switch
+            checked={hidden}
+            disabled={!canHide || togglingHide}
+            onCheckedChange={toggleHidden}
+          />
+        </div>
+        {!canHide && (
+          <Button asChild variant="outline" size="sm" className="mt-3 w-full rounded-full">
+            <Link to="/concursos">Obter acesso para desbloquear</Link>
+          </Button>
+        )}
+      </Card>
+
 
       <Button variant="outline" onClick={handleSignOut} className="w-full rounded-full text-destructive border-destructive/30 hover:bg-destructive/5">
         <LogOut className="mr-2 h-4 w-4" /> Terminar sessão

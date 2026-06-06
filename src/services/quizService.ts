@@ -47,9 +47,49 @@ export const quizService = {
 
   /** A randomized, capped set of questions for a single quiz session. */
   getSimuladoQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {
-    const all = this.getQuestions(concursoId, categoriaId);
-    return shuffle<Question>(all).slice(0, Math.min(limit, all.length));
+    return this.getSmartQuestions(concursoId, categoriaId, limit);
   },
+
+  /**
+   * Smart selection: prioritizes questions never seen or previously answered
+   * wrong, avoids repeating already-mastered questions, and only repeats
+   * (randomly) once every question has appeared at least once.
+   */
+  getSmartQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {
+    const quizId = `${concursoId}/${categoriaId}`;
+    const all = this.getQuestions(concursoId, categoriaId);
+    const cap = Math.min(limit, all.length);
+    const stats = resultsService.getQuestionStats(quizId);
+
+    const unseen = all.filter((q) => !stats[q.id]);
+    const wrongSeen = all.filter((q) => stats[q.id] && stats[q.id].wrong);
+    const correctSeen = all.filter((q) => stats[q.id] && !stats[q.id].wrong);
+
+    // Priority pool: unseen + previously-wrong (shuffled together), then mastered.
+    let pool = [...shuffle([...unseen, ...wrongSeen]), ...shuffle(correctSeen)];
+
+    let selected = pool.slice(0, cap);
+
+    // Only when every distinct question has been used do we allow random repeats.
+    if (selected.length < cap) {
+      while (selected.length < cap) {
+        selected = [...selected, ...shuffle(all)];
+      }
+      selected = selected.slice(0, cap);
+    }
+    return selected;
+  },
+
+  /** Highest completed learn-trail day for a category (-1 if none). */
+  getLearnDay(concursoId: string, categoriaId: string): number {
+    return resultsService.getLearnDay(`${concursoId}/${categoriaId}`);
+  },
+
+  /** Mark a learn-trail day complete. */
+  completeLearnDay(concursoId: string, categoriaId: string, dayIndex: number) {
+    resultsService.completeLearnDay(`${concursoId}/${categoriaId}`, dayIndex);
+  },
+
 
   /** Build a normalized attempt object from the raw quiz interaction. */
   buildAttempt(params: {

@@ -10,10 +10,13 @@ import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
 
+const COUNT_OPTIONS = [20, 50, 100];
+
 const Quiz = () => {
   const { concursoId, categoriaId } = useParams();
   const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const navigate = useNavigate();
+  const [count, setCount] = useState<number | null>(null);
   const [idx, setIdx] = useState(0);
   const [respostas, setRespostas] = useState<number[]>([]);
   const [escolhida, setEscolhida] = useState<number | null>(null);
@@ -21,10 +24,10 @@ const Quiz = () => {
   const [seconds, setSeconds] = useState(0);
   const startedAtRef = useRef(Date.now());
 
-  // Randomize question order at start; cap at 20 per simulado
+  // Smart selection (prioritizes unseen/wrong) once the user picks a length.
   const questoes = useMemo(
-    () => (cat ? quizService.getSimuladoQuestions(concursoId!, categoriaId!, 20) : []),
-    [cat]
+    () => (cat && count ? quizService.getSmartQuestions(concursoId!, categoriaId!, count) : []),
+    [cat, count]
   );
 
   useEffect(() => {
@@ -64,7 +67,47 @@ const Quiz = () => {
       </div>
     );
   }
+
+  const disponiveis = quizService.getQuestions(concursoId!, categoriaId!).length;
+
+  // Length selection screen (20 / 50 / 100) shown before the simulado starts.
+  if (count === null) {
+    const start = (n: number) => {
+      startedAtRef.current = Date.now();
+      setSeconds(0);
+      setCount(n);
+    };
+    return (
+      <div className="min-h-screen bg-gradient-soft">
+        <div className="mx-auto max-w-2xl px-4 pb-10 pt-6">
+          <header className="mb-4 flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>Sair</Button>
+          </header>
+          <h1 className="font-display text-2xl font-bold">{cat.nome}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Quantas questões quer no simulado? Priorizamos questões novas e as que você errou.
+          </p>
+          <div className="mt-6 space-y-3">
+            {COUNT_OPTIONS.map((n) => (
+              <button
+                key={n}
+                onClick={() => start(n)}
+                className="flex w-full items-center justify-between rounded-2xl border-2 border-border/60 bg-card p-5 text-left shadow-card transition-smooth hover:border-primary/50"
+              >
+                <span className="font-display text-xl font-bold">{n} questões</span>
+                <span className="text-xs text-muted-foreground">
+                  {n > disponiveis ? `${disponiveis} disponíveis · repetições aleatórias` : "selecção inteligente"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!questao) return <Navigate to="/concursos" replace />;
+
 
   const total = questoes.length;
   const isLast = idx === total - 1;

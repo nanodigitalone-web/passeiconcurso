@@ -3,7 +3,34 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+export type Pricing = {
+  valor: number; // current price in Kz
+  valorLabel: string; // formatted current price
+  normal: number | null; // strikethrough "before" price (null = no promo)
+  normalLabel: string | null;
+  isPromo: boolean;
+};
+
+const fmtKz = (n: number) => `${n.toLocaleString("pt-PT")} Kz`;
+
+const PRICING: Record<string, { valor: number; normal: number | null }> = {
+  "licenciatura-medicina": { valor: 2000, normal: null },
+};
+const DEFAULT_PRICING = { valor: 1000, normal: 3700 };
+
 export const paymentsService = {
+  /** Price for a given concurso. Used by the UI to render purchase screens. */
+  getPricing(concursoId: string): Pricing {
+    const p = PRICING[concursoId] ?? DEFAULT_PRICING;
+    return {
+      valor: p.valor,
+      valorLabel: fmtKz(p.valor),
+      normal: p.normal,
+      normalLabel: p.normal != null ? fmtKz(p.normal) : null,
+      isPromo: p.normal != null,
+    };
+  },
+
   /** Upload a payment proof to storage and return the stored path. */
   async uploadComprovativo(userId: string, file: File): Promise<string> {
     const ext = file.name.split(".").pop();

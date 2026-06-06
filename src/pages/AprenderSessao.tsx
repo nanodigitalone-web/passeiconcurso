@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useParams, Link } from "react-router-dom";
+import { Navigate, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -17,12 +17,14 @@ const POINTS_PER_HIT = 10;
 
 const AprenderSessao = () => {
   const { concursoId, categoriaId } = useParams();
+  const [searchParams] = useSearchParams();
+  const dia = Number(searchParams.get("dia") ?? "0") || 0;
   const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
 
   const questoes = useMemo<Question[]>(
-    () => (cat ? quizService.getSimuladoQuestions(concursoId!, categoriaId!, SESSION_SIZE) : []),
+    () => (cat ? quizService.getSmartQuestions(concursoId!, categoriaId!, SESSION_SIZE) : []),
     [cat]
   );
 
@@ -40,9 +42,14 @@ const AprenderSessao = () => {
       authService
         .addPoints(user.id, profile?.pontos || 0, pontosGanhos)
         .then(() => refreshProfile());
+      // Mark this trail day as completed (need at least a passing session).
+      if (hits >= Math.ceil(SESSION_SIZE / 2)) {
+        quizService.completeLearnDay(concursoId!, categoriaId!, dia);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
+
 
   const gate = useAccessGate(concursoId, categoriaId);
 

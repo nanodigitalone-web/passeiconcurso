@@ -7,14 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { quizService, paymentsService, notificationsService, clearAccessCache } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Phone, Upload, Loader2, Landmark, Smartphone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Upload, Loader2, Landmark } from "lucide-react";
 import { toast } from "sonner";
 
-const TELEFONE = "931153086";
 const IBAN = "AO06005900000251657910155";
 const TITULAR = "NANODIGITALONE CONSULT E PREST DE SERV";
-const VALOR = "1.000 Kz";
-const VALOR_NORMAL = "3.700 Kz";
 
 type Step = "instrucoes" | "comprovativo" | "codigo" | "concluido";
 
@@ -34,6 +31,8 @@ const Acesso = () => {
 
   if (!cat || !concurso) return <Navigate to="/concursos" replace />;
   if (!user) return <Navigate to="/login" replace />;
+
+  const pricing = paymentsService.getPricing(concurso.id);
 
   const copiar = async (txt: string) => {
     await navigator.clipboard.writeText(txt);
@@ -110,12 +109,17 @@ const Acesso = () => {
         <p className="text-xs uppercase tracking-wider text-muted-foreground">{concurso.sigla} · {cat.nome}</p>
         <h1 className="font-display text-2xl font-bold">Obter acesso completo</h1>
         <p className="text-sm text-muted-foreground">
-          <span className="line-through opacity-60 mr-1">{VALOR_NORMAL}</span>
-          <span className="font-semibold text-foreground">{VALOR}</span>
-          <span className="ml-1 inline-flex items-center rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">PROMO</span>
+          {pricing.isPromo && pricing.normalLabel && (
+            <span className="line-through opacity-60 mr-1">{pricing.normalLabel}</span>
+          )}
+          <span className="font-semibold text-foreground">{pricing.valorLabel}</span>
+          {pricing.isPromo && (
+            <span className="ml-1 inline-flex items-center rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">PROMO</span>
+          )}
           {" "}· 4 meses de acesso à categoria
         </p>
       </header>
+
 
       {/* Stepper */}
       <div className="mb-5 flex items-center gap-2 text-xs">
@@ -137,32 +141,16 @@ const Acesso = () => {
         <Card className="p-5">
           <h2 className="font-display text-lg font-bold">1. Faça o pagamento</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Escolha uma das opções abaixo para pagar <strong>{VALOR}</strong>. Na <strong>descrição/mensagem</strong> da
-            transferência, escreva o seu <strong>e-mail de cadastro</strong> para identificarmos rapidamente.
+            Pague <strong>{pricing.valorLabel}</strong> por <strong>transferência bancária</strong>. Na{" "}
+            <strong>descrição/mensagem</strong> da transferência, escreva o seu <strong>e-mail de cadastro</strong>{" "}
+            para identificarmos rapidamente.
           </p>
 
-          {/* Multicaixa Express */}
-          <div className="mt-4 rounded-2xl border bg-muted/40 p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <Smartphone className="h-4 w-4 text-primary" /> Opção A — Multicaixa Express
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Contacto</div>
-                  <div className="font-mono text-base font-bold">{TELEFONE}</div>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => copiar(TELEFONE)}>
-                  <Copy className="mr-1 h-3.5 w-3.5" /> Copiar
-                </Button>
-              </div>
-            </div>
-          </div>
 
           {/* Transferência Bancária */}
           <div className="mt-3 rounded-2xl border bg-muted/40 p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <Landmark className="h-4 w-4 text-primary" /> Opção B — Transferência Bancária
+              <Landmark className="h-4 w-4 text-primary" /> Transferência Bancária
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
@@ -199,7 +187,7 @@ const Acesso = () => {
             </div>
             <div className="rounded-2xl border bg-muted/40 p-3">
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Valor</div>
-              <div className="mt-0.5 font-mono text-lg font-bold">{VALOR}</div>
+              <div className="mt-0.5 font-mono text-lg font-bold">{pricing.valorLabel}</div>
             </div>
           </div>
 
