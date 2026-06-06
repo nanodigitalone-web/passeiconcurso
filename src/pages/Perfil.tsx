@@ -31,10 +31,7 @@ const Perfil = () => {
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ nome, bio, avatar_url: avatar || null, updated_at: new Date().toISOString() })
-      .eq("id", user.id);
+    const { error } = await authService.updateProfile(user.id, { nome, bio, avatar_url: avatar || null });
     setSaving(false);
     if (error) return toast.error("Erro ao salvar perfil");
     await refreshProfile();
