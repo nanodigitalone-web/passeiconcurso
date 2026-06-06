@@ -2,21 +2,20 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getCategoria } from "@/data/concursos";
-import { getResults, SimuladoResult } from "@/lib/storage";
+import { quizService, resultsService, type QuizResult } from "@/services";
 import { Award, Check, Clock, Home, RotateCcw, X } from "lucide-react";
 
 const Resultado = () => {
   const { id } = useParams();
   const loc = useLocation();
-  const stored = (loc.state as SimuladoResult) || getResults().find((r) => r.id === id);
+  const stored = (loc.state as QuizResult) || resultsService.getResultById(id!);
   if (!stored) return (
     <AppShell>
       <p className="py-12 text-center text-muted-foreground">Resultado não encontrado.</p>
     </AppShell>
   );
 
-  const cat = getCategoria(stored.concursoId, stored.categoriaId);
+  const cat = quizService.getCategoria(stored.concursoId, stored.categoriaId);
   const taxa = Math.round((stored.acertos / stored.total) * 100);
   const erros = stored.respostas.filter((r) => r.escolhida !== r.correta);
   const mm = String(Math.floor(stored.tempoSegundos / 60)).padStart(2, "0");

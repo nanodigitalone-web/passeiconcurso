@@ -1,14 +1,14 @@
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { clearResults, getResults } from "@/lib/storage";
+import { resultsService } from "@/services";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { TrendingUp, Trash2, BookOpen, Target } from "lucide-react";
 
 const Percurso = () => {
   const [, setTick] = useState(0);
-  const results = getResults();
+  const results = resultsService.getResults();
 
   const totalQ = results.reduce((s, r) => s + r.total, 0);
   const acertos = results.reduce((s, r) => s + r.acertos, 0);
