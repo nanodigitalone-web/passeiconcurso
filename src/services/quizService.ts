@@ -12,7 +12,8 @@ import {
   type Categoria,
   type Question,
 } from "@/data/concursos";
-import type { QuizAnswer, QuizAttempt } from "./types";
+import type { QuizAnswer, QuizAttempt, QuizResult } from "./types";
+import { resultsService } from "./resultsService";
 
 export type { Concurso, Categoria, Question };
 
