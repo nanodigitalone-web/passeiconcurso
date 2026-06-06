@@ -7,14 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { quizService, paymentsService, notificationsService, clearAccessCache } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Phone, Upload, Loader2, Landmark, Smartphone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Upload, Loader2, Landmark } from "lucide-react";
 import { toast } from "sonner";
 
-const TELEFONE = "931153086";
 const IBAN = "AO06005900000251657910155";
 const TITULAR = "NANODIGITALONE CONSULT E PREST DE SERV";
-const VALOR = "1.000 Kz";
-const VALOR_NORMAL = "3.700 Kz";
 
 type Step = "instrucoes" | "comprovativo" | "codigo" | "concluido";
 
