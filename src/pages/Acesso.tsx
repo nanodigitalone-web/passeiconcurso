@@ -150,7 +150,7 @@ const Acesso = () => {
           {/* Transferência Bancária */}
           <div className="mt-3 rounded-2xl border bg-muted/40 p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <Landmark className="h-4 w-4 text-primary" /> Opção B — Transferência Bancária
+              <Landmark className="h-4 w-4 text-primary" /> Transferência Bancária
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
