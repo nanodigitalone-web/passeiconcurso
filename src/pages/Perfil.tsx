@@ -20,14 +20,22 @@ const Perfil = () => {
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
   const [saving, setSaving] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [canHide, setCanHide] = useState(false);
+  const [togglingHide, setTogglingHide] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setNome(profile.nome);
       setBio(profile.bio || "");
       setAvatar(profile.avatar_url || "");
+      setHidden(!!profile.hidden);
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (user) accessService.hasAnyPaidAccess(user.id).then(setCanHide);
+  }, [user]);
 
   const save = async () => {
     if (!user) return;
@@ -37,6 +45,20 @@ const Perfil = () => {
     if (error) return toast.error("Erro ao salvar perfil");
     await refreshProfile();
     toast.success("Perfil atualizado!");
+  };
+
+  const toggleHidden = async (value: boolean) => {
+    if (!user) return;
+    setTogglingHide(true);
+    setHidden(value);
+    const { error } = await authService.updateProfile(user.id, { hidden: value });
+    setTogglingHide(false);
+    if (error) {
+      setHidden(!value);
+      return toast.error("Erro ao atualizar privacidade");
+    }
+    await refreshProfile();
+    toast.success(value ? "A sua conta está oculta no ranking" : "A sua conta voltou a ser pública");
   };
 
   const handleSignOut = async () => {
