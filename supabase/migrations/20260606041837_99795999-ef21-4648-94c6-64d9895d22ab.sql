@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Users update own payment request" ON public.payment_requests;
