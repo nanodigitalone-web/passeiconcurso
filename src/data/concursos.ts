@@ -135,6 +135,19 @@ const cirurgiaGeral: Categoria = {
   questoes: questoesCirurgiaGeral, topicos: topicosCirurgiaGeral,
 };
 
+const medicinaInterna: Categoria = {
+  id: "medicina-interna", nome: "Medicina Interna",
+  descricao: "Abordagem sindrómica de Medicina Interna adaptada ao perfil epidemiológico de Angola - obtenção do grau de Médico",
+  icon: "Stethoscope",
+  disciplinas: [
+    "Síndromes Circulatórias", "Síndromes Respiratórias", "Síndromes Urinárias",
+    "Síndromes Hemolinfopoiéticas", "Síndromes Endócrino-Metabólicas",
+    "Síndromes Neurológicas", "Síndromes Digestivas", "Síndrome Febril e Doenças Endémicas",
+  ],
+  questoes: questoesMedicinaInterna, topicos: topicosMedicinaInterna,
+};
+
+
 
 
 export const concursos: Concurso[] = [
