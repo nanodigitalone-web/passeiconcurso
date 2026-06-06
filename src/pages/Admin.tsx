@@ -311,24 +311,18 @@ const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: Ac
     if (!conc || !cat) return;
     setBusy(true);
     try {
-      const code = genCode();
-      // 1) registar código já usado por este utilizador
-      const { error: e1 } = await supabase.from("access_codes").insert({
-        concurso_id: conc, categoria_id: cat, code,
-        status: "used", used_by: user.id, used_at: new Date().toISOString(),
-      } as any);
-      if (e1 && !String(e1.message).includes("duplicate")) throw e1;
-      // 2) garantir o acesso
-      const { error: e2 } = await supabase.from("category_access").insert({
-        user_id: user.id, concurso_id: conc, categoria_id: cat, code,
-      });
-      if (e2 && !String(e2.message).includes("duplicate")) throw e2;
       const catName = catNome(conc, cat);
-      await supabase.from("notifications" as any).insert({
-        user_id: user.id,
+      const code = await adminService.grantAccess({
+        userId: user.id,
+        concursoId: conc,
+        categoriaId: cat,
+        categoriaNome: catName,
+      });
+      await notificationsService.create({
+        userId: user.id,
         title: "Conta activada ✅",
         body: `O seu acesso a ${catName} foi activado pela equipa. Código: ${code}. Bons estudos!`,
-      } as any);
+      });
       toast.success(`Acesso activado (código ${code})`);
       onChanged();
     } catch (e: any) {
@@ -340,7 +334,7 @@ const ManageAccessDialog = ({ user, access, onChanged }: { user: any; access: Ac
 
   const deactivate = async (a: AccessRow) => {
     if (!confirm(`Desactivar acesso a "${a.categoria_id}"?`)) return;
-    const { error } = await supabase.from("category_access").delete().eq("id", a.id);
+    const { error } = await adminService.deactivateAccess(a.id);
     if (error) toast.error(error.message);
     else { toast.success("Acesso desactivado"); onChanged(); }
   };
