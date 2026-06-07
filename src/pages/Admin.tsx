@@ -73,27 +73,32 @@ const Admin = () => {
 
   return (
     <div className={`${ADMIN_BG} min-h-screen`}>
-      <header className="sticky top-0 z-30 border-b border-[hsl(220_45%_22%)] bg-[hsl(220_70%_8%)]/95 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="font-bold text-lg">Painel Admin · Passei</h1>
-            <p className="text-xs text-white/60">Nano Digital One</p>
+      <header className="sticky top-0 z-30 border-b border-[hsl(220_45%_22%)] bg-[hsl(220_70%_8%)]/85 backdrop-blur-xl">
+        <div className="mx-auto max-w-6xl px-4 py-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 shadow-lg shadow-sky-500/20">
+              <ShieldCheck className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-base leading-tight">Painel Admin</h1>
+              <p className="text-[11px] text-white/50">Nano Digital One · Passei</p>
+            </div>
           </div>
           <div className="flex gap-2">
-            <Link to="/"><Button size="sm" variant="secondary">Plataforma</Button></Link>
-            <Button size="sm" variant="destructive" onClick={signOut}>Sair</Button>
+            <Link to="/"><Button size="sm" variant="secondary" className="rounded-full">Plataforma</Button></Link>
+            <Button size="sm" variant="destructive" className="rounded-full" onClick={signOut}>Sair</Button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <Tabs defaultValue="stats">
-          <TabsList className="bg-[hsl(220_55%_14%)] border border-[hsl(220_45%_22%)] p-1 h-auto flex-wrap">
-            <TabsTrigger value="stats" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><BarChart3 className="h-4 w-4 mr-1" />Estatísticas</TabsTrigger>
-            <TabsTrigger value="users" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><Users className="h-4 w-4 mr-1" />Usuários</TabsTrigger>
-            <TabsTrigger value="codes" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><KeyRound className="h-4 w-4 mr-1" />Códigos</TabsTrigger>
-            <TabsTrigger value="notifs" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><Bell className="h-4 w-4 mr-1" />Notificações</TabsTrigger>
-            <TabsTrigger value="comprovativos" className="text-white/70 data-[state=active]:bg-white data-[state=active]:text-[hsl(220_70%_10%)] data-[state=active]:shadow"><FileText className="h-4 w-4 mr-1" />Comprovativos</TabsTrigger>
+          <TabsList className="bg-[hsl(220_55%_14%)]/60 border border-[hsl(220_45%_22%)] p-1 h-auto flex-wrap rounded-full gap-1">
+            <TabsTrigger value="stats" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><BarChart3 className="h-4 w-4 mr-1" />Estatísticas</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><Users className="h-4 w-4 mr-1" />Usuários</TabsTrigger>
+            <TabsTrigger value="codes" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><KeyRound className="h-4 w-4 mr-1" />Códigos</TabsTrigger>
+            <TabsTrigger value="notifs" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><Bell className="h-4 w-4 mr-1" />Notificações</TabsTrigger>
+            <TabsTrigger value="comprovativos" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><FileText className="h-4 w-4 mr-1" />Comprovativos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats"><StatsTab /></TabsContent>
