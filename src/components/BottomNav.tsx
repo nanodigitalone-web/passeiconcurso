@@ -23,6 +23,7 @@ export const BottomNav = () => {
               <NavLink
                 to={to}
                 end={to === "/"}
+                aria-label={label}
                 className={({ isActive }) =>
                   cn(
                     "flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-smooth",
