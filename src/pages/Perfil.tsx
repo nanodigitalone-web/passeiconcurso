@@ -90,22 +90,44 @@ const Perfil = () => {
 
   return (
     <AppShell>
-      <header className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Meu Perfil</h1>
-        <p className="text-sm text-muted-foreground">Edite suas informações pessoais</p>
-      </header>
+      <Card className="mb-6 overflow-hidden border-border/60 shadow-card">
+        <div className="relative h-28 bg-gradient-hero">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_120%,white,transparent_45%)]" />
+        </div>
+        <div className="px-6 pb-6 -mt-12">
+          <div className="flex flex-col items-center text-center">
+            <Avatar className="h-24 w-24 ring-4 ring-card shadow-elegant">
+              <AvatarImage src={avatar} />
+              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl font-display font-bold">
+                {nome?.charAt(0).toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <h1 className="mt-3 font-display text-xl font-bold">{nome || "Utilizador"}</h1>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+            {profile?.categoria_nome && (
+              <span className="mt-2 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                {profile.categoria_nome}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-primary/5 p-4 text-center">
+              <p className="font-display text-2xl font-bold text-primary">{profile?.pontos || 0}</p>
+              <p className="text-xs text-muted-foreground">Pontos</p>
+            </div>
+            <div className="rounded-2xl bg-accent/5 p-4 text-center">
+              <p className="font-display text-2xl font-bold text-accent">{profile?.streak || 0}🔥</p>
+              <p className="text-xs text-muted-foreground">Sequência</p>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Card className="mb-6 p-6 shadow-card border-border/60">
-        <div className="flex flex-col items-center mb-6">
-          <Avatar className="h-24 w-24 ring-4 ring-primary/10">
-            <AvatarImage src={avatar} />
-            <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl font-display font-bold">
-              {nome?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-          <p className="mt-3 text-xs text-muted-foreground">{user?.email}</p>
+        <div className="mb-4 flex items-center gap-2 font-semibold">
+          <Save className="h-4 w-4 text-primary" /> Informações pessoais
         </div>
-
         <div className="space-y-4">
           <div>
             <Label htmlFor="nome">Nome</Label>
@@ -115,28 +137,14 @@ const Perfil = () => {
             <Label htmlFor="bio">Bio</Label>
             <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" placeholder="Conte um pouco sobre você..." />
           </div>
-          {profile?.categoria_nome && (
-            <div className="rounded-xl bg-primary/5 px-3 py-2 text-sm">
-              <span className="text-xs text-muted-foreground">Categoria</span>
-              <p className="font-semibold">{profile.categoria_nome}</p>
-            </div>
-          )}
           <Button onClick={save} disabled={saving} className="w-full rounded-full bg-gradient-primary">
             <Save className="mr-2 h-4 w-4" /> {saving ? "Salvando..." : "Salvar alterações"}
           </Button>
         </div>
       </Card>
 
-      <Card className="p-4 shadow-card border-border/60 grid grid-cols-2 gap-3 text-center mb-6">
-        <div>
-          <p className="font-display text-2xl font-bold text-primary">{profile?.pontos || 0}</p>
-          <p className="text-xs text-muted-foreground">Pontos</p>
-        </div>
-        <div>
-          <p className="font-display text-2xl font-bold text-accent">{profile?.streak || 0}🔥</p>
-          <p className="text-xs text-muted-foreground">Sequência</p>
-        </div>
-      </Card>
+
+
 
       <Card className="mb-6 p-4 shadow-card border-border/60">
         <div className="mb-3 flex items-center gap-2 font-semibold">
