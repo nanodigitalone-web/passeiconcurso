@@ -127,44 +127,48 @@ const StatsTab = () => {
   }, []);
 
 
-  const groups: { title: string; items: { label: string; value: number; tone?: string }[] }[] = [
+  const groups: { title: string; items: { label: string; value: number; icon: any; grad: string }[] }[] = [
     {
       title: "Conteúdo da plataforma",
       items: [
-        { label: "Questões disponíveis", value: totalQuestoes, tone: "text-emerald-300" },
-        { label: "Categorias", value: totalCategorias },
-        { label: "Concursos", value: concursos.length },
+        { label: "Questões disponíveis", value: totalQuestoes, icon: FileText, grad: "from-emerald-500 to-teal-600" },
+        { label: "Categorias", value: totalCategorias, icon: BarChart3, grad: "from-sky-500 to-blue-600" },
+        { label: "Concursos", value: concursos.length, icon: ShieldCheck, grad: "from-indigo-500 to-violet-600" },
       ],
     },
     {
       title: "Usuários",
       items: [
-        { label: "Total de usuários", value: s.users },
-        { label: "Bloqueados", value: s.blocked, tone: "text-red-300" },
-        { label: "Ocultos", value: s.hidden, tone: "text-amber-300" },
-        { label: "Acessos pagos activos", value: s.paid, tone: "text-emerald-300" },
+        { label: "Total de usuários", value: s.users, icon: Users, grad: "from-sky-500 to-indigo-600" },
+        { label: "Bloqueados", value: s.blocked, icon: Ban, grad: "from-rose-500 to-red-600" },
+        { label: "Ocultos", value: s.hidden, icon: EyeOff, grad: "from-amber-500 to-orange-600" },
+        { label: "Acessos pagos activos", value: s.paid, icon: CheckCircle2, grad: "from-emerald-500 to-green-600" },
       ],
     },
     {
       title: "Códigos & Pagamentos",
       items: [
-        { label: "Códigos disponíveis", value: s.codesAvail, tone: "text-emerald-300" },
-        { label: "Códigos usados", value: s.codesUsed },
-        { label: "Pagamentos pendentes", value: s.payments, tone: "text-amber-300" },
+        { label: "Códigos disponíveis", value: s.codesAvail, icon: KeyRound, grad: "from-emerald-500 to-teal-600" },
+        { label: "Códigos usados", value: s.codesUsed, icon: Lock, grad: "from-slate-500 to-slate-600" },
+        { label: "Pagamentos pendentes", value: s.payments, icon: Clock, grad: "from-amber-500 to-orange-600" },
       ],
     },
   ];
 
   return (
-    <div className="mt-4 space-y-6">
+    <div className="mt-5 space-y-7">
       {groups.map(g => (
         <section key={g.title}>
-          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-2">{g.title}</h2>
+          <h2 className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">{g.title}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {g.items.map(i => (
-              <Card key={i.label} className={`${PANEL} p-4`}>
-                <p className="text-xs text-white/60">{i.label}</p>
-                <p className={`text-3xl font-bold mt-1 ${i.tone ?? "text-white"}`}>{i.value.toLocaleString("pt-PT")}</p>
+              <Card key={i.label} className={`${PANEL} relative overflow-hidden p-4 transition-transform hover:-translate-y-0.5`}>
+                <div className={`absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br ${i.grad} opacity-20 blur-xl`} />
+                <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${i.grad} shadow-lg`}>
+                  <i.icon className="h-4.5 w-4.5 text-white" />
+                </div>
+                <p className="text-3xl font-bold tabular-nums">{i.value.toLocaleString("pt-PT")}</p>
+                <p className="text-xs text-white/55 mt-0.5">{i.label}</p>
               </Card>
             ))}
           </div>
@@ -172,19 +176,19 @@ const StatsTab = () => {
       ))}
 
       <section>
-        <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-2">Questões por categoria</h2>
-        <Card className={`${PANEL} p-4`}>
-          <div className="space-y-2">
+        <h2 className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">Questões por categoria</h2>
+        <Card className={`${PANEL} p-5`}>
+          <div className="space-y-3.5">
             {porCategoria.map(c => {
               const pct = Math.min(100, Math.round((c.n / 1000) * 100));
               return (
                 <div key={c.nome}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-white/90">{c.nome}</span>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="text-white/90 font-medium">{c.nome}</span>
                     <span className="text-white/60 tabular-nums">{c.n} <span className="text-white/30">/ 1000</span></span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-[hsl(220_45%_22%)] overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-sky-400 to-emerald-400" style={{ width: `${pct}%` }} />
+                  <div className="h-2 rounded-full bg-[hsl(220_45%_22%)] overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-sky-400 via-indigo-400 to-emerald-400" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
