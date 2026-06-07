@@ -24,7 +24,7 @@ import {
 const concursos = quizService.getConcursos();
 
 const ADMIN_BG = "bg-[hsl(220_70%_8%)] text-[hsl(210_40%_96%)]";
-const PANEL = "bg-[hsl(220_55%_12%)] border-[hsl(220_45%_22%)]";
+const PANEL = "bg-[hsl(220_55%_12%)] border-[hsl(220_45%_22%)] text-[hsl(210_40%_96%)]";
 
 const Admin = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
