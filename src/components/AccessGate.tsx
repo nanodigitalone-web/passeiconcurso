@@ -31,7 +31,7 @@ export const AccessGate = ({ concursoId, categoriaId, categoriaNome, children }:
         {gate.isTrial && (
           <div className="mb-4 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-2.5 text-xs font-medium text-warning-foreground">
             <Sparkles className="mr-1 inline h-3.5 w-3.5" />
-            Período de teste — restam {gate.trialDaysLeft} dia{gate.trialDaysLeft === 1 ? "" : "s"}.{" "}
+            Período de teste — restam {gate.trialHoursLeft} hora{gate.trialHoursLeft === 1 ? "" : "s"}.{" "}
             <Link to={`/acesso/${concursoId}/${categoriaId}`} className="underline font-semibold">
               Adquirir acesso
             </Link>
