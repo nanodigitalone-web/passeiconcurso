@@ -191,7 +191,7 @@ const Perfil = () => {
             </p>
             {!canHide && (
               <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-warning">
-                <Lock className="h-3 w-3" /> Funcionalidade exclusiva para contas com acesso pago.
+                <Lock className="h-3 w-3" /> Funcionalidade paga — 500 AOA. Exclusiva para contas com acesso pago.
               </p>
             )}
           </div>
