@@ -165,7 +165,7 @@ const StatsTab = () => {
               <Card key={i.label} className={`${PANEL} relative overflow-hidden p-4 transition-transform hover:-translate-y-0.5`}>
                 <div className={`absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br ${i.grad} opacity-20 blur-xl`} />
                 <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${i.grad} shadow-lg`}>
-                  <i.icon className="h-4.5 w-4.5 text-white" />
+                  <i.icon className="h-5 w-5 text-white" />
                 </div>
                 <p className="text-3xl font-bold tabular-nums">{i.value.toLocaleString("pt-PT")}</p>
                 <p className="text-xs text-white/55 mt-0.5">{i.label}</p>
