@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { rankingService, type RankRow } from "@/services";
@@ -27,8 +28,13 @@ const Ranking = () => {
 
   return (
     <AppShell>
+      <Seo
+        title="Ranking de Candidatos · Passei"
+        description="Veja a classificação dos melhores candidatos do Passei e compita com outros profissionais da sua área da saúde."
+        path="/ranking"
+      />
       <header className="mb-5 animate-fade-in">
-        <h1 className="font-display text-2xl font-bold">Ranking</h1>
+        <h1 className="font-display text-2xl font-bold">Ranking de Candidatos</h1>
         <p className="text-sm text-muted-foreground">Os melhores candidatos do Passei</p>
       </header>
 
