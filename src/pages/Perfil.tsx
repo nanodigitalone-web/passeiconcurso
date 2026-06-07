@@ -144,16 +144,7 @@ const Perfil = () => {
       </Card>
 
 
-      <Card className="p-4 shadow-card border-border/60 grid grid-cols-2 gap-3 text-center mb-6">
-        <div>
-          <p className="font-display text-2xl font-bold text-primary">{profile?.pontos || 0}</p>
-          <p className="text-xs text-muted-foreground">Pontos</p>
-        </div>
-        <div>
-          <p className="font-display text-2xl font-bold text-accent">{profile?.streak || 0}🔥</p>
-          <p className="text-xs text-muted-foreground">Sequência</p>
-        </div>
-      </Card>
+
 
       <Card className="mb-6 p-4 shadow-card border-border/60">
         <div className="mb-3 flex items-center gap-2 font-semibold">
