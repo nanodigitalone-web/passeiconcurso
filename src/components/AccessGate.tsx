@@ -49,7 +49,7 @@ export const AccessGate = ({ concursoId, categoriaId, categoriaNome, children }:
       </div>
       <h2 className="font-display text-xl font-bold">Acesso bloqueado</h2>
       <p className="mt-1 text-sm opacity-90">
-        O período de teste de 2 dias terminou. Adquira o acesso completo a{" "}
+        O período de teste de 2 horas terminou. Adquira o acesso completo a{" "}
         <span className="font-semibold">{categoriaNome ?? "esta categoria"}</span> por apenas{" "}
         {pricing.isPromo && pricing.normalLabel && (
           <span className="line-through opacity-70">{pricing.normalLabel}</span>
