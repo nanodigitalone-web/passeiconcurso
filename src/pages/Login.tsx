@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, BookOpen, Trophy, Target } from "lucide-react";
 import { toast } from "sonner";
 import { LegalModal } from "@/components/LegalModal";
+import { Seo } from "@/components/Seo";
 
 const Login = () => {
   const { user, loading } = useAuth();
@@ -27,10 +28,15 @@ const Login = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-hero text-primary-foreground">
+      <Seo
+        title="Entrar no Passei · Concursos da Saúde em Angola"
+        description="Acesse o Passei para estudar com simulados comentados e trilhas de preparação para concursos públicos da saúde em Angola."
+        path="/login"
+      />
       <div className="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-10">
+      <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-10">
         <div className="flex-1 flex flex-col justify-center">
           <div className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" /> Concursos públicos · Angola
@@ -81,7 +87,7 @@ const Login = () => {
             </a>
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
+import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { quizService } from "@/services";
@@ -23,8 +24,13 @@ const Concursos = () => {
 
   return (
     <AppShell>
+      <Seo
+        title="Concursos Públicos de Saúde Abertos em Angola"
+        description="Explore os concursos públicos da saúde disponíveis em Angola e escolha um para iniciar seus simulados comentados."
+        path="/concursos"
+      />
       <header className="mb-4 animate-fade-in">
-        <h1 className="font-display text-2xl font-bold">Concursos</h1>
+        <h1 className="font-display text-2xl font-bold">Concursos Públicos Abertos</h1>
         <p className="text-sm text-muted-foreground">Escolha um concurso para começar</p>
       </header>
 

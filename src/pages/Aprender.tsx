@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
+import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { quizService } from "@/services";
@@ -24,6 +25,11 @@ const Aprender = () => {
 
   return (
     <AppShell>
+      <Seo
+        title="Aprender · Trilhas de Estudo para Concursos"
+        description="Estude com trilhas diárias e sessões rápidas de questões para concursos públicos da saúde em Angola e ganhe pontos."
+        path="/aprender"
+      />
       <header className="mb-5">
         <h1 className="font-display text-2xl font-bold flex items-center gap-2">
           <Zap className="h-6 w-6 text-warning" /> Aprender

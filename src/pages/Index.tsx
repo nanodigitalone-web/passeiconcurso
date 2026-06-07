@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
+import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -18,6 +19,11 @@ const Index = () => {
 
   return (
     <AppShell>
+      <Seo
+        title="Passei · Simulados para Concursos da Saúde em Angola"
+        description="Prepare-se para concursos públicos da saúde em Angola (MINSA) com simulados comentados, trilhas de estudo e ranking entre candidatos."
+        path="/"
+      />
       <header className="mb-7 animate-fade-in">
         <p className="text-sm text-muted-foreground">Olá,</p>
         <h1 className="font-display text-3xl font-bold tracking-tight">
