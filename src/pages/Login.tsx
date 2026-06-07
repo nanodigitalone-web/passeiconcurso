@@ -33,12 +33,12 @@ const Login = () => {
         description="Acesse o Passei para estudar com simulados comentados e trilhas de preparação para concursos públicos da saúde em Angola."
         path="/login"
       />
-      <div className="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full bg-white/10 opacity-70" />
+      <div className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-white/10 opacity-70" />
 
       <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-10">
         <div className="flex-1 flex flex-col justify-center">
-          <div className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur">
+          <div className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-medium">
             <Sparkles className="h-3.5 w-3.5" /> Concursos públicos · Angola
           </div>
           <h1 className="font-display text-6xl font-bold tracking-tight">Passei</h1>
@@ -94,7 +94,7 @@ const Login = () => {
 
 const Feature = ({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) => (
   <li className="flex items-start gap-3">
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/15">
       <Icon className="h-5 w-5" />
     </div>
     <div>

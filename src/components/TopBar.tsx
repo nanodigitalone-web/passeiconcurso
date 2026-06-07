@@ -14,7 +14,7 @@ export const TopBar = () => {
   const showBack = !ROOT_ROUTES.includes(pathname);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/85 backdrop-blur-lg">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background shadow-card">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-1 min-w-0">
           {showBack ? (
