@@ -37,9 +37,9 @@ const Index = () => {
           {concursos.map((c) => (
             <CarouselItem key={c.id}>
               <Card className="relative overflow-hidden border-0 bg-gradient-hero p-6 text-primary-foreground shadow-elegant">
-                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 opacity-70" />
                 <div className="relative">
-                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur">
+                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/20 px-3 py-1 text-xs font-medium">
                     <Sparkles className="h-3.5 w-3.5" /> {c.sigla} {c.ano}
                   </div>
                   <h2 className="font-display text-2xl font-bold leading-tight">{c.nome}</h2>
