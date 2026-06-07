@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 import { accessService, clearAccessCache } from "@/services";
 
-const TRIAL_DAYS = 2;
+const TRIAL_HOURS = 2;
 
 export { clearAccessCache };
 
@@ -10,7 +10,7 @@ export type GateState = {
   loading: boolean;
   hasAccess: boolean;
   isTrial: boolean;
-  trialDaysLeft: number;
+  trialHoursLeft: number;
   trialExpired: boolean;
 };
 
