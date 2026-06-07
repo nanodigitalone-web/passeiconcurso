@@ -1,0 +1,16 @@
+# Passei
+
+> Plataforma PWA de quizzes e simulados comentados para concursos públicos da saúde em Angola (MINSA).
+
+Passei ajuda candidatos a se prepararem para concursos públicos da saúde em Angola com simulados comentados, trilhas de estudo diárias e ranking entre candidatos.
+
+## Pages
+
+- [Início](/): Visão geral, concursos em destaque e desafios rápidos.
+- [Concursos](/concursos): Lista de concursos públicos da saúde disponíveis.
+- [Aprender](/aprender): Trilhas de estudo e sessões diárias de questões.
+- [Ranking](/ranking): Classificação dos melhores candidatos.
+
+## Optional
+
+- [Entrar](/login): Acesso à conta para começar a estudar.
