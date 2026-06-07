@@ -47,7 +47,7 @@ const CategoriaDetail = () => {
       <AccessGate concursoId={concurso.id} categoriaId={cat.id} categoriaNome={cat.nome}>
         <Card className="mb-4 border-0 bg-gradient-primary p-5 text-primary-foreground shadow-elegant">
           <p className="text-xs uppercase tracking-wider opacity-80">Simulado</p>
-          <h2 className="mt-1 font-display text-xl font-bold">{totalQuiz} questões comentadas</h2>
+          <h2 className="mt-1 font-display text-xl font-bold">Questões comentadas</h2>
           <p className="mt-1 text-xs opacity-90">Cada simulado traz questões diferentes do banco.</p>
           <div className="mt-3 flex items-center gap-4 text-sm opacity-90">
             <span className="inline-flex items-center gap-1"><Clock className="h-4 w-4" /> ~{Math.round(tempoMin)} min</span>
