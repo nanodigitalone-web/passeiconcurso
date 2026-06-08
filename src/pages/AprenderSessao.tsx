@@ -201,8 +201,8 @@ const AprenderSessao = () => {
 
         <div className="mt-5">
           {!revealed ? (
-            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold bg-gradient-to-r from-warning to-accent text-white">
-              Confirmar
+            <Button onClick={confirmar} disabled={escolhida === null || !answersReady} size="lg" className="w-full rounded-full font-semibold bg-gradient-to-r from-warning to-accent text-white">
+              {answersReady ? "Confirmar" : "A carregar…"}
             </Button>
           ) : (
             <Button onClick={proxima} size="lg" className="w-full rounded-full font-semibold bg-gradient-primary">
