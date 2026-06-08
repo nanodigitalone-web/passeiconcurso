@@ -54,6 +54,16 @@ const AprenderSessao = () => {
 
   const gate = useAccessGate(concursoId, categoriaId);
 
+  useEffect(() => {
+    if (gate.hasAccess && cat) {
+      quizService.ensureAnswers(concursoId!, categoriaId!)
+        .then(() => setAnswersReady(true))
+        .catch(() => setAnswersReady(false));
+    }
+  }, [gate.hasAccess, concursoId, categoriaId]);
+
+
+
   if (!cat) return <Navigate to="/aprender" replace />;
   if (!gate.loading && !gate.hasAccess) {
     return (
