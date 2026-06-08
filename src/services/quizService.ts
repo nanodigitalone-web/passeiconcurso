@@ -14,8 +14,15 @@ import {
 } from "@/data/concursos";
 import type { QuizAnswer, QuizAttempt, QuizResult } from "./types";
 import { resultsService } from "./resultsService";
+import { supabase } from "@/integrations/supabase/client";
 
 export type { Concurso, Categoria, Question };
+
+// Correct answers + explanations are NOT bundled in the client. They are
+// fetched on demand from the gated `quiz-content` edge function (which enforces
+// trial/paid access server-side) and patched into the in-memory question
+// objects so the rest of the app keeps working unchanged.
+const hydrated = new Set<string>();
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = [...arr];
