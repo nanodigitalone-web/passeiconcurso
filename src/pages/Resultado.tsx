@@ -10,6 +10,18 @@ const Resultado = () => {
   const { id } = useParams();
   const loc = useLocation();
   const stored = (loc.state as QuizResult) || resultsService.getResultById(id!);
+  const [, setAnswersReady] = useState(false);
+
+  // Hydrate explanations (gated) so the error report can show comments even
+  // after a page refresh. Stored answers already carry the correct index.
+  useEffect(() => {
+    if (stored) {
+      quizService.ensureAnswers(stored.concursoId, stored.categoriaId)
+        .then(() => setAnswersReady(true))
+        .catch(() => {});
+    }
+  }, [stored?.concursoId, stored?.categoriaId]);
+
   if (!stored) return (
     <AppShell>
       <p className="py-12 text-center text-muted-foreground">Resultado não encontrado.</p>
