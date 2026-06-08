@@ -35,6 +35,7 @@ const AprenderSessao = () => {
   const [lives, setLives] = useState(3);
   const [combo, setCombo] = useState(0);
   const [done, setDone] = useState(false);
+  const [answersReady, setAnswersReady] = useState(false);
 
   useEffect(() => {
     if (done && user) {
@@ -52,6 +53,16 @@ const AprenderSessao = () => {
 
 
   const gate = useAccessGate(concursoId, categoriaId);
+
+  useEffect(() => {
+    if (gate.hasAccess && cat) {
+      quizService.ensureAnswers(concursoId!, categoriaId!)
+        .then(() => setAnswersReady(true))
+        .catch(() => setAnswersReady(false));
+    }
+  }, [gate.hasAccess, concursoId, categoriaId]);
+
+
 
   if (!cat) return <Navigate to="/aprender" replace />;
   if (!gate.loading && !gate.hasAccess) {
@@ -190,8 +201,8 @@ const AprenderSessao = () => {
 
         <div className="mt-5">
           {!revealed ? (
-            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold bg-gradient-to-r from-warning to-accent text-white">
-              Confirmar
+            <Button onClick={confirmar} disabled={escolhida === null || !answersReady} size="lg" className="w-full rounded-full font-semibold bg-gradient-to-r from-warning to-accent text-white">
+              {answersReady ? "Confirmar" : "A carregar…"}
             </Button>
           ) : (
             <Button onClick={proxima} size="lg" className="w-full rounded-full font-semibold bg-gradient-primary">

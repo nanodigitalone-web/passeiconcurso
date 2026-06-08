@@ -14,8 +14,15 @@ import {
 } from "@/data/concursos";
 import type { QuizAnswer, QuizAttempt, QuizResult } from "./types";
 import { resultsService } from "./resultsService";
+import { supabase } from "@/integrations/supabase/client";
 
 export type { Concurso, Categoria, Question };
+
+// Correct answers + explanations are NOT bundled in the client. They are
+// fetched on demand from the gated `quiz-content` edge function (which enforces
+// trial/paid access server-side) and patched into the in-memory question
+// objects so the rest of the app keeps working unchanged.
+const hydrated = new Set<string>();
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = [...arr];
@@ -44,6 +51,40 @@ export const quizService = {
   getQuestions(concursoId: string, categoriaId: string): Question[] {
     return localGetCategoria(concursoId, categoriaId)?.questoes ?? [];
   },
+
+  /**
+   * Fetch the correct answers + explanations for a category from the gated
+   * edge function and patch them into the in-memory question objects. Must be
+   * called (and awaited) before a quiz/learn session reveals answers. The edge
+   * function enforces trial/paid access, so this resolves only for users who
+   * are actually allowed to see the answer key.
+   */
+  async ensureAnswers(concursoId: string, categoriaId: string): Promise<void> {
+    const key = `${concursoId}/${categoriaId}`;
+    if (hydrated.has(key)) return;
+
+    const { data, error } = await supabase.functions.invoke("quiz-content", {
+      body: { concursoId, categoriaId },
+    });
+    if (error) throw error;
+
+    const byId = new Map<string, Question>(
+      this.getQuestions(concursoId, categoriaId).map((q) => [q.id, q]),
+    );
+    for (const item of (data?.questions ?? []) as Array<{
+      id: string;
+      correta: number;
+      comentario: string;
+    }>) {
+      const q = byId.get(item.id);
+      if (q) {
+        q.correta = item.correta;
+        q.comentario = item.comentario;
+      }
+    }
+    hydrated.add(key);
+  },
+
 
   /** A randomized, capped set of questions for a single quiz session. */
   getSimuladoQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {

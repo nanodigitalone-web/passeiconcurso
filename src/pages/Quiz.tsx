@@ -22,6 +22,7 @@ const Quiz = () => {
   const [escolhida, setEscolhida] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [answersReady, setAnswersReady] = useState(false);
   const startedAtRef = useRef(Date.now());
 
   // Smart selection (prioritizes unseen/wrong) once the user picks a length.
@@ -56,6 +57,16 @@ const Quiz = () => {
   const questao = questoes[idx];
 
   const gate = useAccessGate(concursoId, categoriaId);
+
+  // Load the answer key (gated server-side) once access is confirmed.
+  useEffect(() => {
+    if (gate.hasAccess && cat) {
+      quizService.ensureAnswers(concursoId!, categoriaId!)
+        .then(() => setAnswersReady(true))
+        .catch(() => setAnswersReady(false));
+    }
+  }, [gate.hasAccess, concursoId, categoriaId]);
+
 
   if (!cat) return <Navigate to="/concursos" replace />;
   if (!gate.loading && !gate.hasAccess) {
@@ -210,8 +221,8 @@ const Quiz = () => {
 
         <div className="mt-6">
           {!revealed ? (
-            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold">
-              Confirmar resposta
+            <Button onClick={confirmar} disabled={escolhida === null || !answersReady} size="lg" className="w-full rounded-full font-semibold">
+              {answersReady ? "Confirmar resposta" : "A carregar…"}
             </Button>
           ) : (
             <Button onClick={proxima} size="lg" className="w-full rounded-full font-semibold bg-gradient-primary">

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,18 @@ const Resultado = () => {
   const { id } = useParams();
   const loc = useLocation();
   const stored = (loc.state as QuizResult) || resultsService.getResultById(id!);
+  const [, setAnswersReady] = useState(false);
+
+  // Hydrate explanations (gated) so the error report can show comments even
+  // after a page refresh. Stored answers already carry the correct index.
+  useEffect(() => {
+    if (stored) {
+      quizService.ensureAnswers(stored.concursoId, stored.categoriaId)
+        .then(() => setAnswersReady(true))
+        .catch(() => {});
+    }
+  }, [stored?.concursoId, stored?.categoriaId]);
+
   if (!stored) return (
     <AppShell>
       <p className="py-12 text-center text-muted-foreground">Resultado não encontrado.</p>
@@ -64,13 +77,15 @@ const Resultado = () => {
                       </p>
                     )}
                     <p className="text-success">
-                      <span className="font-semibold">Correta:</span> {q.opcoes[q.correta]}
+                      <span className="font-semibold">Correta:</span> {q.opcoes[r.correta]}
                     </p>
                   </div>
-                  <div className="mt-3 rounded-lg bg-primary/5 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Explicação</p>
-                    <p className="mt-1 text-sm leading-relaxed">{q.comentario}</p>
-                  </div>
+                  {q.comentario && (
+                    <div className="mt-3 rounded-lg bg-primary/5 p-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary">Explicação</p>
+                      <p className="mt-1 text-sm leading-relaxed">{q.comentario}</p>
+                    </div>
+                  )}
                 </Card>
               );
             })}
