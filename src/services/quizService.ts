@@ -52,6 +52,40 @@ export const quizService = {
     return localGetCategoria(concursoId, categoriaId)?.questoes ?? [];
   },
 
+  /**
+   * Fetch the correct answers + explanations for a category from the gated
+   * edge function and patch them into the in-memory question objects. Must be
+   * called (and awaited) before a quiz/learn session reveals answers. The edge
+   * function enforces trial/paid access, so this resolves only for users who
+   * are actually allowed to see the answer key.
+   */
+  async ensureAnswers(concursoId: string, categoriaId: string): Promise<void> {
+    const key = `${concursoId}/${categoriaId}`;
+    if (hydrated.has(key)) return;
+
+    const { data, error } = await supabase.functions.invoke("quiz-content", {
+      body: { concursoId, categoriaId },
+    });
+    if (error) throw error;
+
+    const byId = new Map(
+      this.getQuestions(concursoId, categoriaId).map((q) => [q.id, q]),
+    );
+    for (const item of (data?.questions ?? []) as Array<{
+      id: string;
+      correta: number;
+      comentario: string;
+    }>) {
+      const q = byId.get(item.id);
+      if (q) {
+        q.correta = item.correta;
+        q.comentario = item.comentario;
+      }
+    }
+    hydrated.add(key);
+  },
+
+
   /** A randomized, capped set of questions for a single quiz session. */
   getSimuladoQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {
     return this.getSmartQuestions(concursoId, categoriaId, limit);
