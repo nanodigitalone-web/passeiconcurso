@@ -22,6 +22,7 @@ const Quiz = () => {
   const [escolhida, setEscolhida] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [answersReady, setAnswersReady] = useState(false);
   const startedAtRef = useRef(Date.now());
 
   // Smart selection (prioritizes unseen/wrong) once the user picks a length.
