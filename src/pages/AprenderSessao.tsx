@@ -35,6 +35,7 @@ const AprenderSessao = () => {
   const [lives, setLives] = useState(3);
   const [combo, setCombo] = useState(0);
   const [done, setDone] = useState(false);
+  const [answersReady, setAnswersReady] = useState(false);
 
   useEffect(() => {
     if (done && user) {
