@@ -68,7 +68,7 @@ export const quizService = {
     });
     if (error) throw error;
 
-    const byId = new Map(
+    const byId = new Map<string, Question>(
       this.getQuestions(concursoId, categoriaId).map((q) => [q.id, q]),
     );
     for (const item of (data?.questions ?? []) as Array<{
