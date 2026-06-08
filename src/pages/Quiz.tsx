@@ -221,8 +221,8 @@ const Quiz = () => {
 
         <div className="mt-6">
           {!revealed ? (
-            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold">
-              Confirmar resposta
+            <Button onClick={confirmar} disabled={escolhida === null || !answersReady} size="lg" className="w-full rounded-full font-semibold">
+              {answersReady ? "Confirmar resposta" : "A carregar…"}
             </Button>
           ) : (
             <Button onClick={proxima} size="lg" className="w-full rounded-full font-semibold bg-gradient-primary">
