@@ -77,13 +77,15 @@ const Resultado = () => {
                       </p>
                     )}
                     <p className="text-success">
-                      <span className="font-semibold">Correta:</span> {q.opcoes[q.correta]}
+                      <span className="font-semibold">Correta:</span> {q.opcoes[r.correta]}
                     </p>
                   </div>
-                  <div className="mt-3 rounded-lg bg-primary/5 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Explicação</p>
-                    <p className="mt-1 text-sm leading-relaxed">{q.comentario}</p>
-                  </div>
+                  {q.comentario && (
+                    <div className="mt-3 rounded-lg bg-primary/5 p-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary">Explicação</p>
+                      <p className="mt-1 text-sm leading-relaxed">{q.comentario}</p>
+                    </div>
+                  )}
                 </Card>
               );
             })}
