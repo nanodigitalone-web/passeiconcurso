@@ -58,6 +58,16 @@ const Quiz = () => {
 
   const gate = useAccessGate(concursoId, categoriaId);
 
+  // Load the answer key (gated server-side) once access is confirmed.
+  useEffect(() => {
+    if (gate.hasAccess && cat) {
+      quizService.ensureAnswers(concursoId!, categoriaId!)
+        .then(() => setAnswersReady(true))
+        .catch(() => setAnswersReady(false));
+    }
+  }, [gate.hasAccess, concursoId, categoriaId]);
+
+
   if (!cat) return <Navigate to="/concursos" replace />;
   if (!gate.loading && !gate.hasAccess) {
     return (
