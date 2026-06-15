@@ -9,6 +9,12 @@ import { BookOpen, BookMarked, Clock, Play, Check, UserCheck, Sparkles } from "l
 import { AccessGate } from "@/components/AccessGate";
 import { toast } from "sonner";
 
+// Categorias que já têm Recursos clínicos disponíveis.
+const RECURSOS_DISPONIVEIS = new Set([
+  "licenciatura-medicina/medicina-interna",
+  "licenciatura-medicina/pediatria",
+]);
+
 const CategoriaDetail = () => {
   const { concursoId, categoriaId } = useParams();
   const cat = quizService.getCategoria(concursoId!, categoriaId!);
