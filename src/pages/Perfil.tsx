@@ -8,13 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { authService, accessService, quizService } from "@/services";
-import { CreditCard, EyeOff, Lock, LogOut, Save } from "lucide-react";
+import { CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 
 const Perfil = () => {
   const { profile, user, refreshProfile, signOut } = useAuth();
+  const { status: pushStatus, toggle: togglePush } = usePushNotifications();
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [bio, setBio] = useState("");
@@ -26,6 +28,14 @@ const Perfil = () => {
   const [plans, setPlans] = useState<
     { concursoId: string; categoriaId: string; nome: string; expiresAt: number | null }[]
   >([]);
+
+  const pushLabel = {
+    granted: { icon: BellRing, text: "Activas", desc: "Recebe lembretes de estudo no dispositivo." },
+    denied: { icon: BellOff, text: "Bloqueadas", desc: "A permissão foi negada no browser." },
+    prompt: { icon: Bell, text: "Desactivadas", desc: "Activa para receber lembretes de estudo." },
+    unsupported: { icon: BellOff, text: "Não suportado", desc: "O teu dispositivo/browser não suporta notificações." },
+    loading: { icon: Bell, text: "A verificar...", desc: "" },
+  }[pushStatus];
 
   useEffect(() => {
     if (profile) {
