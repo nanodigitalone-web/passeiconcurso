@@ -39,6 +39,14 @@ const Acesso = () => {
     toast.success("Copiado");
   };
 
+  // O IBAN angolano começa sempre por "AO06" (padrão nacional que muitos apps
+  // de banco já preenchem). Copiamos sem esse prefixo para evitar duplicação.
+  const copiarIban = async () => {
+    const semPrefixo = IBAN.replace(/^AO06/, "");
+    await navigator.clipboard.writeText(semPrefixo);
+    toast.success("IBAN copiado (sem o AO06)");
+  };
+
   const enviarComprovativo = async () => {
     if (!file) return toast.error("Selecione o ficheiro do comprovativo");
     if (file.size > 5 * 1024 * 1024) return toast.error("Ficheiro deve ter no máximo 5MB");
@@ -158,7 +166,7 @@ const Acesso = () => {
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">IBAN</div>
                   <div className="break-all font-mono text-sm font-bold">{IBAN}</div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => copiar(IBAN)}>
+                <Button size="sm" variant="outline" onClick={copiarIban}>
                   <Copy className="mr-1 h-3.5 w-3.5" /> Copiar
                 </Button>
               </div>
