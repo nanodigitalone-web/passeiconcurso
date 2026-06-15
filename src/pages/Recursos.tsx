@@ -69,7 +69,7 @@ const RecursosInner = ({ concursoId, categoriaId }: { concursoId: string; catego
             <Card key={s.id} className="p-5 shadow-card">
               <div className="mb-3 flex items-center gap-2">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Icon className="h-4.5 w-4.5" />
+                  <Icon className="h-5 w-5" />
                 </span>
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{meta.label}</p>
