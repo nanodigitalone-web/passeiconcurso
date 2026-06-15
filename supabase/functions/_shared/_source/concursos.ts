@@ -53,6 +53,7 @@ import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
 import { topicosCirurgiaGeral, questoesCirurgiaGeral } from "./cirurgia";
 import { topicosMedicinaInterna, questoesMedicinaInterna } from "./medicinaInterna";
 import { topicosPediatria, questoesPediatria } from "./pediatria";
+import { topicosGinecoObstetricia, questoesGinecoObstetricia } from "./ginecoObstetricia";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
