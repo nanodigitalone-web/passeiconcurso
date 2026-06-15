@@ -20,5 +20,7 @@ export { rankingService } from "./rankingService";
 export type { RankRow } from "./rankingService";
 export { paymentsService } from "./paymentsService";
 export { adminService } from "./adminService";
+export { pushService } from "./pushService";
 export { recursosService } from "./recursosService";
 export type { RecursoSeccao, RecursoItem, RecursoTipo } from "./recursosService";
+export type { PushStatus } from "./pushService";

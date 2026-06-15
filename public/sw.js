@@ -25,3 +25,24 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(req).then((r) => r || caches.match('/')))
   );
 });
+
+// --- Push Notification support ---
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() ?? {};
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? 'Passei', {
+      body: data.body ?? 'Hora de estudar!',
+      icon: '/placeholder.svg',
+      badge: '/placeholder.svg',
+      data: { url: data.url ?? '/' },
+      tag: data.tag ?? 'passei-reminder',
+      renotify: true,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? '/';
+  event.waitUntil(self.clients.openWindow(url));
+});
