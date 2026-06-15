@@ -14926,6 +14926,224 @@ export const concursos: Concurso[] = [
             ]
           }
         ]
+      },
+      {
+        "id": "gineco-obstetricia",
+        "nome": "Ginecologia e Obstetrícia",
+        "descricao": "Saúde da mulher e obstetrícia - pré-natal, urgências obstétricas e ginecologia geral (perfil de Angola) - obtenção do grau de Médico",
+        "icon": "Baby",
+        "disciplinas": [
+          "Ciclo Menstrual",
+          "Assistência Pré-Natal",
+          "Trabalho de Parto e Puerpério",
+          "Urgências Obstétricas",
+          "Ginecologia Geral"
+        ],
+        "questoes": [
+          {
+            "id": "go-1",
+            "disciplina": "Assistência Pré-Natal",
+            "enunciado": "Pela regra de Naegele, qual a data provável do parto (DPP) para uma DUM em 10 de Janeiro?",
+            "opcoes": [
+              "10 de Setembro",
+              "17 de Outubro",
+              "03 de Outubro",
+              "17 de Setembro"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-2",
+            "disciplina": "Urgências Obstétricas",
+            "enunciado": "Gestante de 34 semanas com hemorragia vaginal indolor, sangue vivo e útero relaxado. O diagnóstico mais provável é:",
+            "opcoes": [
+              "Descolamento prematuro da placenta",
+              "Placenta prévia",
+              "Rotura uterina",
+              "Trabalho de parto"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-3",
+            "disciplina": "Urgências Obstétricas",
+            "enunciado": "Critério que define pré-eclâmpsia grave:",
+            "opcoes": [
+              "PA 140/90 mmHg sem proteinúria",
+              "Edema de membros inferiores",
+              "PA ≥160/110 mmHg com proteinúria/sinais de gravidade",
+              "Náuseas no 1º trimestre"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-4",
+            "disciplina": "Trabalho de Parto e Puerpério",
+            "enunciado": "A causa mais frequente de hemorragia pós-parto imediata é:",
+            "opcoes": [
+              "Atonia uterina",
+              "Retenção de restos placentários",
+              "Lacerações do canal",
+              "Distúrbios da coagulação"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-5",
+            "disciplina": "Ciclo Menstrual e Endocrinologia Reprodutiva",
+            "enunciado": "A ovulação ocorre tipicamente em resposta a:",
+            "opcoes": [
+              "Pico de FSH",
+              "Pico de LH",
+              "Queda da progesterona",
+              "Aumento da prolactina"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-6",
+            "disciplina": "Ginecologia Geral",
+            "enunciado": "Método de rastreio do cancro do colo do útero mais usado em contextos de recursos limitados em Angola:",
+            "opcoes": [
+              "Colposcopia",
+              "Inspecção Visual com Ácido Acético (IVA)",
+              "Ressonância magnética",
+              "Biópsia em cone"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-7",
+            "disciplina": "Urgências Obstétricas",
+            "enunciado": "Mulher com atraso menstrual, dor pélvica e hemorragia, com teste de gravidez positivo e útero vazio à ecografia. Suspeita-se de:",
+            "opcoes": [
+              "Aborto completo",
+              "Gravidez ectópica",
+              "Mola hidatiforme",
+              "Gravidez gemelar"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-8",
+            "disciplina": "Assistência Pré-Natal",
+            "enunciado": "Na prevenção da transmissão vertical do VIH (PTV), a conduta correcta é:",
+            "opcoes": [
+              "Suspender o aleitamento sempre",
+              "Iniciar TARV na mãe e profilaxia no RN",
+              "Adiar o tratamento para o pós-parto",
+              "Apenas cesariana eletiva"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-9",
+            "disciplina": "Trabalho de Parto e Puerpério",
+            "enunciado": "O partograma serve principalmente para:",
+            "opcoes": [
+              "Calcular a idade gestacional",
+              "Monitorizar a progressão do trabalho de parto",
+              "Avaliar a maturidade pulmonar fetal",
+              "Diagnosticar diabetes gestacional"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-10",
+            "disciplina": "Ginecologia Geral",
+            "enunciado": "Tríade clássica da doença inflamatória pélvica (DIP):",
+            "opcoes": [
+              "Febre, dor à mobilização do colo e dor anexial",
+              "Cefaleia, edema e hipertensão",
+              "Icterícia, prurido e colúria",
+              "Tosse, febre e dispneia"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-11",
+            "disciplina": "Urgências Obstétricas",
+            "enunciado": "Fármaco de eleição na prevenção e tratamento das convulsões na eclâmpsia:",
+            "opcoes": [
+              "Diazepam",
+              "Sulfato de magnésio",
+              "Fenitoína",
+              "Nifedipina"
+            ],
+            "correta": -1,
+            "comentario": ""
+          },
+          {
+            "id": "go-12",
+            "disciplina": "Ciclo Menstrual e Endocrinologia Reprodutiva",
+            "enunciado": "Achado clínico-laboratorial característico da SOP:",
+            "opcoes": [
+              "Hipogonadismo com FSH muito elevado",
+              "Hiperandrogenismo e oligo/anovulação",
+              "Hiperprolactinemia isolada",
+              "Hipotiroidismo primário"
+            ],
+            "correta": -1,
+            "comentario": ""
+          }
+        ],
+        "topicos": [
+          {
+            "titulo": "Ciclo Menstrual e Endocrinologia Reprodutiva",
+            "itens": [
+              "Eixo hipotálamo-hipófise-ovário; FSH, LH, estrogénio e progesterona",
+              "Fases folicular, ovulatória e lútea",
+              "Distúrbios menstruais: amenorreia, oligomenorreia, menorragia",
+              "Síndrome dos ovários poliquísticos (SOP)"
+            ]
+          },
+          {
+            "titulo": "Assistência Pré-Natal",
+            "itens": [
+              "Cálculo da idade gestacional e DPP (regra de Naegele)",
+              "Número e conteúdo das consultas; exames de rotina",
+              "Suplementação de ferro e ácido fólico; profilaxia da malária na gravidez",
+              "Imunização antitetânica e rastreio de VIH/sífilis (PTV)"
+            ]
+          },
+          {
+            "titulo": "Trabalho de Parto e Puerpério",
+            "itens": [
+              "Períodos do trabalho de parto; partograma",
+              "Mecanismo do parto e assistência ao parto normal",
+              "Puerpério normal e patológico",
+              "Aleitamento materno e contracepção pós-parto"
+            ]
+          },
+          {
+            "titulo": "Urgências Obstétricas",
+            "itens": [
+              "Hemorragias do 1º trimestre: aborto e gravidez ectópica",
+              "Hemorragias do 3º trimestre: placenta prévia e descolamento",
+              "Pré-eclâmpsia e eclâmpsia",
+              "Hemorragia pós-parto e sepse puerperal"
+            ]
+          },
+          {
+            "titulo": "Ginecologia Geral",
+            "itens": [
+              "Infecções do tracto genital inferior e DIP",
+              "Rastreio do cancro do colo do útero (IVA / citologia)",
+              "Miomas, endometriose e massas anexiais",
+              "Planeamento familiar e métodos contraceptivos"
+            ]
+          }
+        ]
       }
     ]
   }
