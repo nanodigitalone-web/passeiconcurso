@@ -15,7 +15,7 @@ export const BottomNav = () => {
   if (pathname.startsWith("/quiz/") || pathname.startsWith("/aprender/sessao")) return null;
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background shadow-card">
+    <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background shadow-card md:hidden">
       <div className="mx-auto max-w-2xl px-1">
         <ul className="grid grid-cols-5">
           {items.map(({ to, label, icon: Icon }) => (
