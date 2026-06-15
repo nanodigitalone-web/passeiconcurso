@@ -15,7 +15,7 @@ export const TopBar = () => {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background shadow-card">
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-3 py-2.5">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-3 py-2.5 md:px-6 md:py-3">
         <div className="flex items-center gap-1 min-w-0">
           {showBack ? (
             <Button

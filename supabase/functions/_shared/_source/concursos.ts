@@ -53,6 +53,7 @@ import { topicosMedicinaUAN, questoesMedicinaUAN } from "./uan";
 import { topicosCirurgiaGeral, questoesCirurgiaGeral } from "./cirurgia";
 import { topicosMedicinaInterna, questoesMedicinaInterna } from "./medicinaInterna";
 import { topicosPediatria, questoesPediatria } from "./pediatria";
+import { topicosGinecoObstetricia, questoesGinecoObstetricia } from "./ginecoObstetricia";
 import {
   topicosMedico, topicosEnfermeiro, topicosTecEnfermagem, topicosFarmaceutico,
   topicosLaboratorio, topicosFisioterapia, topicosCardio, topicosPsicologia,
@@ -160,6 +161,17 @@ const pediatria: Categoria = {
   questoes: questoesPediatria, topicos: topicosPediatria,
 };
 
+const ginecoObstetricia: Categoria = {
+  id: "gineco-obstetricia", nome: "Ginecologia e Obstetrícia",
+  descricao: "Saúde da mulher e obstetrícia - pré-natal, urgências obstétricas e ginecologia geral (perfil de Angola) - obtenção do grau de Médico",
+  icon: "Baby",
+  disciplinas: [
+    "Ciclo Menstrual", "Assistência Pré-Natal", "Trabalho de Parto e Puerpério",
+    "Urgências Obstétricas", "Ginecologia Geral",
+  ],
+  questoes: questoesGinecoObstetricia, topicos: topicosGinecoObstetricia,
+};
+
 
 
 
@@ -209,7 +221,7 @@ export const concursos: Concurso[] = [
       "Comprovativo de matrícula no curso de Medicina",
       "Comprovativo de pagamento da taxa de exame (quando aplicável)",
     ],
-    categorias: [cirurgiaGeral, medicinaInterna, pediatria],
+    categorias: [cirurgiaGeral, medicinaInterna, pediatria, ginecoObstetricia],
   },
 ];
 
