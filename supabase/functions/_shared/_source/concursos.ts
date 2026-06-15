@@ -221,7 +221,7 @@ export const concursos: Concurso[] = [
       "Comprovativo de matrícula no curso de Medicina",
       "Comprovativo de pagamento da taxa de exame (quando aplicável)",
     ],
-    categorias: [cirurgiaGeral, medicinaInterna, pediatria],
+    categorias: [cirurgiaGeral, medicinaInterna, pediatria, ginecoObstetricia],
   },
 ];
 
