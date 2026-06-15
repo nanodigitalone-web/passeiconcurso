@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { quizService, authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, BookMarked, Clock, Play, Check, UserCheck } from "lucide-react";
+import { BookOpen, BookMarked, Clock, Play, Check, UserCheck, Sparkles } from "lucide-react";
 import { AccessGate } from "@/components/AccessGate";
 import { toast } from "sonner";
 
