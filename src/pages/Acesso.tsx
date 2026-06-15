@@ -166,7 +166,7 @@ const Acesso = () => {
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">IBAN</div>
                   <div className="break-all font-mono text-sm font-bold">{IBAN}</div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => copiar(IBAN)}>
+                <Button size="sm" variant="outline" onClick={copiarIban}>
                   <Copy className="mr-1 h-3.5 w-3.5" /> Copiar
                 </Button>
               </div>
