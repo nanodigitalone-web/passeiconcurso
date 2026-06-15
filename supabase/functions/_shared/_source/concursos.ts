@@ -160,6 +160,17 @@ const pediatria: Categoria = {
   questoes: questoesPediatria, topicos: topicosPediatria,
 };
 
+const ginecoObstetricia: Categoria = {
+  id: "gineco-obstetricia", nome: "Ginecologia e Obstetrícia",
+  descricao: "Saúde da mulher e obstetrícia - pré-natal, urgências obstétricas e ginecologia geral (perfil de Angola) - obtenção do grau de Médico",
+  icon: "Baby",
+  disciplinas: [
+    "Ciclo Menstrual", "Assistência Pré-Natal", "Trabalho de Parto e Puerpério",
+    "Urgências Obstétricas", "Ginecologia Geral",
+  ],
+  questoes: questoesGinecoObstetricia, topicos: topicosGinecoObstetricia,
+};
+
 
 
 
