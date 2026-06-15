@@ -22,6 +22,7 @@ import AprenderSessao from "./pages/AprenderSessao";
 import Acesso from "./pages/Acesso";
 import Admin from "./pages/Admin";
 import Notificacoes from "./pages/Notificacoes";
+import Recursos from "./pages/Recursos";
 import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient({
