@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Trophy, BarChart3, BookOpen, Zap } from "lucide-react";
+import { Home, Trophy, BarChart3, BookOpen, Zap, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/", label: "Início", icon: Home },
   { to: "/concursos", label: "Concursos", icon: BookOpen },
   { to: "/aprender", label: "Aprender", icon: Zap },
+  { to: "/recursos", label: "Recursos", icon: Sparkles },
   { to: "/percurso", label: "Percurso", icon: BarChart3 },
   { to: "/ranking", label: "Ranking", icon: Trophy },
 ];
