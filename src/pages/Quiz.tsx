@@ -9,6 +9,7 @@ import { Check, Clock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
+import { MotivationModal, type MotivationVariant } from "@/components/MotivationModal";
 
 const COUNT_OPTIONS = [20, 50, 100];
 
