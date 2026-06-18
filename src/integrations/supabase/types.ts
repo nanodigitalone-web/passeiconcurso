@@ -266,6 +266,7 @@ export type Database = {
         Args: { _cat: string; _code: string; _conc: string }
         Returns: Json
       }
+      add_points: { Args: { _delta: number }; Returns: undefined }
       admin_generate_codes: {
         Args: { _cat: string; _conc: string; _count: number }
         Returns: number
