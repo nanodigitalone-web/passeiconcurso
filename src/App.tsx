@@ -23,6 +23,7 @@ import Acesso from "./pages/Acesso";
 import Admin from "./pages/Admin";
 import Notificacoes from "./pages/Notificacoes";
 import Recursos from "./pages/Recursos";
+import RecursosIndex from "./pages/RecursosIndex";
 import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<P><Index /></P>} />
             <Route path="/concursos" element={<P><Concursos /></P>} />
+            <Route path="/recursos" element={<P><RecursosIndex /></P>} />
             <Route path="/concursos/:concursoId" element={<P><ConcursoDetail /></P>} />
             <Route path="/concursos/:concursoId/:categoriaId" element={<P><CategoriaDetail /></P>} />
             <Route path="/concursos/:concursoId/:categoriaId/topicos" element={<P><Topicos /></P>} />
