@@ -244,6 +244,13 @@ const Quiz = () => {
           )}
         </div>
       </div>
+
+      <MotivationModal
+        open={motivation !== null}
+        variant={motivation ?? "quarter"}
+        progress={(idx / total) * 100}
+        onClose={() => setMotivation(null)}
+      />
     </div>
   );
 };
