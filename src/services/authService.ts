@@ -57,7 +57,7 @@ export const authService = {
   // Points are applied server-side via a SECURITY DEFINER RPC that validates
   // the delta, so clients cannot set an arbitrary pontos value.
   addPoints(_uid: string, _currentPoints: number, delta: number) {
-    return supabase.rpc("add_points", { _delta: delta });
+    return (supabase.rpc as any)("add_points", { _delta: delta });
   },
 
   setCategoria(uid: string, concursoId: string, categoriaId: string, categoriaNome: string) {
