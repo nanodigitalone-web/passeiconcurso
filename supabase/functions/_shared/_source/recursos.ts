@@ -143,6 +143,106 @@ const pediatria: RecursoSeccao[] = [
       { nome: "Reflexo de Moro", valor: "Reflexo primitivo presente no RN normal" },
     ],
   },
+  {
+    id: "ped-doses-analgesicos", tipo: "doses", titulo: "Analgésicos, antipiréticos e AINEs",
+    itens: [
+      { nome: "Dipirona (Metamizol)", valor: "10-25 mg/kg/dose VO, IM ou IV, 6/6h ou 8/8h", nota: "Gotas (500 mg/ml), Solução oral (50 mg/ml), Ampolas (500 mg/ml)" },
+      { nome: "Ibuprofeno", valor: "5-10 mg/kg/dose VO, 6/6h ou 8/8h; máx 40 mg/kg/dia", nota: "Gotas (50 e 100 mg/ml), Suspensão (20 mg/ml), Comprimidos (200 e 400 mg)" },
+      { nome: "Paracetamol (Acetaminofeno)", valor: "10-15 mg/kg/dose VO ou retal, 4/4h ou 6/6h; máx 75 mg/kg/dia (até 4 g/dia)", nota: "Gotas (200 mg/ml), Solução (32 mg/ml), Comprimidos (500 mg), Supositórios" },
+    ],
+  },
+  {
+    id: "ped-doses-antibioticos", tipo: "doses", titulo: "Antibióticos de uso sistémico",
+    itens: [
+      { nome: "Amoxicilina", valor: "Leve/moderada: 40-50 mg/kg/dia 8/8h ou 12/12h; grave (OMA/pneumonia): 80-90 mg/kg/dia", nota: "Suspensão (250 e 500 mg/5 ml), Cápsulas/Comprimidos (500 e 875 mg)" },
+      { nome: "Amoxicilina + Clavulanato", valor: "40-90 mg/kg/dia (base amoxicilina) 8/8h ou 12/12h", nota: "Suspensão (250+62,5 ou 400+57 mg/5 ml), Frasco-ampola IV" },
+      { nome: "Azitromicina", valor: "10 mg/kg/dia VO dose única, 3-5 dias; faringite estrept.: 12 mg/kg/dia 5 dias", nota: "Suspensão (200 mg/5 ml), Comprimidos (500 mg)" },
+      { nome: "Cefalotina", valor: "50-100 mg/kg/dia IV/IM profunda em 4 doses (6/6h); grave até 150 mg/kg/dia", nota: "Frasco-ampola 1 g" },
+      { nome: "Ceftriaxona", valor: "Geral: 50-75 mg/kg/dia IV/IM dose única ou 12/12h; meningite: 100 mg/kg/dia 12/12h", nota: "Frasco-ampola 500 mg e 1 g" },
+      { nome: "Claritromicina", valor: "15 mg/kg/dia VO em 2 doses (12/12h); máx 1 g/dia", nota: "Suspensão (125 e 250 mg/5 ml), Comprimidos (250 e 500 mg)" },
+      { nome: "Oxacilina", valor: "Leve/moderada: 50-100 mg/kg/dia IV 6/6h; grave: 100-200 mg/kg/dia 4/4h ou 6/6h", nota: "Frasco-ampola 500 mg" },
+      { nome: "Vancomicina", valor: "RN (meningite): 15 mg/kg/dose IV 8/8h ou 12/12h; crianças: 40-60 mg/kg/dia 6/6h (máx 2-4 g/dia); infusão ≥60 min", nota: "Frasco-ampola 500 mg e 1 g" },
+    ],
+  },
+  {
+    id: "ped-doses-anticonvulsivantes", tipo: "doses", titulo: "Anticonvulsivantes e sedativos críticos",
+    itens: [
+      { nome: "Diazepam", valor: "Crise aguda: 0,2-0,3 mg/kg/dose IV lenta (máx 1 mg/min), repetir 1-2x; retal: 0,5 mg/kg/dose", nota: "Ampolas 10 mg/2 ml, Comprimidos (5 e 10 mg)" },
+      { nome: "Fenobarbital", valor: "Ataque (crise neonatal/EME): 15-20 mg/kg IV lenta; manutenção 3-5 mg/kg/dia VO/IV 12/12h", nota: "Gotas (40 mg/ml; 1 gota=1 mg), Comprimidos (100 mg), Ampolas (200 mg/2 ml)" },
+      { nome: "Fenitoína", valor: "Ataque (EME): 15-20 mg/kg IV (diluir em SF 0,9%, infusão lenta); manutenção 5-8 mg/kg/dia 12/12h", nota: "Suspensão (20 mg/ml), Ampolas (50 mg/ml)" },
+      { nome: "Midazolam", valor: "Sedação/crise: 0,1-0,2 mg/kg/dose IV ou IM; infusão contínua: 1-6 mcg/kg/min", nota: "Ampolas 5 mg/5 ml, 15 mg/3 ml e 50 mg/10 ml" },
+    ],
+  },
+  {
+    id: "ped-doses-antiemeticos", tipo: "doses", titulo: "Antieméticos e procinéticos",
+    itens: [
+      { nome: "Domperidona", valor: "0,25 mg/kg/dose VO 3-4x/dia (15-30 min antes das refeições)", nota: "Suspensão (1 mg/ml)" },
+      { nome: "Metoclopramida", valor: "0,1-0,15 mg/kg/dose VO/IM/IV até 8/8h; evitar <1 ano (reações extrapiramidais)", nota: "Gotas (4 mg/ml), Solução oral, Ampolas (10 mg/2 ml)" },
+      { nome: "Ondansetrona", valor: "0,15 mg/kg/dose VO/IM/IV 8/8h; máx 4 mg (pequenas) ou 8 mg (maiores)", nota: "Solução (2 mg/5 ml), Comprimidos dispersíveis (4 e 8 mg), Ampolas (2 mg/ml)" },
+    ],
+  },
+  {
+    id: "ped-doses-hidratacao", tipo: "doses", titulo: "Hidratação e suporte hidroeletrolítico",
+    itens: [
+      { nome: "Sais de Reidratação Oral (SRO)", valor: "Plano A: 50-100 ml (<2a) ou 100-200 ml (>2a) após cada evacuação; Plano B: 50-100 ml/kg VO em 4h", nota: "Envelopes para 1 L de água (padrão OMS baixa osmolaridade)" },
+      { nome: "Expansão (SF 0,9%/Ringer)", valor: "Choque: 20 ml/kg IV em 15-20 min, repetir conforme hemodinâmica", nota: "Bolsas SF 0,9%, Glicosado 5%, Glicofisiológico" },
+      { nome: "Manutenção (Holliday-Segar)", valor: "100 ml/kg primeiros 10 kg + 50 ml/kg próximos 10 kg + 20 ml/kg cada kg adicional", nota: "Via IV" },
+    ],
+  },
+  {
+    id: "ped-doses-antiparasitarios", tipo: "doses", titulo: "Antiparasitários e antifúngicos",
+    itens: [
+      { nome: "Albendazol", valor: ">2a: 400 mg dose única (oxiúrus, ascaris, ancilostoma, tricuríase); giardíase/estrongiloidíase: 400 mg/dia 3-5 dias", nota: "Suspensão (40 mg/ml), Comprimidos mastigáveis (400 mg)" },
+      { nome: "Anfotericina B (desoxicolato)", valor: "Inicial 0,25-0,5 mg/kg/dia IV, aumentar até 1 mg/kg/dia (1,5 em graves); infundir 2-6h protegido da luz", nota: "Frasco-ampola 50 mg" },
+      { nome: "Fluconazol", valor: "Candidíase sistémica: 6-12 mg/kg/dia 1x; mucocutânea: 3-6 mg/kg/dia; máx 600 mg/dia", nota: "Cápsulas (50, 100 e 150 mg), Bolsa IV (2 mg/ml - 100 ml)" },
+      { nome: "Mebendazol", valor: "Nematódeos: 100 mg 12/12h por 3 dias; repetir após 3 semanas se indicado", nota: "Suspensão (20 mg/ml), Comprimidos (100 mg)" },
+      { nome: "Metronidazol", valor: "Giardíase: 15-20 mg/kg/dia 8/8h 5d; amebíase: 35-50 mg/kg/dia 8/8h 7-10d; anaeróbios: 30 mg/kg/dia 6/6h ou 8/8h", nota: "Suspensão (40 mg/ml), Comprimidos (250 e 400 mg), Bolsa IV (5 mg/ml - 100 ml)" },
+      { nome: "Nitazoxanida", valor: ">1a: 0,35 ml (7,5 mg)/kg 12/12h por 3 dias, com alimentos", nota: "Suspensão (20 mg/ml), Comprimidos revestidos (500 mg)" },
+      { nome: "Nistatina", valor: "Prematuros/lactentes: 1-2 ml (100.000-200.000 UI) 4x/dia; maiores: 1-6 ml 4x/dia (bochechar antes de engolir)", nota: "Suspensão oral (100.000 UI/ml)" },
+    ],
+  },
+  {
+    id: "ped-doses-corticoides", tipo: "doses", titulo: "Corticosteroides",
+    itens: [
+      { nome: "Dexametasona", valor: "Anti-inflam.: 0,08-0,3 mg/kg/dia 6/6h ou 12/12h; edema cerebral: 1-2 mg/kg inicial + 1-1,5 mg/kg/dia 6/6h; crupe: 0,6 mg/kg/dose IM/VO única", nota: "Elixir (0,1 mg/ml), Comprimidos (0,5 e 4 mg), Injetável (2,5 e 4 mg/ml)" },
+      { nome: "Hidrocortisona", valor: "Asma/anafilaxia: ataque 5-10 mg/kg/dose IV, manutenção 5 mg/kg/dose 6/6h; insuf. adrenal: 10-20 mg/m²/dia 8/8h", nota: "Frasco-ampola 100 mg e 500 mg" },
+      { nome: "Metilprednisolona", valor: "Anti-inflam./asma grave: 1-2 mg/kg/dia IV 6/6h ou 12/12h; pulsoterapia: 10-30 mg/kg/dia (máx 1 g/dia) 1-2h por 3 dias", nota: "Frasco-ampola 40, 125, 500 mg e 1 g" },
+      { nome: "Prednisolona/Prednisona", valor: "1-2 mg/kg/dia dose matinal ou 12/12h; máx 60 mg/dia; desmame se >7-10 dias", nota: "Solução 1 e 3 mg/ml (prednisolona), Comprimidos 5, 20 e 50 mg (prednisona)" },
+    ],
+  },
+  {
+    id: "ped-doses-antihistaminicos", tipo: "doses", titulo: "Anti-histamínicos (antialérgicos)",
+    itens: [
+      { nome: "Cetirizina", valor: "6m-2a: 2,5 mg 1x/dia; 2-5a: 2,5-5 mg/dia; >6a: 10 mg/dia dose única", nota: "Solução (1 mg/ml), Gotas (10 mg/ml)" },
+      { nome: "Dexclorfeniramina", valor: "2-6a: 0,5 mg 6/6h ou 8/8h (máx 3 mg/dia); 6-12a: 1 mg 6/6h ou 8/8h (máx 6 mg/dia)", nota: "Xarope (2 mg/5 ml), Gotas (2,8 mg/ml; 1 gota=0,1 mg), Comprimidos (2 mg)" },
+      { nome: "Hidroxizina", valor: "2 mg/kg/dia em 3-4 tomadas (6/6h ou 8/8h); máx 50 mg/dia (pequenas)", nota: "Xarope (2 mg/ml), Comprimidos (25 mg)" },
+      { nome: "Loratadina", valor: "2-5a (<30 kg): 5 mg 1x/dia; >6a (>30 kg): 10 mg 1x/dia", nota: "Xarope (1 mg/ml), Comprimidos (10 mg)" },
+      { nome: "Prometazina", valor: ">2a: 0,5-1 mg/kg/dia VO ou IM profunda 8/8h ou 12/12h; evitar IV direto (risco de necrose)", nota: "Comprimidos (25 mg), Ampolas (50 mg/2 ml)" },
+    ],
+  },
+  {
+    id: "ped-doses-broncodilatadores", tipo: "doses", titulo: "Broncodilatadores e antiasmáticos",
+    itens: [
+      { nome: "Aminofilina", valor: "Ataque: 3-5 mg/kg/dose IV diluída em 20-30 min; manutenção 4-6 mg/kg/dose 6/6h IV ou VO", nota: "Comprimidos (100 e 200 mg), Ampolas (24 mg/ml - 240 mg/10 ml)" },
+      { nome: "Fenoterol", valor: "Nebulização: 1 gota/3-5 kg em 3-4 ml SF 0,9% 4/4h ou 6/6h; máx 10 gotas (0,5 ml)", nota: "Solução gotas (5 mg/ml; 20 gotas=1 ml)" },
+      { nome: "Ipratrópio (brometo)", valor: "Nebulização: <1a 10 gotas (0,25 mg), >1a 20 gotas (0,5 mg) em SF 4/4h ou 6/6h; spray 1-2 jatos 6/6h", nota: "Solução (0,25 mg/ml; 20 gotas=1 ml), Spray (20 mcg/jato)" },
+      { nome: "Salbutamol", valor: "VO: 0,1-0,2 mg/kg/dose 6/6h ou 8/8h; nebulização: 0,05-0,1 mg/kg/dose (1 gota/2-3 kg, máx 10-20 gotas) em 3 ml SF; spray: 2-4 jatos cada 20 min na 1ª hora", nota: "Xarope (2 mg/5 ml), Nebulização (5 mg/ml), Spray (100 mcg/jato)" },
+    ],
+  },
+  {
+    id: "ped-doses-gastro", tipo: "doses", titulo: "Trato gastrintestinal (protetores e antissecretores)",
+    itens: [
+      { nome: "Omeprazol", valor: "RGE/dispepsia: 0,5-1,5 mg/kg/dia dose única matinal em jejum", nota: "Cápsulas gastrorresistentes (10, 20 e 40 mg), Frasco-ampola IV (40 mg)" },
+      { nome: "Ranitidina", valor: "VO: 2-4 mg/kg/dose 12/12h (4-8 mg/kg/dia); IV: 1-2 mg/kg/dose lenta 8/8h", nota: "Xarope (15 mg/ml), Comprimidos (150 e 300 mg), Ampolas (50 mg/2 ml)" },
+    ],
+  },
+  {
+    id: "ped-doses-vitaminas", tipo: "doses", titulo: "Vitaminas e suplementos minerais",
+    itens: [
+      { nome: "Sulfato Ferroso", valor: "Tratamento anemia: 3-5 mg/kg/dia de ferro elementar em 1-2 tomadas (longe das refeições/leite); profilaxia: 1-2 mg/kg/dia", nota: "Gotas pediátricas, Xarope, Comprimidos (verificar ferro elementar)" },
+      { nome: "Zinco (sulfato/gluconato)", valor: "Diarreia aguda: <6m 10 mg/dia, >6m 20 mg/dia, dose única por 10-14 dias", nota: "Solução/Xarope, Comprimidos dispersíveis" },
+    ],
+  },
 ];
 
 export const recursos: RecursoCategoria[] = [
