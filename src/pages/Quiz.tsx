@@ -150,7 +150,17 @@ const Quiz = () => {
       finishedRef.current = true;
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
-      setIdx((i) => i + 1);
+      const nextIdx = idx + 1;
+      const pct = (nextIdx / total) * 100;
+      const shown = motivationShownRef.current;
+      if (pct >= 75 && !shown.has("threequarter")) {
+        shown.add("threequarter");
+        setMotivation("threequarter");
+      } else if (pct >= 30 && !shown.has("quarter")) {
+        shown.add("quarter");
+        setMotivation("quarter");
+      }
+      setIdx(nextIdx);
     }
   };
 
