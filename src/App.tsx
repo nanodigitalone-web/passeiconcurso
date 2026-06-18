@@ -23,6 +23,7 @@ import Acesso from "./pages/Acesso";
 import Admin from "./pages/Admin";
 import Notificacoes from "./pages/Notificacoes";
 import Recursos from "./pages/Recursos";
+import RecursosIndex from "./pages/RecursosIndex";
 import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient({
