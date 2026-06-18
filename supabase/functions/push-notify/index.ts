@@ -1,14 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
-const VAPID_PUBLIC_KEY = "BCsE0XN9A9R-RXuVE-qytWn_jLktp0oS23wJsn82Rj7ObCig-9cGZ6d7JaoPTPbVt4t6-qPpXWGjg9IjEeyAhV4";
-const VAPID_PRIVATE_KEY = "f8jSOy7834aUUHZweyOiHyJDwg4c-NycyyEHIoflWmE";
-
-webpush.setVapidDetails(
-  "mailto:suporte@passeii.com",
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
+// Public key is safe to expose; private key is read from secrets.
+const VAPID_PUBLIC_KEY = "BO7y5DEKL6n6nLquKXoTCj-Qo-2pcqrtmesZzL3qTGSsv18QGx2B0yMBwJNvqujokNQkCVDXmn_pSTkuwfpitoQ";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 
 const MENSAGENS = [
   { title: "Hora de estudar! 📚", body: "Um simulado rápido mantém o conhecimento fresco. Vamos lá?" },
@@ -24,10 +19,29 @@ Deno.serve(async (req) => {
     return new Response("ok", {
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
       },
     });
   }
+
+  // Only the scheduled cron job (which carries the shared secret) may trigger
+  // mass notifications. This blocks anonymous abuse / notification flooding.
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (!cronSecret || req.headers.get("x-cron-secret") !== cronSecret) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+
+  if (!VAPID_PRIVATE_KEY) {
+    return new Response(JSON.stringify({ error: "vapid_not_configured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+
+  webpush.setVapidDetails("mailto:suporte@passeii.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
