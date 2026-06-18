@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { quizService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, Flame, Lock, Trophy, Check, Play, BookMarked } from "lucide-react";
+import { Zap, Flame, Lock, Trophy, Check, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Aprender = () => {
