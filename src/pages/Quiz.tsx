@@ -9,6 +9,7 @@ import { Check, Clock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
+import { MotivationModal, type MotivationVariant } from "@/components/MotivationModal";
 
 const COUNT_OPTIONS = [20, 50, 100];
 
@@ -23,6 +24,8 @@ const Quiz = () => {
   const [revealed, setRevealed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [answersReady, setAnswersReady] = useState(false);
+  const [motivation, setMotivation] = useState<MotivationVariant | null>(null);
+  const motivationShownRef = useRef<Set<MotivationVariant>>(new Set());
   const startedAtRef = useRef(Date.now());
 
   // Smart selection (prioritizes unseen/wrong) once the user picks a length.
@@ -147,7 +150,17 @@ const Quiz = () => {
       finishedRef.current = true;
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
-      setIdx((i) => i + 1);
+      const nextIdx = idx + 1;
+      const pct = (nextIdx / total) * 100;
+      const shown = motivationShownRef.current;
+      if (pct >= 75 && !shown.has("threequarter")) {
+        shown.add("threequarter");
+        setMotivation("threequarter");
+      } else if (pct >= 30 && !shown.has("quarter")) {
+        shown.add("quarter");
+        setMotivation("quarter");
+      }
+      setIdx(nextIdx);
     }
   };
 
@@ -231,6 +244,13 @@ const Quiz = () => {
           )}
         </div>
       </div>
+
+      <MotivationModal
+        open={motivation !== null}
+        variant={motivation ?? "quarter"}
+        progress={(idx / total) * 100}
+        onClose={() => setMotivation(null)}
+      />
     </div>
   );
 };

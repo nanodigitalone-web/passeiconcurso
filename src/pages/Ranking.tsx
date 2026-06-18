@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { rankingService, type RankRow } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { Crown, Medal, Trophy } from "lucide-react";
+import { Crown, Trophy } from "lucide-react";
 
 type Filtro = "todos" | "minha";
 
@@ -68,27 +68,68 @@ const Ranking = () => {
         </Card>
       ) : (
         <>
-          <div className="mb-5 grid grid-cols-3 gap-2">
-            {[1, 0, 2].map((i, slot) => {
-              const u = data[i];
-              if (!u) return <div key={i} />;
-              const heights = ["h-24", "h-32", "h-20"];
-              const colors = ["bg-gradient-to-b from-slate-300 to-slate-400", "bg-gradient-primary", "bg-gradient-to-b from-amber-500 to-amber-700"];
-              const icons = [<Medal key="1" className="h-5 w-5" />, <Crown key="0" className="h-6 w-6" />, <Medal key="2" className="h-5 w-5" />];
-              const isMe = u.id === user?.id;
-              return (
-                <div key={i} className="flex flex-col items-center justify-end">
-                  <div className="mb-2 text-center">
-                    <p className={cn("text-xs font-semibold truncate max-w-[90px]", isMe && "text-primary")}>{u.nome}{isMe ? " (você)" : ""}</p>
-                    <p className="text-[11px] text-muted-foreground">{u.pontos} pts</p>
+          <Card className="mb-5 overflow-hidden border-0 bg-gradient-to-b from-primary/10 via-background to-background p-5 pt-6 shadow-elegant">
+            <div className="grid grid-cols-3 items-end gap-2.5">
+              {[1, 0, 2].map((i, slot) => {
+                const u = data[i];
+                if (!u) return <div key={i} />;
+                const isFirst = slot === 1;
+                const isMe = u.id === user?.id;
+                const pedestalH = ["h-20", "h-28", "h-16"][slot];
+                const pedestal = [
+                  "bg-gradient-to-b from-slate-200 to-slate-400 dark:from-slate-500 dark:to-slate-700",
+                  "bg-gradient-primary",
+                  "bg-gradient-to-b from-amber-500 to-amber-700",
+                ][slot];
+                const ringColor = [
+                  "ring-slate-300 dark:ring-slate-500",
+                  "ring-primary",
+                  "ring-amber-500",
+                ][slot];
+                const rankNum = [2, 1, 3][slot];
+                const avatarSize = isFirst ? "h-20 w-20" : "h-14 w-14";
+                return (
+                  <div key={i} className="flex flex-col items-center justify-end animate-fade-in">
+                    {isFirst && (
+                      <Crown className="mb-1 h-7 w-7 fill-amber-400 text-amber-400 animate-float drop-shadow" />
+                    )}
+                    <div className="relative">
+                      <Avatar className={cn(avatarSize, "ring-4 ring-offset-2 ring-offset-background shadow-elegant", ringColor)}>
+                        <AvatarImage src={u.avatar_url || undefined} />
+                        <AvatarFallback className="bg-gradient-primary font-display text-lg font-bold text-primary-foreground">
+                          {u.nome?.charAt(0).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className={cn(
+                        "absolute -bottom-2 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full font-display text-xs font-bold text-white shadow-card",
+                        pedestal
+                      )}>
+                        {rankNum}
+                      </span>
+                    </div>
+                    <div className="mt-3 mb-2 text-center">
+                      <p className={cn("max-w-[92px] truncate text-xs font-bold", isMe && "text-primary")}>
+                        {u.nome}{isMe ? " (você)" : ""}
+                      </p>
+                      <p className={cn(
+                        "font-display text-sm font-bold",
+                        isFirst ? "text-primary" : "text-foreground/80"
+                      )}>
+                        {u.pontos}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">pts</span>
+                      </p>
+                    </div>
+                    <div className={cn(
+                      pedestalH, pedestal,
+                      "flex w-full items-start justify-center rounded-t-xl pt-2 text-white/90 shadow-card"
+                    )}>
+                      <span className="font-display text-2xl font-black opacity-40">{rankNum}</span>
+                    </div>
                   </div>
-                  <div className={cn(heights[slot], colors[slot], "flex w-full items-start justify-center rounded-t-2xl pt-3 text-white shadow-card")}>
-                    {icons[slot]}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </Card>
+
 
           <Card className="border-border/60 p-2 shadow-card">
             <ul className="divide-y divide-border/60">
