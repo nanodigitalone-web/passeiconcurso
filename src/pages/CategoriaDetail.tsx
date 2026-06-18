@@ -76,22 +76,7 @@ const CategoriaDetail = () => {
           </div>
         </Card>
 
-        {RECURSOS_DISPONIVEIS.has(`${concurso.id}/${cat.id}`) && (
-          <Card className="mb-5 p-4 border-primary/30">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="inline-flex items-center gap-2 text-xs font-medium text-primary">
-                  <Sparkles className="h-4 w-4" /> Recursos clínicos
-                </div>
-                <p className="mt-1 text-sm font-semibold">Doses, classes, algoritmos e protocolos</p>
-                <p className="text-xs text-muted-foreground">Terminologias · sinais & sintomas</p>
-              </div>
-              <Button asChild size="sm" variant="outline" className="rounded-full">
-                <Link to={`/concursos/${concursoId}/${categoriaId}/recursos`}>Ver</Link>
-              </Button>
-            </div>
-          </Card>
-        )}
+
 
 
 
