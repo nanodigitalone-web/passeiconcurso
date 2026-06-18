@@ -24,6 +24,8 @@ const Quiz = () => {
   const [revealed, setRevealed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [answersReady, setAnswersReady] = useState(false);
+  const [motivation, setMotivation] = useState<MotivationVariant | null>(null);
+  const motivationShownRef = useRef<Set<MotivationVariant>>(new Set());
   const startedAtRef = useRef(Date.now());
 
   // Smart selection (prioritizes unseen/wrong) once the user picks a length.
