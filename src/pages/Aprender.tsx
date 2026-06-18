@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { quizService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, Flame, Lock, Trophy, Check, Play, BookMarked } from "lucide-react";
+import { Zap, Flame, Lock, Trophy, Check, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Aprender = () => {
@@ -39,15 +39,15 @@ const Aprender = () => {
         </p>
       </header>
 
-      <Card className="mb-5 overflow-hidden border-0 bg-gradient-to-br from-warning to-accent p-5 text-white shadow-elegant">
+      <Card className="mb-6 overflow-hidden rounded-3xl border-0 bg-gradient-hero p-5 text-white shadow-elegant">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wider opacity-80">Seus pontos</p>
             <p className="font-display text-4xl font-bold leading-none">{pontos}</p>
           </div>
-          <div className="text-right">
-            <Flame className="ml-auto h-6 w-6" />
-            <p className="text-xs">{profile?.streak ?? 0} dias</p>
+          <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5">
+            <Flame className="h-5 w-5" />
+            <span className="font-display text-lg font-bold leading-none">{profile?.streak ?? 0}</span>
           </div>
         </div>
         {cat && (
@@ -58,85 +58,77 @@ const Aprender = () => {
       </Card>
 
       {!cat ? (
-        <Card className="p-6 text-center border-dashed">
+        <Card className="rounded-3xl border-2 border-dashed p-6 text-center">
           <p className="text-sm text-muted-foreground">
             Escolha a sua categoria profissional para começar a trilha.
           </p>
-          <Button asChild className="mt-4 rounded-full bg-gradient-primary">
+          <Button asChild className="mt-4">
             <Link to="/concursos">Escolher categoria</Link>
           </Button>
         </Card>
       ) : (
-        <div className="relative pl-2">
-          <div className="absolute left-[26px] top-3 bottom-3 w-1 rounded-full bg-muted" />
-          <ul className="space-y-4">
-            {days.map((titulo, i) => {
-              const done = i <= completedDay;
-              const current = i === currentDay;
-              const locked = i > currentDay;
-              const isReview = i === days.length - 1;
+        <ul className="relative mx-auto flex max-w-md flex-col items-center gap-6 py-4">
+          {days.map((titulo, i) => {
+            const done = i <= completedDay;
+            const current = i === currentDay;
+            const locked = i > currentDay;
+            const isReview = i === days.length - 1;
+            // Serpentine horizontal offset (Duolingo winding path)
+            const wave = [0, 1, 2, 1, 0, -1, -2, -1];
+            const offset = wave[i % wave.length] * 34;
 
-              return (
-                <li key={i} className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-4 shadow-card transition-smooth",
-                      done && "border-success bg-success text-success-foreground",
-                      current && "border-warning bg-gradient-to-br from-warning to-accent text-white animate-pulse",
-                      locked && "border-border bg-muted text-muted-foreground"
-                    )}
+            return (
+              <li
+                key={i}
+                className="flex w-full flex-col items-center"
+                style={{ transform: `translateX(${offset}px)` }}
+              >
+                {(current || done) && !locked ? (
+                  <Link
+                    to={`/aprender/sessao/${concursoId}/${categoriaId}?dia=${i}`}
+                    aria-label={titulo}
+                    className="group flex flex-col items-center"
                   >
-                    {done ? (
-                      <Check className="h-5 w-5" />
-                    ) : locked ? (
-                      <Lock className="h-4 w-4" />
-                    ) : isReview ? (
-                      <Trophy className="h-5 w-5" />
-                    ) : (
-                      <span className="font-display text-sm font-bold">{i + 1}</span>
+                    <span
+                      className={cn(
+                        "relative flex h-[68px] w-[72px] items-center justify-center rounded-[40%] text-white transition-transform group-active:translate-y-1",
+                        done
+                          ? "bg-success shadow-[0_6px_0_0_hsl(var(--primary-deep))]"
+                          : "bg-accent shadow-[0_6px_0_0_hsl(var(--accent-deep))]",
+                        current && "animate-float",
+                      )}
+                    >
+                      {done ? (
+                        <Check className="h-7 w-7" strokeWidth={3} />
+                      ) : isReview ? (
+                        <Trophy className="h-7 w-7" />
+                      ) : (
+                        <Play className="h-7 w-7 fill-current" />
+                      )}
+                    </span>
+                    {current && (
+                      <span className="mt-2 rounded-xl border-2 border-border bg-card px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary shadow-card">
+                        Começar
+                      </span>
                     )}
-                  </div>
-
-                  <Card
-                    className={cn(
-                      "flex-1 border-border/60 p-3 shadow-card",
-                      current && "border-warning/50 ring-1 ring-warning/30",
-                      locked && "opacity-70"
-                    )}
-                  >
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {isReview ? "Dia final" : `Dia ${i + 1}`}
-                    </p>
-                    <p className="mt-0.5 flex items-start gap-1.5 font-display text-sm font-semibold leading-snug">
-                      <BookMarked className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                      {titulo}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {done ? "Concluído ✓" : current ? "Disponível agora" : "Bloqueado"}
-                    </p>
-                    {(current || done) && (
-                      <Button
-                        asChild
-                        size="sm"
-                        className={cn(
-                          "mt-2 rounded-full",
-                          current
-                            ? "bg-gradient-to-r from-warning to-accent text-white"
-                            : "bg-secondary text-secondary-foreground"
-                        )}
-                      >
-                        <Link to={`/aprender/sessao/${concursoId}/${categoriaId}?dia=${i}`}>
-                          <Play className="mr-1 h-3.5 w-3.5" />
-                          {done ? "Rever dia" : "Começar dia"}
-                        </Link>
-                      </Button>
-                    )}
-                  </Card>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+                  </Link>
+                ) : (
+                  <span className="flex h-[68px] w-[72px] items-center justify-center rounded-[40%] bg-muted text-muted-foreground shadow-[0_6px_0_0_hsl(var(--border))]">
+                    {isReview ? <Trophy className="h-6 w-6" /> : <Lock className="h-5 w-5" />}
+                  </span>
+                )}
+                <p
+                  className={cn(
+                    "mt-2 max-w-[180px] text-center text-xs font-semibold leading-snug",
+                    locked ? "text-muted-foreground" : "text-foreground",
+                  )}
+                >
+                  {isReview ? "Revisão geral" : titulo}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </AppShell>
   );
