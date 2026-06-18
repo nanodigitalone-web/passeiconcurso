@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { rankingService, type RankRow } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { Crown, Medal, Trophy } from "lucide-react";
+import { Crown, Trophy } from "lucide-react";
 
 type Filtro = "todos" | "minha";
 
