@@ -123,4 +123,21 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+  /* Duolingo chunky pressable buttons */
+  .btn-3d {
+    box-shadow: 0 4px 0 0 hsl(var(--primary-deep));
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  .btn-3d:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 0 hsl(var(--primary-deep));
+  }
+  .btn-3d-accent {
+    box-shadow: 0 4px 0 0 hsl(var(--accent-deep));
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  .btn-3d-accent:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 0 hsl(var(--accent-deep));
+  }
 }
