@@ -49,6 +49,7 @@ export default {
         warning: {
           DEFAULT: withOpacity("--warning"),
           foreground: withOpacity("--warning-foreground"),
+          strong: withOpacity("--warning-strong"),
         },
         muted: {
           DEFAULT: withOpacity("--muted"),

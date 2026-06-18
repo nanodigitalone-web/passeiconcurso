@@ -39,6 +39,8 @@
     /* streak orange */
     --warning: 36, 100%, 50%;
     --warning-foreground: 0, 0%, 100%;
+    /* readable amber text for use on light warning tints */
+    --warning-strong: 28, 85%, 34%;
 
     --destructive: 0, 84%, 60%;
     --destructive-foreground: 0, 0%, 100%;
@@ -79,6 +81,7 @@
     --border: 217, 35%, 20%;
     --input: 217, 35%, 20%;
     --ring: 210, 100%, 62%;
+    --warning-strong: 40, 95%, 62%;
   }
 }
 
