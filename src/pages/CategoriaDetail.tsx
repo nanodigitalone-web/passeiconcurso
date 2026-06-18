@@ -5,15 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { quizService, authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, BookMarked, Clock, Play, Check, UserCheck, Sparkles } from "lucide-react";
+import { BookOpen, BookMarked, Clock, Play, Check, UserCheck } from "lucide-react";
 import { AccessGate } from "@/components/AccessGate";
 import { toast } from "sonner";
 
-// Categorias que já têm Recursos clínicos disponíveis.
-const RECURSOS_DISPONIVEIS = new Set([
-  "licenciatura-medicina/medicina-interna",
-  "licenciatura-medicina/pediatria",
-]);
 
 const CategoriaDetail = () => {
   const { concursoId, categoriaId } = useParams();
