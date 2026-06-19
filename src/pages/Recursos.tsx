@@ -55,12 +55,20 @@ const RecursosInner = ({ concursoId, categoriaId }: { concursoId: string; catego
     );
   }
 
+  const doseItens = seccoes
+    .filter((s) => s.tipo === "doses")
+    .flatMap((s) => s.itens) as RecursoItem[];
+
   return (
     <>
       <div className="mb-4 flex items-start gap-2 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-2.5 text-xs font-medium text-warning-strong">
         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>Conteúdo de estudo. Confirme doses e protocolos nas normas oficiais antes do uso clínico.</span>
       </div>
+
+      {doseItens.length > 0 && <DoseCalculator itens={doseItens} />}
+
+
 
       <div className="grid gap-4 md:grid-cols-2">
         {seccoes.map((s) => {
