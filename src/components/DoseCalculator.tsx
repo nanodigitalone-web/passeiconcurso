@@ -39,7 +39,8 @@ export const DoseCalculator = ({ itens }: { itens: RecursoItem[] }) => {
     [selected],
   );
 
-  const pe(weight: number) => weight; // noop placeholder (kept tree-shake friendly)
+
+
 
   const peso_n = parseFloat(peso.replace(",", "."));
   const perKg = selected ? parsePerKg(selected.valor) : null;
