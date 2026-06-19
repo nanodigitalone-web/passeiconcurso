@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
-import { quizService, recursosService, type RecursoSeccao, type RecursoTipo } from "@/services";
+import { quizService, recursosService, type RecursoSeccao, type RecursoTipo, type RecursoItem } from "@/services";
 import { AccessGate } from "@/components/AccessGate";
+import { DoseCalculator } from "@/components/DoseCalculator";
 import {
   Sparkles, Pill, FlaskConical, GitBranch, ClipboardList, BookA, Activity, Loader2, AlertTriangle,
 } from "lucide-react";
