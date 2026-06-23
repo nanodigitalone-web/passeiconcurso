@@ -83,7 +83,7 @@ const Login = () => {
           </p>
           <p className="mt-6 text-center">
             <a href="/admin" className="text-[10px] font-light tracking-wide opacity-50 hover:opacity-100 transition-opacity">
-              Nano Digital One
+              Yetuedu
             </a>
           </p>
         </div>
