@@ -1,13 +1,22 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { quizService } from "@/services";
+import { quizService, cursosService } from "@/services";
+import type { CursoPreparatorio } from "@/services";
 import { temRecursos } from "@/lib/recursosDisponiveis";
-import { Sparkles, ArrowRight, Clock } from "lucide-react";
+import { Sparkles, ArrowRight, Clock, GraduationCap, Phone, ExternalLink } from "lucide-react";
 
 const RecursosIndex = () => {
   const concursos = quizService.getConcursos();
+  const [cursos, setCursos] = useState<CursoPreparatorio[]>([]);
+
+  useEffect(() => {
+    cursosService.listAll().then(setCursos).catch(() => setCursos([]));
+  }, []);
+
+  const concNome = (id: string) => concursos.find((c) => c.id === id)?.nome ?? id;
 
   // Categorias que já têm recursos clínicos disponíveis.
   const disponiveis = concursos.flatMap((c) =>
@@ -51,13 +60,61 @@ const RecursosIndex = () => {
         </div>
       )}
 
-      <Card className="mt-6 flex items-start gap-3 border-dashed bg-muted/30 p-4">
-        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">
-          As restantes categorias ainda não têm recursos clínicos. Estamos a prepará-los e estarão
-          disponíveis em breve.
-        </p>
-      </Card>
+      {/* Cursos Preparatórios */}
+      <section className="mt-8">
+        <div className="mb-3 flex items-center gap-2">
+          <GraduationCap className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-xl font-bold">Cursos preparatórios</h2>
+        </div>
+        {cursos.length === 0 ? (
+          <Card className="flex items-start gap-3 border-dashed bg-muted/30 p-4">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
+              Ainda não há cursos preparatórios disponíveis. Estamos a adicioná-los em breve.
+            </p>
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {cursos.map((curso) => (
+              <Card key={curso.id} className="flex flex-col p-5 shadow-card">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
+                    {curso.logo_url ? (
+                      <img src={curso.logo_url} alt={curso.nome} className="h-full w-full object-contain" loading="lazy" />
+                    ) : (
+                      <GraduationCap className="h-7 w-7 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary">
+                      {concNome(curso.concurso_id)}
+                    </span>
+                    <h3 className="mt-1 truncate font-display text-base font-bold leading-tight">{curso.nome}</h3>
+                  </div>
+                </div>
+
+                {curso.descricao && (
+                  <p className="mt-3 flex-1 text-xs text-muted-foreground">{curso.descricao}</p>
+                )}
+
+                {curso.contacto && (
+                  <p className="mt-3 flex items-center gap-2 text-sm text-foreground">
+                    <Phone className="h-4 w-4 text-primary" /> {curso.contacto}
+                  </p>
+                )}
+
+                {curso.link_externo && (
+                  <Button asChild className="mt-4 w-full rounded-full font-semibold">
+                    <a href={curso.link_externo} target="_blank" rel="noopener noreferrer">
+                      Visitar preparatório <ExternalLink className="ml-2 h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
     </AppShell>
   );
 };

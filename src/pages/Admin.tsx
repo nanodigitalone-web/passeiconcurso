@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { adminService, authService, quizService, notificationsService } from "@/services";
+import { adminService, authService, quizService, notificationsService, cursosService } from "@/services";
+import type { CursoPreparatorio } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import {
 import { toast } from "sonner";
 import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban, CheckCircle2, RefreshCw,
-  ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock,
+  ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock, GraduationCap, Plus, Phone, Image as ImageIcon,
 } from "lucide-react";
 
 const concursos = quizService.getConcursos();
@@ -99,6 +100,7 @@ const Admin = () => {
             <TabsTrigger value="codes" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><KeyRound className="h-4 w-4 mr-1" />Códigos</TabsTrigger>
             <TabsTrigger value="notifs" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><Bell className="h-4 w-4 mr-1" />Notificações</TabsTrigger>
             <TabsTrigger value="comprovativos" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><FileText className="h-4 w-4 mr-1" />Comprovativos</TabsTrigger>
+            <TabsTrigger value="preparatorios" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><GraduationCap className="h-4 w-4 mr-1" />Preparatórios</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats"><StatsTab /></TabsContent>
@@ -106,6 +108,7 @@ const Admin = () => {
           <TabsContent value="codes"><CodesTab /></TabsContent>
           <TabsContent value="notifs"><NotifsTab /></TabsContent>
           <TabsContent value="comprovativos"><ComprovativosTab /></TabsContent>
+          <TabsContent value="preparatorios"><PreparatoriosTab /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -684,6 +687,159 @@ const ComprovativosTab = () => {
           </Card>
         );
       })}
+    </div>
+  );
+};
+
+/* ---------------- Cursos Preparatórios ---------------- */
+const emptyCurso = (): Partial<CursoPreparatorio> => ({
+  concurso_id: concursos[0]?.id ?? "",
+  nome: "",
+  logo_url: "",
+  contacto: "",
+  link_externo: "",
+  descricao: "",
+  ativo: true,
+  ordem: 0,
+});
+
+const PreparatoriosTab = () => {
+  const [rows, setRows] = useState<CursoPreparatorio[]>([]);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Partial<CursoPreparatorio> | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => setRows(await cursosService.adminList());
+  useEffect(() => { load(); }, []);
+
+  const concNome = (id: string) => concursos.find(c => c.id === id)?.nome ?? id;
+
+  const openNew = () => { setEditing(emptyCurso()); setOpen(true); };
+  const openEdit = (c: CursoPreparatorio) => { setEditing({ ...c }); setOpen(true); };
+
+  const save = async () => {
+    if (!editing?.nome?.trim() || !editing?.concurso_id) {
+      toast.error("Preencha o nome e o concurso");
+      return;
+    }
+    setBusy(true);
+    const payload: any = {
+      concurso_id: editing.concurso_id,
+      nome: editing.nome.trim(),
+      logo_url: editing.logo_url?.trim() || null,
+      contacto: editing.contacto?.trim() || null,
+      link_externo: editing.link_externo?.trim() || null,
+      descricao: editing.descricao?.trim() || null,
+      ativo: editing.ativo ?? true,
+      ordem: Number(editing.ordem) || 0,
+    };
+    const { error } = editing.id
+      ? await cursosService.update(editing.id, payload)
+      : await cursosService.create(payload);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Guardado");
+    setOpen(false); setEditing(null); load();
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Eliminar este preparatório?")) return;
+    const { error } = await cursosService.remove(id);
+    if (error) toast.error(error.message); else { toast.success("Eliminado"); load(); }
+  };
+
+  const toggle = async (c: CursoPreparatorio) => {
+    const { error } = await cursosService.update(c.id, { ativo: !c.ativo });
+    if (error) toast.error(error.message); else load();
+  };
+
+  const inputCls = "bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white placeholder:text-white/40";
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-white/60">{rows.length} preparatório(s)</p>
+        <Button size="sm" className="rounded-full" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Novo</Button>
+      </div>
+
+      <div className="space-y-2">
+        {rows.map(c => (
+          <Card key={c.id} className={`${PANEL} p-3`}>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white/10 flex items-center justify-center">
+                {c.logo_url
+                  ? <img src={c.logo_url} alt={c.nome} className="h-full w-full object-contain" />
+                  : <GraduationCap className="h-6 w-6 text-white/50" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate flex items-center gap-2">
+                  {c.nome}
+                  {!c.ativo && <Badge variant="secondary">Inactivo</Badge>}
+                  <Badge variant="outline" className="border-white/20 text-white/60">{concNome(c.concurso_id)}</Badge>
+                </p>
+                <p className="text-xs text-white/55 truncate">
+                  {c.contacto && <span className="mr-2">{c.contacto}</span>}
+                  {c.link_externo && <span className="text-sky-300">{c.link_externo}</span>}
+                </p>
+              </div>
+              <div className="flex gap-1">
+                <Button size="sm" variant="secondary" title={c.ativo ? "Desactivar" : "Activar"} onClick={() => toggle(c)}>
+                  {c.ativo ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </Button>
+                <Button size="sm" variant="secondary" title="Editar" onClick={() => openEdit(c)}><RefreshCw className="h-4 w-4" /></Button>
+                <Button size="sm" variant="destructive" title="Eliminar" onClick={() => del(c.id)}><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+        {rows.length === 0 && <p className="text-sm text-white/50">Nenhum preparatório ainda.</p>}
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className={`${PANEL} max-w-md`}>
+          <DialogHeader><DialogTitle>{editing?.id ? "Editar" : "Novo"} preparatório</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-white/60">Concurso</label>
+                <Select value={editing.concurso_id} onValueChange={v => setEditing({ ...editing, concurso_id: v })}>
+                  <SelectTrigger className={inputCls}><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {concursos.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs text-white/60">Nome do preparatório</label>
+                <Input className={inputCls} value={editing.nome ?? ""} onChange={e => setEditing({ ...editing, nome: e.target.value })} placeholder="Ex: Preparatório Saber+" />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 flex items-center gap-1"><ImageIcon className="h-3 w-3" /> Link do logótipo (URL da imagem)</label>
+                <Input className={inputCls} value={editing.logo_url ?? ""} onChange={e => setEditing({ ...editing, logo_url: e.target.value })} placeholder="https://.../logo.png" />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 flex items-center gap-1"><Phone className="h-3 w-3" /> Contacto</label>
+                <Input className={inputCls} value={editing.contacto ?? ""} onChange={e => setEditing({ ...editing, contacto: e.target.value })} placeholder="Ex: +244 9XX XXX XXX" />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 flex items-center gap-1"><ExternalLink className="h-3 w-3" /> Link externo</label>
+                <Input className={inputCls} value={editing.link_externo ?? ""} onChange={e => setEditing({ ...editing, link_externo: e.target.value })} placeholder="https://..." />
+              </div>
+              <div>
+                <label className="text-xs text-white/60">Descrição (opcional)</label>
+                <Textarea className={inputCls} value={editing.descricao ?? ""} onChange={e => setEditing({ ...editing, descricao: e.target.value })} placeholder="Breve descrição do preparatório" />
+              </div>
+              <div className="flex gap-3">
+                <div className="w-24">
+                  <label className="text-xs text-white/60">Ordem</label>
+                  <Input type="number" className={inputCls} value={editing.ordem ?? 0} onChange={e => setEditing({ ...editing, ordem: Number(e.target.value) })} />
+                </div>
+              </div>
+              <Button className="w-full rounded-full" disabled={busy} onClick={save}>{busy ? "A guardar…" : "Guardar"}</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
