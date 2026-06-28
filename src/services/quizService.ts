@@ -80,6 +80,13 @@ export const quizService = {
       if (q) {
         q.correta = item.correta;
         q.comentario = item.comentario;
+        // Remove answer-position bias (source data often has the correct
+        // option in the same slot): shuffle the options and remap `correta`.
+        if (q.correta >= 0 && q.opcoes.length > 1) {
+          const order = shuffle(q.opcoes.map((_, i) => i));
+          q.opcoes = order.map((i) => q.opcoes[i]);
+          q.correta = order.indexOf(item.correta);
+        }
       }
     }
     hydrated.add(key);

@@ -13,7 +13,7 @@ import { Swords, Trophy, Clock, ArrowLeft } from "lucide-react";
 const Batalha = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [battle, setBattle] = useState<BattleRow | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -42,22 +42,37 @@ const Batalha = () => {
           return;
         }
         setBattle(b);
-        const alreadyDone = b.challenger_id === myId ? b.challenger_done : b.opponent_done;
+        const iAmChallenger = b.challenger_id === myId;
+        const alreadyDone = iAmChallenger ? b.challenger_done : b.opponent_done;
         if (!alreadyDone) {
-          await quizService.ensureAnswers(b.concurso_id, b.categoria_id);
-          const all = quizService.getQuestions(b.concurso_id, b.categoria_id);
-          const byId = new Map(all.map((q) => [q.id, q]));
-          const qs = b.question_ids.map((qid) => byId.get(qid)).filter(Boolean) as Question[];
-          setQuestions(qs);
+          if (iAmChallenger) {
+            // Challenger plays the questions stored with the battle (their category).
+            await quizService.ensureAnswers(b.concurso_id, b.categoria_id);
+            const all = quizService.getQuestions(b.concurso_id, b.categoria_id);
+            const byId = new Map(all.map((q) => [q.id, q]));
+            const qs = b.question_ids.map((qid) => byId.get(qid)).filter(Boolean) as Question[];
+            setQuestions(qs);
+          } else {
+            // Opponent plays 8 questions from THEIR own category — no need to
+            // share the same category as the challenger.
+            const conc = profile?.concurso_id;
+            const cat = profile?.categoria_id;
+            if (!conc || !cat) {
+              setError("Escolha a sua categoria no perfil para jogar a batalha.");
+              return;
+            }
+            await quizService.ensureAnswers(conc, cat);
+            setQuestions(quizService.getSmartQuestions(conc, cat, 8));
+          }
         }
       } catch (e) {
-        setError("Precisa de acesso a esta categoria para jogar a batalha.");
+        setError("Precisa de acesso à sua categoria para jogar a batalha.");
       } finally {
         setLoading(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, myId]);
+  }, [id, myId, profile?.concurso_id, profile?.categoria_id]);
 
   const current = questions[idx];
   const total = questions.length;
