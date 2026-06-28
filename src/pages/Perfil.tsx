@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { authService, accessService, quizService } from "@/services";
-import { CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing } from "lucide-react";
+import { CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing, Coins, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 
