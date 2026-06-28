@@ -92,7 +92,9 @@ const Index = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{c.nome}</p>
-                  <p className="truncate text-sm text-muted-foreground">{c.area} · {c.categorias.length} categorias</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {c.area} · {c.categorias.length} categorias
+                  </p>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground transition-smooth group-hover:translate-x-1 group-hover:text-primary" />
               </Card>
