@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { quizService, notificationsService } from "@/services";
+import { quizService, notificationsService, authService } from "@/services";
 import { cn } from "@/lib/utils";
 import { Check, Clock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
@@ -40,7 +40,7 @@ const Quiz = () => {
   }, []);
 
   // Notifica em caso de simulado abandonado a meio
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const finishedRef = useRef(false);
   const progressRef = useRef({ idx: 0, total: 0, nome: cat?.nome ?? "" });
   progressRef.current = { idx, total: questoes.length, nome: cat?.nome ?? "" };
@@ -148,6 +148,13 @@ const Quiz = () => {
         startedAt: startedAtRef.current,
       });
       finishedRef.current = true;
+      // Pontos do simulado contam na cotação geral do usuário (1 pt por acerto).
+      if (user && result.acertos > 0) {
+        authService
+          .addPoints(user.id, profile?.pontos || 0, Math.min(100, result.acertos))
+          .then(() => refreshProfile())
+          .catch(() => {});
+      }
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
       const nextIdx = idx + 1;

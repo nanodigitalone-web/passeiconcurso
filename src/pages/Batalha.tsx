@@ -5,7 +5,7 @@ import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { battlesService, quizService, type BattleRow, type Question } from "@/services";
+import { battlesService, quizService, authService, type BattleRow, type Question } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Swords, Trophy, Clock, ArrowLeft } from "lucide-react";
@@ -13,7 +13,7 @@ import { Swords, Trophy, Clock, ArrowLeft } from "lucide-react";
 const Batalha = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
 
   const [battle, setBattle] = useState<BattleRow | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -92,6 +92,13 @@ const Batalha = () => {
     // finished — submit
     setSubmitting(true);
     await battlesService.submitResult(battle!.id, score);
+    // Pontos da batalha contam na cotação geral (5 pts por acerto).
+    if (user && score > 0) {
+      await authService
+        .addPoints(user.id, profile?.pontos || 0, Math.min(100, score * 5))
+        .catch(() => {});
+      refreshProfile();
+    }
     const refreshed = await battlesService.get(battle!.id);
     setBattle(refreshed);
     setSubmitting(false);
