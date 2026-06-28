@@ -5,9 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { quizService, paymentsService, notificationsService, clearAccessCache } from "@/services";
+import { quizService, paymentsService, notificationsService, coinsService, clearAccessCache } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Upload, Loader2, Landmark } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Upload, Loader2, Landmark, Coins } from "lucide-react";
 import { toast } from "sonner";
 
 const IBAN = "AO06005900000251657910155";
