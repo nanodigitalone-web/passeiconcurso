@@ -72,7 +72,9 @@ export const PlatformAlertModal = () => {
             avatarName: f.nome,
             primary: {
               label: "Aceitar",
-              action: () => friendsService.respond(f.friendship_id, true),
+              action: async () => {
+                await friendsService.respond(f.friendship_id, true);
+              },
             },
             secondary: {
               label: "Agora não",
