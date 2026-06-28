@@ -19,7 +19,7 @@ import {
 import { toast } from "sonner";
 import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban, CheckCircle2, RefreshCw,
-  ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock,
+  ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock, GraduationCap, Plus, Phone, Image as ImageIcon,
 } from "lucide-react";
 
 const concursos = quizService.getConcursos();
