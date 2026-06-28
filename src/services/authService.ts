@@ -18,6 +18,9 @@ export type Profile = {
   blocked?: boolean;
   hidden?: boolean;
   email?: string | null;
+  moedas?: number;
+  iban?: string | null;
+  friend_code?: string | null;
 };
 
 export const authService = {

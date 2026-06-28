@@ -5,9 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { quizService, paymentsService, notificationsService, clearAccessCache } from "@/services";
+import { quizService, paymentsService, notificationsService, coinsService, clearAccessCache } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Upload, Loader2, Landmark } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Upload, Loader2, Landmark, Coins } from "lucide-react";
 import { toast } from "sonner";
 
 const IBAN = "AO06005900000251657910155";
@@ -19,7 +19,7 @@ const Acesso = () => {
   const { concursoId, categoriaId } = useParams();
   const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const concurso = quizService.getConcurso(concursoId!);
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("instrucoes");
@@ -28,6 +28,7 @@ const Acesso = () => {
   const [requestId, setRequestId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [activating, setActivating] = useState(false);
+  const [payingCoins, setPayingCoins] = useState(false);
 
   if (!cat || !concurso) return <Navigate to="/concursos" replace />;
   if (!user) return <Navigate to="/login" replace />;
@@ -107,6 +108,30 @@ const Acesso = () => {
     }
   };
 
+  const pagarComMoedas = async () => {
+    setPayingCoins(true);
+    try {
+      const res = await coinsService.purchaseAccess(concurso.id, cat.id);
+      if (!res.ok) {
+        toast.error(res.error === "insufficient_coins" ? "Moedas insuficientes" : "Erro ao pagar com moedas");
+        return;
+      }
+      clearAccessCache(user.id);
+      await notificationsService.create({
+        userId: user.id,
+        title: "Conta activada ✅",
+        body: `O seu acesso a ${cat.nome} (${concurso.sigla}) foi activado com moedas. Bons estudos!`,
+      });
+      await refreshProfile();
+      toast.success("Acesso activado com moedas!");
+      setStep("concluido");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao pagar com moedas");
+    } finally {
+      setPayingCoins(false);
+    }
+  };
+
   return (
     <AppShell>
       <button onClick={() => navigate(-1)} className="mb-3 inline-flex items-center text-sm text-muted-foreground">
@@ -144,6 +169,26 @@ const Acesso = () => {
           );
         })}
       </div>
+
+      {step === "instrucoes" && (
+        <Card className="mb-4 border-primary/30 bg-primary/5 p-4">
+          <div className="flex items-center gap-2 font-semibold">
+            <Coins className="h-5 w-5 text-primary" /> Pagar com moedas (instantâneo)
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tem <strong>{(profile?.moedas ?? 0).toLocaleString("pt-PT")}</strong> moedas. Este acesso custa{" "}
+            <strong>{pricing.valor.toLocaleString("pt-PT")}</strong> moedas e é activado de imediato.
+          </p>
+          <Button
+            onClick={pagarComMoedas}
+            disabled={payingCoins || (profile?.moedas ?? 0) < pricing.valor}
+            className="mt-3 w-full rounded-full bg-gradient-primary"
+          >
+            {payingCoins ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
+            {(profile?.moedas ?? 0) < pricing.valor ? "Moedas insuficientes" : `Desbloquear por ${pricing.valor} moedas`}
+          </Button>
+        </Card>
+      )}
 
       {step === "instrucoes" && (
         <Card className="p-5">

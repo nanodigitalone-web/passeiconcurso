@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { authService, accessService, quizService } from "@/services";
-import { CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing } from "lucide-react";
+import { CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing, Coins, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -134,6 +134,25 @@ const Perfil = () => {
           </div>
         </div>
       </Card>
+
+      <Link to="/carteira" className="mb-6 block">
+        <Card className="flex items-center justify-between gap-3 p-4 shadow-card border-border/60 transition-colors hover:bg-muted/40">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Coins className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-semibold">A minha carteira</p>
+              <p className="text-xs text-muted-foreground">
+                {(profile?.moedas ?? 0).toLocaleString("pt-PT")} moedas · carregar, presentear e sacar
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Card>
+      </Link>
+
+
 
       <Card className="mb-6 p-6 shadow-card border-border/60">
         <div className="mb-4 flex items-center gap-2 font-semibold">

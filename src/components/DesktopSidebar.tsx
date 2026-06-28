@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, Trophy, BarChart3, BookOpen, Zap, User, Sparkles } from "lucide-react";
+import { Home, Trophy, BarChart3, BookOpen, Zap, User, Sparkles, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -10,6 +10,7 @@ const items = [
   { to: "/recursos", label: "Recursos", icon: Sparkles },
   { to: "/percurso", label: "Percurso", icon: BarChart3 },
   { to: "/ranking", label: "Ranking", icon: Trophy },
+  { to: "/carteira", label: "Carteira", icon: Coins },
   { to: "/perfil", label: "Perfil", icon: User },
 ];
 

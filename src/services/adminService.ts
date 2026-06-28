@@ -192,4 +192,56 @@ export const adminService = {
   rejectPayment(id: string) {
     return supabase.from("payment_requests").update({ status: "rejected" as any }).eq("id", id);
   },
+
+  // ---- Coin top-ups ----
+  async listTopupRequests(filter: "all" | "awaiting_review" | "approved" | "rejected", limit = 200) {
+    let q = supabase
+      .from("coin_topup_requests" as any)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (filter !== "all") q = q.eq("status", filter as any);
+    const { data } = await q;
+    return (data as any[]) ?? [];
+  },
+
+  async approveTopup(r: any) {
+    const { error } = await supabase.rpc("admin_credit_coins" as any, {
+      _user: r.user_id,
+      _amount: r.moedas,
+      _desc: `Carregamento de ${r.moedas} moedas`,
+    });
+    if (error) throw error;
+    await supabase.from("coin_topup_requests" as any).update({ status: "approved" }).eq("id", r.id);
+  },
+
+  rejectTopup(id: string) {
+    return supabase.from("coin_topup_requests" as any).update({ status: "rejected" }).eq("id", id);
+  },
+
+  // ---- Withdrawals ----
+  async listWithdrawals(filter: "all" | "pending" | "paid" | "rejected", limit = 200) {
+    let q = supabase
+      .from("withdrawal_requests" as any)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (filter !== "all") q = q.eq("status", filter as any);
+    const { data } = await q;
+    return (data as any[]) ?? [];
+  },
+
+  markWithdrawalPaid(id: string) {
+    return supabase.from("withdrawal_requests" as any).update({ status: "paid" }).eq("id", id);
+  },
+
+  async rejectWithdrawal(r: any) {
+    // refund coins back to the user
+    await supabase.rpc("admin_credit_coins" as any, {
+      _user: r.user_id,
+      _amount: r.moedas,
+      _desc: "Saque rejeitado — moedas devolvidas",
+    });
+    return supabase.from("withdrawal_requests" as any).update({ status: "rejected" }).eq("id", r.id);
+  },
 };

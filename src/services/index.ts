@@ -29,4 +29,6 @@ export { recursosService } from "./recursosService";
 export type { RecursoSeccao, RecursoItem, RecursoTipo } from "./recursosService";
 export { cursosService } from "./cursosService";
 export type { CursoPreparatorio } from "./cursosService";
+export { coinsService, COIN_RULES } from "./coinsService";
+export type { CoinTx, TopupRequest, WithdrawalRequest } from "./coinsService";
 export type { PushStatus } from "./pushService";
