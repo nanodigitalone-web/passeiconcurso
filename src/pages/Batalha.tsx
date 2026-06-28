@@ -13,7 +13,7 @@ import { Swords, Trophy, Clock, ArrowLeft } from "lucide-react";
 const Batalha = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [battle, setBattle] = useState<BattleRow | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
