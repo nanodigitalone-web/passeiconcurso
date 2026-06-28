@@ -851,4 +851,202 @@ const PreparatoriosTab = () => {
   );
 };
 
+/* ---------------- Carregamentos de moedas ---------------- */
+const CarregamentosTab = () => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const [filter, setFilter] = useState<"all" | "awaiting_review" | "approved" | "rejected">("awaiting_review");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = async () => {
+    const data = await adminService.listTopupRequests(filter, 200);
+    setRows(data);
+    const ids = Array.from(new Set(data.map((r: any) => r.user_id)));
+    if (ids.length) {
+      const ps = await adminService.listProfilesByIds(ids as string[]);
+      const map: Record<string, any> = {};
+      ps.forEach((p: any) => { map[p.id] = p; });
+      setProfiles(map);
+    }
+  };
+  useEffect(() => { load(); }, [filter]);
+
+  const openComprovativo = async (path: string) => {
+    try { window.open(await adminService.getComprovativoUrl(path), "_blank"); }
+    catch { toast.error("Não foi possível abrir o comprovativo"); }
+  };
+
+  const aprovar = async (r: any) => {
+    setBusy(r.id);
+    try {
+      await adminService.approveTopup(r);
+      await notificationsService.create({
+        userId: r.user_id,
+        title: "Moedas creditadas 🪙",
+        body: `Foram adicionadas ${r.moedas} moedas à sua carteira.`,
+      });
+      toast.success("Creditado");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao creditar");
+    } finally { setBusy(null); }
+  };
+
+  const rejeitar = async (r: any) => {
+    if (!confirm("Rejeitar este carregamento?")) return;
+    await adminService.rejectTopup(r.id);
+    toast.success("Rejeitado");
+    load();
+  };
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {(["awaiting_review", "approved", "rejected", "all"] as const).map(f => (
+          <Button key={f} size="sm" variant={filter === f ? "default" : "secondary"} onClick={() => setFilter(f)}>
+            {f === "awaiting_review" ? "Por verificar" : f === "approved" ? "Aprovados" : f === "rejected" ? "Rejeitados" : "Todos"}
+          </Button>
+        ))}
+      </div>
+      {rows.length === 0 && <p className="text-sm text-white/50">Nenhum carregamento.</p>}
+      {rows.map(r => {
+        const p = profiles[r.user_id];
+        return (
+          <Card key={r.id} className={`${PANEL} p-3`}>
+            <div className="flex flex-wrap items-start gap-3">
+              <Avatar className="h-11 w-11 ring-2 ring-white/10">
+                <AvatarImage src={p?.avatar_url || undefined} />
+                <AvatarFallback className="bg-[hsl(220_70%_18%)] text-white font-bold">
+                  {(p?.nome || r.email)?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{p?.nome ?? "—"}</p>
+                <p className="text-xs text-white/60 truncate">{r.email}</p>
+                <p className="text-xs text-white/70 mt-1">{r.amount_aoa} AOA → <span className="font-semibold">{r.moedas} moedas</span></p>
+                <p className="text-[11px] text-white/40 mt-0.5">
+                  Enviado {formatRelative(r.created_at)} · status: <span className="font-semibold text-white/70">{r.status}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {r.comprovativo_url && (
+                  <Button size="sm" variant="secondary" onClick={() => openComprovativo(r.comprovativo_url)}>
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ver
+                  </Button>
+                )}
+                {r.status === "awaiting_review" && (
+                  <>
+                    <Button size="sm" disabled={busy === r.id} onClick={() => aprovar(r)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Creditar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => rejeitar(r)}>
+                      <Ban className="h-3.5 w-3.5 mr-1" /> Rejeitar
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ---------------- Saques ---------------- */
+const SaquesTab = () => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const [filter, setFilter] = useState<"all" | "pending" | "paid" | "rejected">("pending");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = async () => {
+    const data = await adminService.listWithdrawals(filter, 200);
+    setRows(data);
+    const ids = Array.from(new Set(data.map((r: any) => r.user_id)));
+    if (ids.length) {
+      const ps = await adminService.listProfilesByIds(ids as string[]);
+      const map: Record<string, any> = {};
+      ps.forEach((p: any) => { map[p.id] = p; });
+      setProfiles(map);
+    }
+  };
+  useEffect(() => { load(); }, [filter]);
+
+  const pagar = async (r: any) => {
+    if (!confirm(`Confirmar que pagou ${r.aoa} AOA ao IBAN ${r.iban}?`)) return;
+    setBusy(r.id);
+    try {
+      await adminService.markWithdrawalPaid(r.id);
+      await notificationsService.create({
+        userId: r.user_id,
+        title: "Saque pago ✅",
+        body: `O seu saque de ${r.aoa} AOA foi transferido para o seu IBAN.`,
+      });
+      toast.success("Marcado como pago");
+      load();
+    } finally { setBusy(null); }
+  };
+
+  const rejeitar = async (r: any) => {
+    if (!confirm("Rejeitar este saque? As moedas serão devolvidas.")) return;
+    await adminService.rejectWithdrawal(r);
+    await notificationsService.create({
+      userId: r.user_id,
+      title: "Saque rejeitado",
+      body: `O seu pedido de saque foi rejeitado e as ${r.moedas} moedas foram devolvidas.`,
+    });
+    toast.success("Rejeitado e devolvido");
+    load();
+  };
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {(["pending", "paid", "rejected", "all"] as const).map(f => (
+          <Button key={f} size="sm" variant={filter === f ? "default" : "secondary"} onClick={() => setFilter(f)}>
+            {f === "pending" ? "Pendentes" : f === "paid" ? "Pagos" : f === "rejected" ? "Rejeitados" : "Todos"}
+          </Button>
+        ))}
+      </div>
+      {rows.length === 0 && <p className="text-sm text-white/50">Nenhum saque.</p>}
+      {rows.map(r => {
+        const p = profiles[r.user_id];
+        return (
+          <Card key={r.id} className={`${PANEL} p-3`}>
+            <div className="flex flex-wrap items-start gap-3">
+              <Avatar className="h-11 w-11 ring-2 ring-white/10">
+                <AvatarImage src={p?.avatar_url || undefined} />
+                <AvatarFallback className="bg-[hsl(220_70%_18%)] text-white font-bold">
+                  {(p?.nome || r.email)?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{p?.nome ?? "—"}</p>
+                <p className="text-xs text-white/60 truncate">{r.email}</p>
+                <p className="text-xs text-white/70 mt-1">{r.moedas} moedas → <span className="font-semibold">{r.aoa} AOA</span></p>
+                <p className="text-xs text-white/80 mt-1 font-mono break-all">IBAN: {r.iban}</p>
+                <p className="text-[11px] text-white/40 mt-0.5">
+                  {formatRelative(r.created_at)} · status: <span className="font-semibold text-white/70">{r.status}</span>
+                </p>
+              </div>
+              {r.status === "pending" && (
+                <div className="flex flex-wrap gap-1">
+                  <Button size="sm" disabled={busy === r.id} onClick={() => pagar(r)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Pago
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => rejeitar(r)}>
+                    <Ban className="h-3.5 w-3.5 mr-1" /> Rejeitar
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};
+
 export default Admin;
+
