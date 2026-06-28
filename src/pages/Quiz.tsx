@@ -148,6 +148,13 @@ const Quiz = () => {
         startedAt: startedAtRef.current,
       });
       finishedRef.current = true;
+      // Pontos do simulado contam na cotação geral do usuário (1 pt por acerto).
+      if (user && result.acertos > 0) {
+        authService
+          .addPoints(user.id, profile?.pontos || 0, Math.min(100, result.acertos))
+          .then(() => refreshProfile())
+          .catch(() => {});
+      }
       navigate(`/resultado/${result.id}`, { state: result });
     } else {
       const nextIdx = idx + 1;
