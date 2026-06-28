@@ -26,6 +26,7 @@ import Notificacoes from "./pages/Notificacoes";
 import Recursos from "./pages/Recursos";
 import RecursosIndex from "./pages/RecursosIndex";
 import Batalha from "./pages/Batalha";
+import Carteira from "./pages/Carteira";
 import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient({
