@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
@@ -7,10 +8,19 @@ import { rankingService, type RankRow } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Crown, Trophy } from "lucide-react";
+import { WeeklyTop } from "@/components/ranking/WeeklyTop";
+import { FriendsPanel } from "@/components/ranking/FriendsPanel";
 
 type Filtro = "todos" | "minha";
+type Tab = "geral" | "semana" | "amigos";
 
-const Ranking = () => {
+const TABS: { id: Tab; label: string }[] = [
+  { id: "geral", label: "Geral" },
+  { id: "semana", label: "Semana" },
+  { id: "amigos", label: "Amigos" },
+];
+
+const GeralRanking = () => {
   const { profile, user } = useAuth();
   const [rows, setRows] = useState<RankRow[]>([]);
   const [filtro, setFiltro] = useState<Filtro>("todos");
@@ -27,17 +37,7 @@ const Ranking = () => {
   const data = rows;
 
   return (
-    <AppShell>
-      <Seo
-        title="Ranking de Candidatos · Passei"
-        description="Veja a classificação dos melhores candidatos do Passei e compita com outros profissionais da sua área da saúde."
-        path="/ranking"
-      />
-      <header className="mb-5 animate-fade-in">
-        <h1 className="font-display text-2xl font-bold">Ranking de Candidatos</h1>
-        <p className="text-sm text-muted-foreground">Os melhores candidatos do Passei</p>
-      </header>
-
+    <>
       <div className="mb-5 inline-flex w-full rounded-full bg-muted p-1">
         <button
           onClick={() => setFiltro("todos")}
@@ -130,7 +130,6 @@ const Ranking = () => {
             </div>
           </Card>
 
-
           <Card className="border-border/60 p-2 shadow-card">
             <ul className="divide-y divide-border/60">
               {data.map((u, i) => {
@@ -171,6 +170,50 @@ const Ranking = () => {
           </Card>
         </>
       )}
+    </>
+  );
+};
+
+const Ranking = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initial = (searchParams.get("tab") as Tab) || "geral";
+  const [tab, setTab] = useState<Tab>(["geral", "semana", "amigos"].includes(initial) ? initial : "geral");
+
+  const changeTab = (t: Tab) => {
+    setTab(t);
+    setSearchParams(t === "geral" ? {} : { tab: t }, { replace: true });
+  };
+
+  return (
+    <AppShell>
+      <Seo
+        title="Ranking de Candidatos · Passei"
+        description="Veja a classificação dos melhores candidatos do Passei, o top da semana, conecte amigos e desafie-os em batalhas."
+        path="/ranking"
+      />
+      <header className="mb-5 animate-fade-in">
+        <h1 className="font-display text-2xl font-bold">Ranking de Candidatos</h1>
+        <p className="text-sm text-muted-foreground">Compita, conecte amigos e dispute batalhas</p>
+      </header>
+
+      <div className="mb-5 inline-flex w-full rounded-full bg-muted p-1">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => changeTab(t.id)}
+            className={cn(
+              "flex-1 rounded-full px-3 py-2 text-xs font-semibold transition-smooth",
+              tab === t.id ? "bg-background text-primary shadow-card" : "text-muted-foreground"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "geral" && <GeralRanking />}
+      {tab === "semana" && <WeeklyTop />}
+      {tab === "amigos" && <FriendsPanel />}
     </AppShell>
   );
 };
