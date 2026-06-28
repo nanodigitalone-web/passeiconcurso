@@ -15,4 +15,10 @@ export const rankingService = {
     const { data } = await supabase.rpc("get_ranking", { _categoria: categoria });
     return (data ?? []) as RankRow[];
   },
+
+  /** Weekly ranking — points earned since Monday, resets every week. */
+  async getWeeklyRanking(): Promise<RankRow[]> {
+    const { data } = await supabase.rpc("get_weekly_ranking");
+    return (data ?? []) as RankRow[];
+  },
 };
