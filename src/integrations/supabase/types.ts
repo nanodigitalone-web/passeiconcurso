@@ -128,6 +128,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cursos_preparatorios: {
+        Row: {
+          ativo: boolean
+          concurso_id: string
+          contacto: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          link_externo: string | null
+          logo_url: string | null
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          concurso_id: string
+          contacto?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          link_externo?: string | null
+          logo_url?: string | null
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          concurso_id?: string
+          contacto?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          link_externo?: string | null
+          logo_url?: string | null
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
