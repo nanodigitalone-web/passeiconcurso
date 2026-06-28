@@ -171,6 +171,26 @@ const Acesso = () => {
       </div>
 
       {step === "instrucoes" && (
+        <Card className="mb-4 border-primary/30 bg-primary/5 p-4">
+          <div className="flex items-center gap-2 font-semibold">
+            <Coins className="h-5 w-5 text-primary" /> Pagar com moedas (instantâneo)
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tem <strong>{(profile?.moedas ?? 0).toLocaleString("pt-PT")}</strong> moedas. Este acesso custa{" "}
+            <strong>{pricing.valor.toLocaleString("pt-PT")}</strong> moedas e é activado de imediato.
+          </p>
+          <Button
+            onClick={pagarComMoedas}
+            disabled={payingCoins || (profile?.moedas ?? 0) < pricing.valor}
+            className="mt-3 w-full rounded-full bg-gradient-primary"
+          >
+            {payingCoins ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
+            {(profile?.moedas ?? 0) < pricing.valor ? "Moedas insuficientes" : `Desbloquear por ${pricing.valor} moedas`}
+          </Button>
+        </Card>
+      )}
+
+      {step === "instrucoes" && (
         <Card className="p-5">
           <h2 className="font-display text-lg font-bold">1. Faça o pagamento</h2>
           <p className="mt-1 text-sm text-muted-foreground">
