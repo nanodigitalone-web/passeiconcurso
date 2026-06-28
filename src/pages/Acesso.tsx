@@ -19,7 +19,7 @@ const Acesso = () => {
   const { concursoId, categoriaId } = useParams();
   const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const concurso = quizService.getConcurso(concursoId!);
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("instrucoes");
@@ -28,6 +28,7 @@ const Acesso = () => {
   const [requestId, setRequestId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [activating, setActivating] = useState(false);
+  const [payingCoins, setPayingCoins] = useState(false);
 
   if (!cat || !concurso) return <Navigate to="/concursos" replace />;
   if (!user) return <Navigate to="/login" replace />;
