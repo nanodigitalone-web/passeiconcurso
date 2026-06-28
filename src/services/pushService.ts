@@ -13,18 +13,29 @@ export type PushStatus = "granted" | "denied" | "prompt" | "unsupported" | "load
 
 export const pushService = {
   isSupported() {
-    return "serviceWorker" in navigator && "PushManager" in window;
+    return (
+      typeof navigator !== "undefined" &&
+      "serviceWorker" in navigator &&
+      typeof window !== "undefined" &&
+      "PushManager" in window &&
+      typeof Notification !== "undefined"
+    );
   },
 
   async getStatus(): Promise<PushStatus> {
-    if (!this.isSupported()) return "unsupported";
-    const perm = Notification.permission;
-    if (perm === "granted") {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      return sub ? "granted" : "prompt";
+    try {
+      if (!this.isSupported() || typeof Notification === "undefined") return "unsupported";
+      const perm = Notification.permission;
+      if (perm === "granted") {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        return sub ? "granted" : "prompt";
+      }
+      // Notification.permission can be "default" (never asked) — treat as prompt.
+      return perm === "denied" ? "denied" : "prompt";
+    } catch {
+      return "unsupported";
     }
-    return perm as PushStatus;
   },
 
   async subscribe(userId: string): Promise<boolean> {
