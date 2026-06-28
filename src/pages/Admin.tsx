@@ -99,6 +99,7 @@ const Admin = () => {
             <TabsTrigger value="codes" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><KeyRound className="h-4 w-4 mr-1" />Códigos</TabsTrigger>
             <TabsTrigger value="notifs" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><Bell className="h-4 w-4 mr-1" />Notificações</TabsTrigger>
             <TabsTrigger value="comprovativos" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><FileText className="h-4 w-4 mr-1" />Comprovativos</TabsTrigger>
+            <TabsTrigger value="preparatorios" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><GraduationCap className="h-4 w-4 mr-1" />Preparatórios</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats"><StatsTab /></TabsContent>
@@ -106,6 +107,7 @@ const Admin = () => {
           <TabsContent value="codes"><CodesTab /></TabsContent>
           <TabsContent value="notifs"><NotifsTab /></TabsContent>
           <TabsContent value="comprovativos"><ComprovativosTab /></TabsContent>
+          <TabsContent value="preparatorios"><PreparatoriosTab /></TabsContent>
         </Tabs>
       </main>
     </div>
