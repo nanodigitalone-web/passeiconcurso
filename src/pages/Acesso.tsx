@@ -108,6 +108,30 @@ const Acesso = () => {
     }
   };
 
+  const pagarComMoedas = async () => {
+    setPayingCoins(true);
+    try {
+      const res = await coinsService.purchaseAccess(concurso.id, cat.id);
+      if (!res.ok) {
+        toast.error(res.error === "insufficient_coins" ? "Moedas insuficientes" : "Erro ao pagar com moedas");
+        return;
+      }
+      clearAccessCache(user.id);
+      await notificationsService.create({
+        userId: user.id,
+        title: "Conta activada ✅",
+        body: `O seu acesso a ${cat.nome} (${concurso.sigla}) foi activado com moedas. Bons estudos!`,
+      });
+      await refreshProfile();
+      toast.success("Acesso activado com moedas!");
+      setStep("concluido");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao pagar com moedas");
+    } finally {
+      setPayingCoins(false);
+    }
+  };
+
   return (
     <AppShell>
       <button onClick={() => navigate(-1)} className="mb-3 inline-flex items-center text-sm text-muted-foreground">
