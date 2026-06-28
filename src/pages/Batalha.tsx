@@ -92,6 +92,13 @@ const Batalha = () => {
     // finished — submit
     setSubmitting(true);
     await battlesService.submitResult(battle!.id, score);
+    // Pontos da batalha contam na cotação geral (5 pts por acerto).
+    if (user && score > 0) {
+      await authService
+        .addPoints(user.id, profile?.pontos || 0, Math.min(100, score * 5))
+        .catch(() => {});
+      refreshProfile();
+    }
     const refreshed = await battlesService.get(battle!.id);
     setBattle(refreshed);
     setSubmitting(false);
