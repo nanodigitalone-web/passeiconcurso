@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Concursos from "./pages/Concursos";
@@ -46,6 +47,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ErrorBoundary>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<P><Index /></P>} />
@@ -67,6 +69,7 @@ const App = () => (
             <Route path="/notificacoes" element={<P><Notificacoes /></P>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
           <InstallPrompt />
         </AuthProvider>
       </BrowserRouter>
