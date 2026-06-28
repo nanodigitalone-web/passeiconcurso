@@ -27,4 +27,6 @@ export { adminService } from "./adminService";
 export { pushService } from "./pushService";
 export { recursosService } from "./recursosService";
 export type { RecursoSeccao, RecursoItem, RecursoTipo } from "./recursosService";
+export { cursosService } from "./cursosService";
+export type { CursoPreparatorio } from "./cursosService";
 export type { PushStatus } from "./pushService";
