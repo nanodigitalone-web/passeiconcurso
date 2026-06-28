@@ -5,7 +5,7 @@ import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { battlesService, quizService, type BattleRow, type Question } from "@/services";
+import { battlesService, quizService, authService, type BattleRow, type Question } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Swords, Trophy, Clock, ArrowLeft } from "lucide-react";
