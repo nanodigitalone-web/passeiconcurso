@@ -128,6 +128,72 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_topup_requests: {
+        Row: {
+          amount_aoa: number
+          comprovativo_url: string
+          created_at: string
+          email: string | null
+          id: string
+          moedas: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_aoa: number
+          comprovativo_url: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          moedas: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_aoa?: number
+          comprovativo_url?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          moedas?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          descricao: string | null
+          id: string
+          meta: Json | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          meta?: Json | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          meta?: Json | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cursos_preparatorios: {
         Row: {
           ativo: boolean
@@ -299,8 +365,10 @@ export type Database = {
           email: string | null
           friend_code: string | null
           hidden: boolean
+          iban: string | null
           id: string
           last_seen: string | null
+          moedas: number
           nome: string
           pontos: number
           streak: number
@@ -317,8 +385,10 @@ export type Database = {
           email?: string | null
           friend_code?: string | null
           hidden?: boolean
+          iban?: string | null
           id: string
           last_seen?: string | null
+          moedas?: number
           nome?: string
           pontos?: number
           streak?: number
@@ -335,8 +405,10 @@ export type Database = {
           email?: string | null
           friend_code?: string | null
           hidden?: boolean
+          iban?: string | null
           id?: string
           last_seen?: string | null
+          moedas?: number
           nome?: string
           pontos?: number
           streak?: number
@@ -398,6 +470,42 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          aoa: number
+          created_at: string
+          email: string | null
+          iban: string
+          id: string
+          moedas: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aoa: number
+          created_at?: string
+          email?: string | null
+          iban: string
+          id?: string
+          moedas: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aoa?: number
+          created_at?: string
+          email?: string | null
+          iban?: string
+          id?: string
+          moedas?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -409,10 +517,20 @@ export type Database = {
       }
       add_friend_by_code: { Args: { _code: string }; Returns: Json }
       add_points: { Args: { _delta: number }; Returns: undefined }
+      admin_credit_coins: {
+        Args: { _amount: number; _desc: string; _user: string }
+        Returns: Json
+      }
       admin_generate_codes: {
         Args: { _cat: string; _conc: string; _count: number }
         Returns: number
       }
+      coin_access_cost: { Args: { _conc: string }; Returns: number }
+      coin_grant_access: {
+        Args: { _cat: string; _conc: string; _user: string }
+        Returns: undefined
+      }
+      convert_points_to_coins: { Args: { _points: number }; Returns: Json }
       gen_friend_code: { Args: never; Returns: string }
       get_battles: {
         Args: never
@@ -467,6 +585,11 @@ export type Database = {
           pontos: number
         }[]
       }
+      gift_access_with_coins: {
+        Args: { _cat: string; _conc: string; _to: string }
+        Returns: Json
+      }
+      gift_coins: { Args: { _amount: number; _to: string }; Returns: Json }
       has_category_access: {
         Args: { _cat: string; _conc: string; _user: string }
         Returns: boolean
@@ -479,6 +602,14 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      purchase_access_with_coins: {
+        Args: { _cat: string; _conc: string }
+        Returns: Json
+      }
+      request_withdrawal: {
+        Args: { _iban: string; _moedas: number }
+        Returns: Json
+      }
       respond_friend_request: {
         Args: { _accept: boolean; _id: string }
         Returns: Json
