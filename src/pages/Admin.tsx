@@ -113,7 +113,10 @@ const Admin = () => {
           <TabsContent value="notifs"><NotifsTab /></TabsContent>
           <TabsContent value="comprovativos"><ComprovativosTab /></TabsContent>
           <TabsContent value="preparatorios"><PreparatoriosTab /></TabsContent>
+          <TabsContent value="carregamentos"><CarregamentosTab /></TabsContent>
+          <TabsContent value="saques"><SaquesTab /></TabsContent>
         </Tabs>
+
       </main>
     </div>
   );
