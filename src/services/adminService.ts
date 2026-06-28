@@ -134,7 +134,9 @@ export const adminService = {
   },
 
   async getComprovativoUrl(path: string) {
-    // Files are served statically from the backend at /uploads.
+    // Cloudinary (production) stores an absolute URL; local disk (dev) stores a
+    // relative path served statically from the backend at /uploads.
+    if (/^https?:\/\//.test(path)) return path;
     return `${api.baseUrl}/uploads/${path}`;
   },
 

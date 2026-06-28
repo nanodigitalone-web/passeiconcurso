@@ -1,53 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, BookOpen, Trophy, Target } from "lucide-react";
-import { toast } from "sonner";
 import { LegalModal } from "@/components/LegalModal";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { Seo } from "@/components/Seo";
 
 const Login = () => {
   const { user, loading, refresh } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate("/", { replace: true });
   }, [user, loading, navigate]);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("Preencha email e palavra-passe.");
-      return;
-    }
-    setBusy(true);
-    const result =
-      mode === "login"
-        ? await authService.signIn(email.trim(), password)
-        : await authService.signUp(email.trim(), password, nome.trim() || undefined);
-    setBusy(false);
-    if (result.error) {
-      const msg =
-        result.error === "invalid_credentials"
-          ? "Email ou palavra-passe incorretos."
-          : result.error === "email_taken"
-          ? "Este email já está registado."
-          : "Erro ao iniciar sessão. Tente novamente.";
-      toast.error(msg);
-      return;
-    }
-    await refresh();
-    navigate("/", { replace: true });
-  };
-
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-hero text-primary-foreground">
@@ -77,50 +42,17 @@ const Login = () => {
         </div>
 
         <div className="mt-10">
-          <form onSubmit={submit} className="space-y-3">
-            {mode === "register" && (
-              <Input
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Nome"
-                className="rounded-full bg-white/95 text-foreground"
-              />
-            )}
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-              className="rounded-full bg-white/95 text-foreground"
-            />
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Palavra-passe"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              className="rounded-full bg-white/95 text-foreground"
-            />
-            <Button
-              type="submit"
-              size="lg"
-              variant="secondary"
-              disabled={busy}
-              className="w-full rounded-full font-semibold shadow-elegant"
-            >
-              {busy ? "A processar…" : mode === "login" ? "Entrar" : "Criar conta"}
-            </Button>
-          </form>
-          <button
-            type="button"
-            onClick={() => setMode(mode === "login" ? "register" : "login")}
-            className="mt-3 w-full text-center text-sm underline underline-offset-2 opacity-90 hover:opacity-100"
-          >
-            {mode === "login" ? "Não tem conta? Criar conta" : "Já tem conta? Entrar"}
-          </button>
+          <p className="mb-4 text-center text-sm opacity-90">
+            Entre com a sua conta Google para começar.
+          </p>
+          <GoogleSignInButton
+            onSuccess={async () => {
+              await refresh();
+              navigate("/", { replace: true });
+            }}
+          />
 
-          <p className="mt-4 text-center text-xs opacity-75">
+          <p className="mt-6 text-center text-xs opacity-75">
             Ao continuar, você aceita os{" "}
             <LegalModal
               defaultTab="termos"

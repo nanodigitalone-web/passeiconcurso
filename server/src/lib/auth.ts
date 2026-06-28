@@ -5,6 +5,14 @@ import { one, query } from "./db.js";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "30d";
 
+// In production, refuse to start with the insecure fallback secret: a known
+// JWT secret lets anyone forge valid tokens for any account.
+if (process.env.NODE_ENV === "production" && JWT_SECRET === "dev-secret-change-me") {
+  throw new Error(
+    "JWT_SECRET is not set. Refusing to start in production with the insecure default.",
+  );
+}
+
 export const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
   .map((e) => e.trim().toLowerCase())

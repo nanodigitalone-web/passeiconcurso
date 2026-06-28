@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import webpush from "web-push";
 import { authRouter } from "./routes/auth.js";
@@ -19,7 +21,24 @@ import { adminRouter } from "./routes/admin.js";
 import { pool, query } from "./lib/db.js";
 
 const app = express();
+
+// Behind Render's proxy — needed so rate-limit & req.ip see the real client IP.
+app.set("trust proxy", 1);
+
+// Security headers. crossOriginResourcePolicy is relaxed so the SPA on another
+// origin (Vercel) can load uploaded proof images served from /uploads.
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+
 app.use(express.json({ limit: "2mb" }));
+
+// Throttle auth endpoints to blunt brute-force / credential-stuffing.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "too_many_requests" },
+});
 
 const origins = (process.env.CORS_ORIGINS || "")
   .split(",")
@@ -44,7 +63,7 @@ app.get("/health", async (_req, res) => {
   }
 });
 
-app.use("/auth", authRouter);
+app.use("/auth", authLimiter, authRouter);
 app.use("/profile", profileRouter);
 app.use("/access", accessRouter);
 app.use("/content", contentRouter);

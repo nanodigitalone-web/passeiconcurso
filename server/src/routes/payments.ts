@@ -2,36 +2,58 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 import { one, query } from "../lib/db.js";
 import { requireAuth, type AuthedRequest } from "../lib/auth.js";
 
 export const paymentsRouter = Router();
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-const storage = multer.diskStorage({
-  destination: (req: any, _file, cb) => {
-    const dir = path.join(UPLOAD_DIR, req.userId || "anon");
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".bin";
-    cb(null, `${Date.now()}${ext}`);
-  },
+// In production we store proofs on Cloudinary (persistent, no disk required).
+// When CLOUDINARY_URL is absent (local dev), fall back to disk. The Cloudinary
+// SDK reads CLOUDINARY_URL from the environment automatically.
+const useCloudinary = !!process.env.CLOUDINARY_URL;
+if (!useCloudinary) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+// Buffer the upload in memory, then push to Cloudinary or write to disk.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
 });
-const upload = multer({ storage, limits: { fileSize: 8 * 1024 * 1024 } });
 
-// Upload a payment / top-up proof. Returns a relative path served at /uploads.
+// Upload a payment / top-up proof. Returns the proof URL (absolute for
+// Cloudinary, relative /uploads path for local disk).
 paymentsRouter.post(
   "/upload",
   requireAuth,
   upload.single("file"),
-  (req: AuthedRequest, res) => {
+  async (req: AuthedRequest, res) => {
     if (!req.file) return res.status(400).json({ error: "no_file" });
-    const rel = path.relative(UPLOAD_DIR, req.file.path).split(path.sep).join("/");
-    res.json({ path: rel, url: `/uploads/${rel}` });
+
+    if (useCloudinary) {
+      try {
+        const result = await new Promise<any>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: `passei/proofs/${req.userId}`, resource_type: "auto" },
+            (err, r) => (err ? reject(err) : resolve(r)),
+          );
+          stream.end(req.file!.buffer);
+        });
+        return res.json({ path: result.secure_url, url: result.secure_url });
+      } catch {
+        return res.status(500).json({ error: "upload_failed" });
+      }
+    }
+
+    // Local disk fallback (dev).
+    const dir = path.join(UPLOAD_DIR, req.userId || "anon");
+    fs.mkdirSync(dir, { recursive: true });
+    const ext = path.extname(req.file.originalname) || ".bin";
+    const filename = `${Date.now()}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), req.file.buffer);
+    const rel = path.join(req.userId || "anon", filename).split(path.sep).join("/");
+    return res.json({ path: rel, url: `/uploads/${rel}` });
   },
 );
 

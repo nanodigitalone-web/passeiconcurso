@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Environment files — NEVER commit secrets
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# Uploaded files (payment proofs) — stored on Render persistent disk
+server/uploads/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
