@@ -40,7 +40,7 @@ const Quiz = () => {
   }, []);
 
   // Notifica em caso de simulado abandonado a meio
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const finishedRef = useRef(false);
   const progressRef = useRef({ idx: 0, total: 0, nome: cat?.nome ?? "" });
   progressRef.current = { idx, total: questoes.length, nome: cat?.nome ?? "" };
