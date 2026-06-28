@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, Trophy, BarChart3, BookOpen, Zap, User, Sparkles } from "lucide-react";
+import { Home, Trophy, BarChart3, BookOpen, Zap, User, Sparkles, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
