@@ -13,7 +13,13 @@ export type PushStatus = "granted" | "denied" | "prompt" | "unsupported" | "load
 
 export const pushService = {
   isSupported() {
-    return "serviceWorker" in navigator && "PushManager" in window;
+    return (
+      typeof navigator !== "undefined" &&
+      "serviceWorker" in navigator &&
+      typeof window !== "undefined" &&
+      "PushManager" in window &&
+      typeof Notification !== "undefined"
+    );
   },
 
   async getStatus(): Promise<PushStatus> {
