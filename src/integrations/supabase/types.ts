@@ -47,6 +47,57 @@ export type Database = {
         }
         Relationships: []
       }
+      battles: {
+        Row: {
+          categoria_id: string
+          challenger_done: boolean
+          challenger_id: string
+          challenger_score: number | null
+          concurso_id: string
+          created_at: string
+          id: string
+          opponent_done: boolean
+          opponent_id: string
+          opponent_score: number | null
+          question_ids: Json
+          status: string
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          categoria_id: string
+          challenger_done?: boolean
+          challenger_id: string
+          challenger_score?: number | null
+          concurso_id: string
+          created_at?: string
+          id?: string
+          opponent_done?: boolean
+          opponent_id: string
+          opponent_score?: number | null
+          question_ids: Json
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          categoria_id?: string
+          challenger_done?: boolean
+          challenger_id?: string
+          challenger_score?: number | null
+          concurso_id?: string
+          created_at?: string
+          id?: string
+          opponent_done?: boolean
+          opponent_id?: string
+          opponent_score?: number | null
+          question_ids?: Json
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       category_access: {
         Row: {
           activated_at: string
@@ -74,6 +125,30 @@ export type Database = {
           expires_at?: string | null
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -149,6 +224,27 @@ export type Database = {
         }
         Relationships: []
       }
+      points_log: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -159,6 +255,7 @@ export type Database = {
           concurso_id: string | null
           created_at: string
           email: string | null
+          friend_code: string | null
           hidden: boolean
           id: string
           last_seen: string | null
@@ -176,6 +273,7 @@ export type Database = {
           concurso_id?: string | null
           created_at?: string
           email?: string | null
+          friend_code?: string | null
           hidden?: boolean
           id: string
           last_seen?: string | null
@@ -193,6 +291,7 @@ export type Database = {
           concurso_id?: string | null
           created_at?: string
           email?: string | null
+          friend_code?: string | null
           hidden?: boolean
           id?: string
           last_seen?: string | null
@@ -266,13 +365,58 @@ export type Database = {
         Args: { _cat: string; _code: string; _conc: string }
         Returns: Json
       }
+      add_friend_by_code: { Args: { _code: string }; Returns: Json }
       add_points: { Args: { _delta: number }; Returns: undefined }
       admin_generate_codes: {
         Args: { _cat: string; _conc: string; _count: number }
         Returns: number
       }
+      gen_friend_code: { Args: never; Returns: string }
+      get_battles: {
+        Args: never
+        Returns: {
+          categoria_id: string
+          challenger_done: boolean
+          challenger_id: string
+          challenger_score: number
+          concurso_id: string
+          created_at: string
+          id: string
+          opponent_avatar: string
+          opponent_done: boolean
+          opponent_id: string
+          opponent_nome: string
+          opponent_score: number
+          question_ids: Json
+          status: string
+          winner_id: string
+        }[]
+      }
+      get_friends: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          categoria_nome: string
+          direction: string
+          friend_id: string
+          friendship_id: string
+          nome: string
+          pontos: number
+          status: string
+        }[]
+      }
       get_ranking: {
         Args: { _categoria?: string }
+        Returns: {
+          avatar_url: string
+          categoria_nome: string
+          id: string
+          nome: string
+          pontos: number
+        }[]
+      }
+      get_weekly_ranking: {
+        Args: never
         Returns: {
           avatar_url: string
           categoria_nome: string
@@ -293,6 +437,25 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      respond_friend_request: {
+        Args: { _accept: boolean; _id: string }
+        Returns: Json
+      }
+      search_users: {
+        Args: { _q: string }
+        Returns: {
+          avatar_url: string
+          categoria_nome: string
+          friend_code: string
+          id: string
+          nome: string
+        }[]
+      }
+      send_friend_request: { Args: { _to: string }; Returns: Json }
+      submit_battle_result: {
+        Args: { _battle: string; _score: number }
+        Returns: Json
+      }
     }
     Enums: {
       access_code_status: "available" | "used" | "revoked"
