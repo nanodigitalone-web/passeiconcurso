@@ -14,7 +14,7 @@ import {
 } from "@/data/concursos";
 import type { QuizAnswer, QuizAttempt, QuizResult } from "./types";
 import { resultsService } from "./resultsService";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export type { Concurso, Categoria, Question };
 
@@ -63,10 +63,10 @@ export const quizService = {
     const key = `${concursoId}/${categoriaId}`;
     if (hydrated.has(key)) return;
 
-    const { data, error } = await supabase.functions.invoke("quiz-content", {
-      body: { concursoId, categoriaId },
-    });
-    if (error) throw error;
+    const data = await api.post<{ questions: Array<{ id: string; correta: number; comentario: string }> }>(
+      "/content/quiz",
+      { concursoId, categoriaId },
+    );
 
     const byId = new Map<string, Question>(
       this.getQuestions(concursoId, categoriaId).map((q) => [q.id, q]),

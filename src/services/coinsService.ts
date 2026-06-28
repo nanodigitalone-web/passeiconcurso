@@ -1,7 +1,7 @@
-// coinsService — wallet / coins feature.
+// coinsService — wallet / coins feature (backend API).
 // 1000 AOA = 1000 moedas. 1000 pontos = 200 moedas. Saque mínimo 2000 moedas (= 2000 AOA).
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export type CoinTx = {
   id: string;
@@ -28,89 +28,96 @@ export type WithdrawalRequest = {
   created_at: string;
 };
 
-// Conversion / withdrawal rules (kept in sync with the backend RPCs).
 export const COIN_RULES = {
-  pointsPerCoinUnit: 1000, // 1000 pontos
-  coinsPerUnit: 200, // -> 200 moedas
-  minWithdrawCoins: 2000, // saque mínimo
-  aoaPerCoin: 1, // 1 moeda = 1 AOA
+  pointsPerCoinUnit: 1000,
+  coinsPerUnit: 200,
+  minWithdrawCoins: 2000,
+  aoaPerCoin: 1,
 };
+
+type Result = { ok: boolean; error?: string; moedas?: number };
 
 export const coinsService = {
   async getBalance(userId: string): Promise<number> {
-    const { data } = await supabase.from("profiles").select("moedas").eq("id", userId).maybeSingle();
-    return (data as any)?.moedas ?? 0;
+    try {
+      const p = await api.get<{ moedas: number }>(`/profile/${userId}`);
+      return p?.moedas ?? 0;
+    } catch {
+      return 0;
+    }
   },
 
   async getIban(userId: string): Promise<string | null> {
-    const { data } = await supabase.from("profiles").select("iban").eq("id", userId).maybeSingle();
-    return (data as any)?.iban ?? null;
+    try {
+      const p = await api.get<{ iban: string | null }>(`/profile/${userId}`);
+      return p?.iban ?? null;
+    } catch {
+      return null;
+    }
   },
 
   async listTransactions(): Promise<CoinTx[]> {
-    const { data } = await supabase
-      .from("coin_transactions" as any)
-      .select("id, tipo, amount, descricao, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    return (data as any[]) ?? [];
+    try {
+      return await api.get<CoinTx[]>("/coins/transactions");
+    } catch {
+      return [];
+    }
   },
 
   async listMyWithdrawals(): Promise<WithdrawalRequest[]> {
-    const { data } = await supabase
-      .from("withdrawal_requests" as any)
-      .select("id, moedas, aoa, iban, status, created_at")
-      .order("created_at", { ascending: false });
-    return (data as any[]) ?? [];
+    try {
+      return await api.get<WithdrawalRequest[]>("/coins/withdrawals");
+    } catch {
+      return [];
+    }
   },
 
-  async convertPoints(points: number) {
-    const { data, error } = await supabase.rpc("convert_points_to_coins" as any, { _points: points });
-    if (error) return { ok: false, error: error.message };
-    return data as { ok: boolean; error?: string; moedas?: number };
+  async convertPoints(points: number): Promise<Result> {
+    try {
+      return await api.post("/coins/convert", { points });
+    } catch (e: any) {
+      return { ok: false, error: e?.message };
+    }
   },
 
-  async giftCoins(toUserId: string, amount: number) {
-    const { data, error } = await supabase.rpc("gift_coins" as any, { _to: toUserId, _amount: amount });
-    if (error) return { ok: false, error: error.message };
-    return data as { ok: boolean; error?: string };
+  async giftCoins(toUserId: string, amount: number): Promise<Result> {
+    try {
+      return await api.post("/coins/gift", { to: toUserId, amount });
+    } catch (e: any) {
+      return { ok: false, error: e?.message };
+    }
   },
 
-  async giftAccess(toUserId: string, concursoId: string, categoriaId: string) {
-    const { data, error } = await supabase.rpc("gift_access_with_coins" as any, {
-      _to: toUserId,
-      _conc: concursoId,
-      _cat: categoriaId,
-    });
-    if (error) return { ok: false, error: error.message };
-    return data as { ok: boolean; error?: string };
+  async giftAccess(toUserId: string, concursoId: string, categoriaId: string): Promise<Result> {
+    try {
+      return await api.post("/coins/gift-access", { to: toUserId, conc: concursoId, cat: categoriaId });
+    } catch (e: any) {
+      return { ok: false, error: e?.message };
+    }
   },
 
-  async purchaseAccess(concursoId: string, categoriaId: string) {
-    const { data, error } = await supabase.rpc("purchase_access_with_coins" as any, {
-      _conc: concursoId,
-      _cat: categoriaId,
-    });
-    if (error) return { ok: false, error: error.message };
-    return data as { ok: boolean; error?: string };
+  async purchaseAccess(concursoId: string, categoriaId: string): Promise<Result> {
+    try {
+      return await api.post("/coins/purchase-access", { conc: concursoId, cat: categoriaId });
+    } catch (e: any) {
+      return { ok: false, error: e?.message };
+    }
   },
 
-  async requestWithdrawal(moedas: number, iban: string) {
-    const { data, error } = await supabase.rpc("request_withdrawal" as any, { _moedas: moedas, _iban: iban });
-    if (error) return { ok: false, error: error.message };
-    return data as { ok: boolean; error?: string };
+  async requestWithdrawal(moedas: number, iban: string): Promise<Result> {
+    try {
+      return await api.post("/coins/withdraw", { moedas, iban });
+    } catch (e: any) {
+      return { ok: false, error: e?.message };
+    }
   },
 
   /** Create a coin top-up request (proof of IBAN transfer, reviewed by admin). */
   async createTopupRequest(params: { userId: string; email: string; amountAoa: number; comprovativoPath: string }) {
-    const { error } = await supabase.from("coin_topup_requests" as any).insert({
-      user_id: params.userId,
-      email: params.email,
+    await api.post("/coins/topup", {
       amount_aoa: params.amountAoa,
       moedas: params.amountAoa, // 1 AOA = 1 moeda
       comprovativo_url: params.comprovativoPath,
-      status: "awaiting_review",
-    } as any);
-    if (error) throw error;
+    });
   },
 };

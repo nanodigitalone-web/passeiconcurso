@@ -1,8 +1,7 @@
 // accessService — encapsulates category access checks with an in-memory cache.
-// Prevents duplicate/repeated backend calls (page + <AccessGate>), fetch loops
-// on re-render, and amplification across navigation.
+// Talks to the backend API (Render) instead of Supabase.
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import type { AccessInfo } from "./types";
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 min
@@ -19,40 +18,26 @@ export const clearAccessCache = (user?: string) => {
   for (const k of cache.keys()) if (k.startsWith(user + ":")) cache.delete(k);
 };
 
+type PlanRow = { concursoId: string; categoriaId: string; expiresAt: number | null };
+
 export const accessService = {
   clearCache: clearAccessCache,
 
   /** Active paid plans of a user, with their expiry date (null = lifetime). */
-  async getMyPlans(userId: string): Promise<
-    { concursoId: string; categoriaId: string; expiresAt: number | null }[]
-  > {
-    const { data } = await supabase
-      .from("category_access")
-      .select("concurso_id, categoria_id, expires_at")
-      .eq("user_id", userId);
-    if (!data) return [];
-    const now = Date.now();
-    return (data as any[])
-      .map((r) => ({
-        concursoId: r.concurso_id,
-        categoriaId: r.categoria_id,
-        expiresAt: r.expires_at ? new Date(r.expires_at).getTime() : null,
-      }))
-      .filter((r) => r.expiresAt === null || r.expiresAt > now)
-      .sort((a, b) => (a.expiresAt ?? Infinity) - (b.expiresAt ?? Infinity));
+  async getMyPlans(_userId: string): Promise<PlanRow[]> {
+    try {
+      const r = await api.get<{ plans: PlanRow[] }>("/access/plans");
+      return r.plans ?? [];
+    } catch {
+      return [];
+    }
   },
 
   /** Whether the user has at least one active paid category access. */
   async hasAnyPaidAccess(userId: string): Promise<boolean> {
-    const { data } = await supabase
-      .from("category_access")
-      .select("expires_at")
-      .eq("user_id", userId);
-    if (!data) return false;
+    const plans = await this.getMyPlans(userId);
     const now = Date.now();
-    return (data as any[]).some(
-      (r) => !r.expires_at || new Date(r.expires_at).getTime() > now
-    );
+    return plans.some((p) => p.expiresAt === null || p.expiresAt > now);
   },
 
   async getAccess(userId: string, concursoId: string, categoriaId: string): Promise<AccessInfo> {
@@ -66,21 +51,16 @@ export const accessService = {
       entry = await inflight.get(key)!;
     } else {
       const p = (async () => {
-        const { data } = await supabase
-          .from("category_access")
-          .select("expires_at")
-          .eq("user_id", userId)
-          .eq("concurso_id", concursoId)
-          .eq("categoria_id", categoriaId)
-          .maybeSingle();
-        const result: CacheEntry = {
-          ts: Date.now(),
-          expiresAt: data
-            ? (data as any).expires_at
-              ? new Date((data as any).expires_at).getTime()
-              : Infinity
-            : null,
-        };
+        let expiresAt: number | null = null;
+        try {
+          const r = await api.get<{ hasPaidAccess: boolean; expiresAt: number | null }>(
+            `/access/check?conc=${encodeURIComponent(concursoId)}&cat=${encodeURIComponent(categoriaId)}`,
+          );
+          expiresAt = r.expiresAt;
+        } catch {
+          expiresAt = null;
+        }
+        const result: CacheEntry = { ts: Date.now(), expiresAt };
         cache.set(key, result);
         inflight.delete(key);
         return result;

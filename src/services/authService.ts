@@ -1,9 +1,7 @@
-// authService — encapsulates authentication, session and profile access.
-// UI/hooks talk to this service instead of importing the Supabase client.
+// authService — authentication, session and profile access via the backend API
+// (JWT). UI/hooks talk to this service instead of any low-level client.
 
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { api, tokenStore, ApiError } from "@/lib/api";
 
 export type Profile = {
   id: string;
@@ -23,51 +21,107 @@ export type Profile = {
   friend_code?: string | null;
 };
 
+export type AuthUser = { id: string; email: string | null; created_at: string };
+
+type AuthResponse = { token: string; profile: Profile; isAdmin: boolean };
+
+const wrap = async (fn: () => Promise<any>): Promise<{ error: string | null }> => {
+  try {
+    await fn();
+    return { error: null };
+  } catch (e: any) {
+    return { error: e?.message || "error" };
+  }
+};
+
 export const authService = {
-  getSession() {
-    return supabase.auth.getSession();
+  /** Current token (null if signed out). */
+  hasSession() {
+    return !!tokenStore.get();
   },
 
-  onAuthStateChange(cb: (event: AuthChangeEvent, session: Session | null) => void) {
-    return supabase.auth.onAuthStateChange(cb);
+  /** Email + password sign in. */
+  async signIn(email: string, password: string) {
+    try {
+      const r = await api.post<AuthResponse>("/auth/login", { email, password });
+      tokenStore.set(r.token);
+      return { error: null, profile: r.profile, isAdmin: r.isAdmin };
+    } catch (e: any) {
+      return { error: e?.message || "invalid_credentials" };
+    }
+  },
+
+  /** Register a new account. */
+  async signUp(email: string, password: string, nome?: string) {
+    try {
+      const r = await api.post<AuthResponse>("/auth/register", { email, password, nome });
+      tokenStore.set(r.token);
+      return { error: null, profile: r.profile, isAdmin: r.isAdmin };
+    } catch (e: any) {
+      return { error: e?.message || "error" };
+    }
+  },
+
+  /** Google sign-in using a Google ID token from Google Identity Services. */
+  async signInWithGoogleToken(idToken: string) {
+    try {
+      const r = await api.post<AuthResponse>("/auth/google", { idToken });
+      tokenStore.set(r.token);
+      return { error: null, profile: r.profile, isAdmin: r.isAdmin };
+    } catch (e: any) {
+      return { error: e?.message || "error" };
+    }
   },
 
   signOut() {
-    return supabase.auth.signOut();
+    tokenStore.clear();
+    return Promise.resolve();
   },
 
-  signInWithGoogle(redirectUri: string) {
-    return lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
+  /** Resolve the current user from the stored token, or null. */
+  async me(): Promise<{ user: AuthUser; profile: Profile; isAdmin: boolean } | null> {
+    if (!tokenStore.get()) return null;
+    try {
+      const r = await api.get<{ profile: Profile; isAdmin: boolean }>("/auth/me");
+      if (!r?.profile) return null;
+      return {
+        user: { id: r.profile.id, email: r.profile.email ?? null, created_at: (r.profile as any).created_at ?? new Date().toISOString() },
+        profile: r.profile,
+        isAdmin: r.isAdmin,
+      };
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) tokenStore.clear();
+      return null;
+    }
   },
 
   async getProfile(uid: string): Promise<Profile | null> {
-    const { data } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
-    return (data as Profile) ?? null;
+    try {
+      return await api.get<Profile>(`/profile/${uid}`);
+    } catch {
+      return null;
+    }
   },
 
-  async isAdmin(uid: string): Promise<boolean> {
-    const { data } = await supabase.from("user_roles" as any).select("role").eq("user_id", uid);
-    return !!data?.some((r: any) => r.role === "admin");
+  updateProfile(_uid: string, patch: Record<string, any>) {
+    return wrap(() => api.patch("/profile", patch));
   },
 
-  updateProfile(uid: string, patch: Record<string, any>) {
-    return supabase
-      .from("profiles")
-      .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq("id", uid);
-  },
-
-  // Points are applied server-side via a SECURITY DEFINER RPC that validates
-  // the delta, so clients cannot set an arbitrary pontos value.
   addPoints(_uid: string, _currentPoints: number, delta: number) {
-    return (supabase.rpc as any)("add_points", { _delta: delta });
+    return wrap(() => api.post("/profile/points", { delta }));
   },
 
-  setCategoria(uid: string, concursoId: string, categoriaId: string, categoriaNome: string) {
-    return this.updateProfile(uid, {
-      concurso_id: concursoId,
-      categoria_id: categoriaId,
-      categoria_nome: categoriaNome,
-    });
+  setCategoria(_uid: string, concursoId: string, categoriaId: string, categoriaNome: string) {
+    return wrap(() =>
+      api.patch("/profile", {
+        concurso_id: concursoId,
+        categoria_id: categoriaId,
+        categoria_nome: categoriaNome,
+      }),
+    );
+  },
+
+  hideAccount(hidden: boolean) {
+    return api.post("/profile/hide", { hidden });
   },
 };

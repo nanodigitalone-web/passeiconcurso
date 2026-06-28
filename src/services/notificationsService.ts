@@ -1,6 +1,7 @@
-// notificationsService — encapsulates notifications data + realtime subscriptions.
+// notificationsService — notifications data via backend API.
+// Realtime is replaced with lightweight polling (no Supabase channels).
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import type { NotificationInput } from "./types";
 
 export type NotificationRow = {
@@ -14,73 +15,55 @@ export type NotificationRow = {
 
 export const notificationsService = {
   async getUnreadCount(userId: string): Promise<number> {
-    const { count } = await supabase
-      .from("notifications" as any)
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("read", false);
-    return count ?? 0;
+    const list = await this.listForUser(userId);
+    return list.filter((n) => !n.read).length;
   },
 
-  async listForUser(userId: string, limit = 100): Promise<NotificationRow[]> {
-    const { data } = await supabase
-      .from("notifications" as any)
-      .select("*")
-      .or(`user_id.eq.${userId},user_id.is.null`)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    return ((data as any) ?? []) as NotificationRow[];
+  async listForUser(_userId: string, _limit = 100): Promise<NotificationRow[]> {
+    try {
+      return await api.get<NotificationRow[]>("/notifications");
+    } catch {
+      return [];
+    }
   },
 
-  async markAllRead(userId: string) {
-    return supabase
-      .from("notifications" as any)
-      .update({ read: true } as any)
-      .eq("user_id", userId)
-      .eq("read", false);
+  async markAllRead(_userId: string) {
+    try {
+      await api.post("/notifications/read-all");
+    } catch {
+      /* ignore */
+    }
   },
 
-  create(input: NotificationInput) {
-    return supabase.from("notifications" as any).insert({
-      user_id: input.userId,
-      title: input.title,
-      body: input.body,
-      ...(input.createdBy !== undefined ? { created_by: input.createdBy } : {}),
-    } as any);
+  async markRead(id: string) {
+    try {
+      await api.post("/notifications/read", { id });
+    } catch {
+      /* ignore */
+    }
   },
 
-  /** Subscribe to realtime changes for a single user. Returns an unsubscribe fn. */
-  subscribeForUser(
-    userId: string,
-    onChange: (payload: any) => void,
-    opts?: { tag?: string; event?: "INSERT" | "UPDATE" | "DELETE" | "*" }
-  ) {
-    const ch = supabase
-      .channel(`notif-${opts?.tag ?? "sub"}-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: opts?.event ?? "*",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        onChange
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+  async create(input: NotificationInput) {
+    try {
+      await api.post("/notifications", {
+        userId: input.userId,
+        title: input.title,
+        body: input.body,
+      });
+    } catch {
+      /* ignore */
+    }
   },
 
-  /** Subscribe to all notification changes (used by the notifications page). */
-  subscribeAll(tag: string, onChange: (payload: any) => void) {
-    const ch = supabase
-      .channel(`notif-${tag}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, onChange)
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+  /** Poll for changes for a single user. Returns an unsubscribe fn. */
+  subscribeForUser(userId: string, onChange: (payload: any) => void, _opts?: any) {
+    const interval = setInterval(() => onChange({ userId }), 30000);
+    return () => clearInterval(interval);
+  },
+
+  /** Poll for all notification changes (used by the notifications page). */
+  subscribeAll(_tag: string, onChange: (payload: any) => void) {
+    const interval = setInterval(() => onChange({}), 30000);
+    return () => clearInterval(interval);
   },
 };

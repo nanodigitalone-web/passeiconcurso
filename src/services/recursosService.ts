@@ -1,10 +1,6 @@
-// recursosService — gateway to the gated `recursos` edge function.
-//
-// Recursos are PAID reference content (doses, drug classes, algorithms,
-// protocols, terminology, signs & symptoms). The content lives ONLY on the
-// server and is served by an edge function that enforces trial/paid access, so
-// it never reaches the client bundle for users without access.
-import { supabase } from "@/integrations/supabase/client";
+// recursosService — gateway to the gated `/content/recursos` backend endpoint.
+
+import { api } from "@/lib/api";
 
 export type RecursoItem = { nome: string; valor: string; nota?: string };
 export type RecursoTipo =
@@ -29,10 +25,10 @@ export const recursosService = {
     const key = `${concursoId}/${categoriaId}`;
     if (cache.has(key)) return cache.get(key)!;
 
-    const { data, error } = await supabase.functions.invoke("recursos", {
-      body: { concursoId, categoriaId },
+    const data = await api.post<{ seccoes: RecursoSeccao[] }>("/content/recursos", {
+      concursoId,
+      categoriaId,
     });
-    if (error) throw error;
 
     const seccoes = (data?.seccoes ?? []) as RecursoSeccao[];
     cache.set(key, seccoes);
