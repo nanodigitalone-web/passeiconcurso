@@ -10,6 +10,7 @@ const items = [
   { to: "/recursos", label: "Recursos", icon: Sparkles },
   { to: "/percurso", label: "Percurso", icon: BarChart3 },
   { to: "/ranking", label: "Ranking", icon: Trophy },
+  { to: "/carteira", label: "Carteira", icon: Coins },
   { to: "/perfil", label: "Perfil", icon: User },
 ];
 
