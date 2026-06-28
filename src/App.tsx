@@ -69,6 +69,7 @@ const App = () => (
             <Route path="/notificacoes" element={<P><Notificacoes /></P>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
           <InstallPrompt />
         </AuthProvider>
       </BrowserRouter>
