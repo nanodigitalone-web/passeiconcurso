@@ -1,8 +1,7 @@
 // cursosService — gateway for "Cursos Preparatórios" (preparatory courses).
-//
-// Courses are managed by admins and shown to all authenticated users inside the
-// Recursos section. The UI must never touch the Supabase client directly.
-import { supabase } from "@/integrations/supabase/client";
+// Talks to the backend API.
+
+import { api } from "@/lib/api";
 
 export type CursoPreparatorio = {
   id: string;
@@ -19,46 +18,40 @@ export type CursoPreparatorio = {
 export const cursosService = {
   /** Active courses for a concurso, visible to all users. */
   async listByConcurso(concursoId: string): Promise<CursoPreparatorio[]> {
-    const { data } = await supabase
-      .from("cursos_preparatorios")
-      .select("*")
-      .eq("concurso_id", concursoId)
-      .eq("ativo", true)
-      .order("ordem", { ascending: true })
-      .order("created_at", { ascending: true });
-    return (data ?? []) as CursoPreparatorio[];
+    try {
+      return await api.get<CursoPreparatorio[]>(`/cursos?concurso=${encodeURIComponent(concursoId)}`);
+    } catch {
+      return [];
+    }
   },
 
-  /** All active courses, grouped usage in the Recursos hub. */
+  /** All active courses. */
   async listAll(): Promise<CursoPreparatorio[]> {
-    const { data } = await supabase
-      .from("cursos_preparatorios")
-      .select("*")
-      .eq("ativo", true)
-      .order("ordem", { ascending: true })
-      .order("created_at", { ascending: true });
-    return (data ?? []) as CursoPreparatorio[];
+    try {
+      return await api.get<CursoPreparatorio[]>("/cursos");
+    } catch {
+      return [];
+    }
   },
 
   // ---- Admin ----
   async adminList(): Promise<CursoPreparatorio[]> {
-    const { data } = await supabase
-      .from("cursos_preparatorios")
-      .select("*")
-      .order("concurso_id", { ascending: true })
-      .order("ordem", { ascending: true });
-    return (data ?? []) as CursoPreparatorio[];
+    try {
+      return await api.get<CursoPreparatorio[]>("/cursos/admin/all");
+    } catch {
+      return [];
+    }
   },
 
   create(curso: Omit<CursoPreparatorio, "id">) {
-    return supabase.from("cursos_preparatorios").insert(curso as any);
+    return api.post("/cursos/admin", curso);
   },
 
   update(id: string, patch: Partial<CursoPreparatorio>) {
-    return supabase.from("cursos_preparatorios").update(patch as any).eq("id", id);
+    return api.patch(`/cursos/admin/${id}`, patch);
   },
 
   remove(id: string) {
-    return supabase.from("cursos_preparatorios").delete().eq("id", id);
+    return api.delete(`/cursos/admin/${id}`);
   },
 };

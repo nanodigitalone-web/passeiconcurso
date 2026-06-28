@@ -1,6 +1,6 @@
 // friendsService — friend connections (search, requests, friend code).
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export type FoundUser = {
   id: string;
@@ -24,51 +24,58 @@ export type FriendRow = {
 export const friendsService = {
   /** The signed-in user's own friend code. */
   async getMyCode(userId: string): Promise<string | null> {
-    const { data } = await supabase
-      .from("profiles")
-      .select("friend_code")
-      .eq("id", userId)
-      .maybeSingle();
-    return (data as any)?.friend_code ?? null;
+    try {
+      const p = await api.get<{ friend_code: string | null }>(`/profile/${userId}`);
+      return p?.friend_code ?? null;
+    } catch {
+      return null;
+    }
   },
 
   async search(q: string): Promise<FoundUser[]> {
     const term = q.trim();
     if (term.length < 2) return [];
-    const { data } = await supabase.rpc("search_users", { _q: term });
-    return (data ?? []) as FoundUser[];
+    try {
+      return await api.get<FoundUser[]>(`/friends/search?q=${encodeURIComponent(term)}`);
+    } catch {
+      return [];
+    }
   },
 
   async list(): Promise<FriendRow[]> {
-    const { data } = await supabase.rpc("get_friends");
-    return (data ?? []) as FriendRow[];
+    try {
+      return await api.get<FriendRow[]>("/friends");
+    } catch {
+      return [];
+    }
   },
 
   async sendRequest(toUserId: string): Promise<{ ok: boolean; status?: string; error?: string }> {
-    const { data, error } = await supabase.rpc("send_friend_request", { _to: toUserId });
-    if (error) return { ok: false, error: error.message };
-    return (data ?? { ok: false }) as any;
+    try {
+      return await api.post("/friends/request", { to: toUserId });
+    } catch (e: any) {
+      return { ok: false, error: e?.message };
+    }
   },
 
   async addByCode(code: string): Promise<{ ok: boolean; status?: string; error?: string }> {
-    const { data, error } = await supabase.rpc("add_friend_by_code", { _code: code.trim() });
-    if (error) return { ok: false, error: error.message };
-    return (data ?? { ok: false }) as any;
+    try {
+      return await api.post("/friends/code", { code: code.trim() });
+    } catch (e: any) {
+      return { ok: false, error: e?.message };
+    }
   },
 
   async respond(friendshipId: string, accept: boolean): Promise<boolean> {
-    const { error } = await supabase.rpc("respond_friend_request", {
-      _id: friendshipId,
-      _accept: accept,
-    });
-    return !error;
+    try {
+      await api.post("/friends/respond", { id: friendshipId, accept });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   async remove(friendshipId: string): Promise<boolean> {
-    const { error } = await supabase.rpc("respond_friend_request", {
-      _id: friendshipId,
-      _accept: false,
-    });
-    return !error;
+    return this.respond(friendshipId, false);
   },
 };

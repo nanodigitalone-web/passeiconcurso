@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, BookOpen, Trophy, Target } from "lucide-react";
@@ -9,22 +10,44 @@ import { LegalModal } from "@/components/LegalModal";
 import { Seo } from "@/components/Seo";
 
 const Login = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && user) navigate("/", { replace: true });
   }, [user, loading, navigate]);
 
-  const signInGoogle = async () => {
-    const result = await authService.signInWithGoogle(window.location.origin);
-    if (result.error) {
-      toast.error("Erro ao iniciar sessão. Tente novamente.");
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error("Preencha email e palavra-passe.");
       return;
     }
-    if (result.redirected) return;
+    setBusy(true);
+    const result =
+      mode === "login"
+        ? await authService.signIn(email.trim(), password)
+        : await authService.signUp(email.trim(), password, nome.trim() || undefined);
+    setBusy(false);
+    if (result.error) {
+      const msg =
+        result.error === "invalid_credentials"
+          ? "Email ou palavra-passe incorretos."
+          : result.error === "email_taken"
+          ? "Este email já está registado."
+          : "Erro ao iniciar sessão. Tente novamente.";
+      toast.error(msg);
+      return;
+    }
+    await refresh();
     navigate("/", { replace: true });
   };
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-hero text-primary-foreground">
@@ -54,20 +77,49 @@ const Login = () => {
         </div>
 
         <div className="mt-10">
-          <Button
-            onClick={signInGoogle}
-            size="lg"
-            variant="secondary"
-            className="w-full rounded-full font-semibold shadow-elegant"
+          <form onSubmit={submit} className="space-y-3">
+            {mode === "register" && (
+              <Input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Nome"
+                className="rounded-full bg-white/95 text-foreground"
+              />
+            )}
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              autoComplete="email"
+              className="rounded-full bg-white/95 text-foreground"
+            />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Palavra-passe"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              className="rounded-full bg-white/95 text-foreground"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              variant="secondary"
+              disabled={busy}
+              className="w-full rounded-full font-semibold shadow-elegant"
+            >
+              {busy ? "A processar…" : mode === "login" ? "Entrar" : "Criar conta"}
+            </Button>
+          </form>
+          <button
+            type="button"
+            onClick={() => setMode(mode === "login" ? "register" : "login")}
+            className="mt-3 w-full text-center text-sm underline underline-offset-2 opacity-90 hover:opacity-100"
           >
-            <svg className="mr-2 h-5 w-5" viewBox="0 0 48 48">
-              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
-              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
-              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.6l6.2 5.2C41.4 35.6 44 30.2 44 24c0-1.3-.1-2.4-.4-3.5z" />
-            </svg>
-            Entrar com Google
-          </Button>
+            {mode === "login" ? "Não tem conta? Criar conta" : "Já tem conta? Entrar"}
+          </button>
+
           <p className="mt-4 text-center text-xs opacity-75">
             Ao continuar, você aceita os{" "}
             <LegalModal

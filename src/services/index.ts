@@ -11,7 +11,7 @@ export type { Concurso, Categoria, Question } from "./quizService";
 
 export { resultsService } from "./resultsService";
 export { authService } from "./authService";
-export type { Profile } from "./authService";
+export type { Profile, AuthUser } from "./authService";
 export { accessService, clearAccessCache } from "./accessService";
 export { notificationsService } from "./notificationsService";
 export type { NotificationRow } from "./notificationsService";

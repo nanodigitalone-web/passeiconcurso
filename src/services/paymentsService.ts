@@ -1,7 +1,7 @@
-// paymentsService — encapsulates the access-purchase flow:
-// proof upload (storage), payment requests, and access-code activation.
+// paymentsService — access-purchase flow: proof upload, payment requests,
+// and access-code activation (backend API).
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export type Pricing = {
   valor: number; // current price in Kz
@@ -31,13 +31,12 @@ export const paymentsService = {
     };
   },
 
-  /** Upload a payment proof to storage and return the stored path. */
-  async uploadComprovativo(userId: string, file: File): Promise<string> {
-    const ext = file.name.split(".").pop();
-    const path = `${userId}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("comprovativos").upload(path, file);
-    if (error) throw error;
-    return path;
+  /** Upload a payment proof and return the stored relative path. */
+  async uploadComprovativo(_userId: string, file: File): Promise<string> {
+    const form = new FormData();
+    form.append("file", file);
+    const r = await api.upload<{ path: string; url: string }>("/payments/upload", form);
+    return r.path;
   },
 
   /** Create a payment request row. Returns the new row id. */
@@ -49,31 +48,21 @@ export const paymentsService = {
     categoriaNome: string;
     comprovativoPath: string;
   }): Promise<string> {
-    const { data, error } = await supabase
-      .from("payment_requests")
-      .insert({
-        user_id: params.userId,
-        email: params.email,
-        concurso_id: params.concursoId,
-        categoria_id: params.categoriaId,
-        categoria_nome: params.categoriaNome,
-        comprovativo_url: params.comprovativoPath,
-        status: "awaiting_review",
-      })
-      .select("id")
-      .single();
-    if (error) throw error;
-    return data.id;
+    const r = await api.post<{ id: string }>("/payments/request", {
+      concursoId: params.concursoId,
+      categoriaId: params.categoriaId,
+      categoriaNome: params.categoriaNome,
+      comprovativoPath: params.comprovativoPath,
+    });
+    return r.id;
   },
 
-  /** Activate a 6-digit access code. Returns the RPC result. */
+  /** Activate a 6-digit access code. */
   async activateAccessCode(code: string, concursoId: string, categoriaId: string) {
-    const { data, error } = await supabase.rpc("activate_access_code", {
-      _code: code,
-      _conc: concursoId,
-      _cat: categoriaId,
+    return await api.post<{ ok: boolean; error?: string }>("/payments/activate-code", {
+      code,
+      concursoId,
+      categoriaId,
     });
-    if (error) throw error;
-    return data as { ok: boolean; error?: string };
   },
 };

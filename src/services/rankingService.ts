@@ -1,6 +1,6 @@
-// rankingService — encapsulates ranking queries.
+// rankingService — encapsulates ranking queries (backend API).
 
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export type RankRow = {
   id: string;
@@ -12,13 +12,20 @@ export type RankRow = {
 
 export const rankingService = {
   async getRanking(categoria: string | null): Promise<RankRow[]> {
-    const { data } = await supabase.rpc("get_ranking", { _categoria: categoria });
-    return (data ?? []) as RankRow[];
+    try {
+      const q = categoria ? `?categoria=${encodeURIComponent(categoria)}` : "";
+      return await api.get<RankRow[]>(`/ranking${q}`);
+    } catch {
+      return [];
+    }
   },
 
   /** Weekly ranking — points earned since Monday, resets every week. */
   async getWeeklyRanking(): Promise<RankRow[]> {
-    const { data } = await supabase.rpc("get_weekly_ranking");
-    return (data ?? []) as RankRow[];
+    try {
+      return await api.get<RankRow[]>("/ranking/weekly");
+    } catch {
+      return [];
+    }
   },
 };
