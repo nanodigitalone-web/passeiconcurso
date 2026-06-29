@@ -191,6 +191,21 @@ export const quizService = {
     finishedAt?: number;
   }): QuizResult {
     const attempt = this.buildAttempt(params);
+
+    // Record the per-question signal for adaptive learning (logged-in users
+    // only). Fire-and-forget: never block or fail the quiz on this.
+    if (params.userId) {
+      const payload = attempt.answers.map((a) => ({
+        questionId: a.questaoId,
+        concursoId: params.concursoId,
+        categoriaId: params.categoriaId,
+        disciplina: a.disciplina,
+        correct: a.escolhida === a.correta,
+        selected: a.escolhida,
+      }));
+      api.post("/content/attempts", { attempts: payload }).catch(() => {});
+    }
+
     return resultsService.saveAttempt(attempt);
   },
 

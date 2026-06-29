@@ -33,6 +33,8 @@ create table if not exists users (
   email         text unique not null,
   password_hash text,                       -- null for Google-only accounts
   google_id     text unique,
+  -- Free trial window. Access to gated content is granted while now() < this.
+  trial_ends_at timestamptz default (now() + interval '14 days'),
   created_at    timestamptz not null default now()
 );
 
@@ -233,7 +235,26 @@ create table if not exists push_subscriptions (
 create trigger trg_push_updated before update on push_subscriptions
   for each row execute function set_updated_at();
 
+-- ---------- question_attempts (adaptive learning signal) -------------
+-- One row per answered question. This is the raw data the recommendation /
+-- spaced-repetition engine learns from (weak disciplinas, mastery, etc.).
+create table if not exists question_attempts (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references users(id) on delete cascade,
+  question_id   text not null,
+  concurso_id   text not null,
+  categoria_id  text not null,
+  disciplina    text,
+  correct       boolean not null,
+  selected      integer,                     -- chosen option index (-1 = none)
+  duration_ms   integer,                     -- time spent on the question
+  answered_at   timestamptz not null default now()
+);
+
 -- ---------- indexes ---------------------------------------------------
+create index if not exists idx_attempts_user_time on question_attempts(user_id, answered_at desc);
+create index if not exists idx_attempts_user_q on question_attempts(user_id, question_id);
+create index if not exists idx_attempts_user_disc on question_attempts(user_id, disciplina);
 create index if not exists idx_category_access_user on category_access(user_id);
 create index if not exists idx_points_log_user_time on points_log(user_id, created_at);
 create index if not exists idx_notifications_user on notifications(user_id, created_at desc);
