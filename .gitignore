@@ -23,6 +23,10 @@ server/.env.*
 # Uploaded files (payment proofs) — stored on Render persistent disk
 server/uploads/
 
+# Supabase data export (PII: emails, names, IBANs) — NEVER commit
+dados dos usuarios/
+dados-usuarios/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
