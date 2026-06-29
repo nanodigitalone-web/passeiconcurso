@@ -93,6 +93,32 @@ export const quizService = {
   },
 
 
+  /**
+   * Load a ready-to-use question set from the backend engine: mixes old
+   * (real-exam) + new (AI) questions with old weighted higher, personalizes by
+   * the user's weaknesses, and ships the options already shuffled (correct
+   * answer in a random slot) with answers + comments included. Gated server-side
+   * by trial/paid access. Falls back to the bundled bank if the API is
+   * unreachable, so the quiz never breaks.
+   */
+  async loadQuestionSet(concursoId: string, categoriaId: string, limit = 20): Promise<Question[]> {
+    try {
+      const data = await api.post<{ questions: Question[] }>("/content/questions", {
+        concursoId,
+        categoriaId,
+        limit,
+      });
+      const qs = data?.questions ?? [];
+      if (qs.length > 0) return qs;
+    } catch {
+      /* fall through to bundled fallback */
+    }
+    // Fallback: bundled smart selection (no AI questions, but app keeps working).
+    const local = this.getSmartQuestions(concursoId, categoriaId, limit);
+    await this.ensureAnswers(concursoId, categoriaId).catch(() => {});
+    return local;
+  },
+
   /** A randomized, capped set of questions for a single quiz session. */
   getSimuladoQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {
     return this.getSmartQuestions(concursoId, categoriaId, limit);

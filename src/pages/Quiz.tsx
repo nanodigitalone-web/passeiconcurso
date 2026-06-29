@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { Question } from "@/data/concursos";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,16 +24,11 @@ const Quiz = () => {
   const [escolhida, setEscolhida] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [seconds, setSeconds] = useState(0);
-  const [answersReady, setAnswersReady] = useState(false);
+  const [questoes, setQuestoes] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(false);
   const [motivation, setMotivation] = useState<MotivationVariant | null>(null);
   const motivationShownRef = useRef<Set<MotivationVariant>>(new Set());
   const startedAtRef = useRef(Date.now());
-
-  // Smart selection (prioritizes unseen/wrong) once the user picks a length.
-  const questoes = useMemo(
-    () => (cat && count ? quizService.getSmartQuestions(concursoId!, categoriaId!, count) : []),
-    [cat, count]
-  );
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -61,14 +57,16 @@ const Quiz = () => {
 
   const gate = useAccessGate(concursoId, categoriaId);
 
-  // Load the answer key (gated server-side) once access is confirmed.
+  // Load the question set (mixed old+new, personalized, options shuffled
+  // server-side) once access is confirmed and a length is chosen.
   useEffect(() => {
-    if (gate.hasAccess && cat) {
-      quizService.ensureAnswers(concursoId!, categoriaId!)
-        .then(() => setAnswersReady(true))
-        .catch(() => setAnswersReady(false));
-    }
-  }, [gate.hasAccess, concursoId, categoriaId]);
+    if (!gate.hasAccess || !cat || count === null) return;
+    setLoading(true);
+    quizService
+      .loadQuestionSet(concursoId!, categoriaId!, count)
+      .then((qs) => setQuestoes(qs))
+      .finally(() => setLoading(false));
+  }, [gate.hasAccess, concursoId, categoriaId, count]);
 
 
   if (!cat) return <Navigate to="/concursos" replace />;
@@ -81,8 +79,6 @@ const Quiz = () => {
       </div>
     );
   }
-
-  const disponiveis = quizService.getQuestions(concursoId!, categoriaId!).length;
 
   // Length selection screen (20 / 50 / 100) shown before the simulado starts.
   if (count === null) {
@@ -109,9 +105,7 @@ const Quiz = () => {
                 className="flex w-full items-center justify-between rounded-2xl border-2 border-border/60 bg-card p-5 text-left shadow-card transition-smooth hover:border-primary/50"
               >
                 <span className="font-display text-xl font-bold">{n} questões</span>
-                <span className="text-xs text-muted-foreground">
-                  {n > disponiveis ? `${disponiveis} disponíveis · repetições aleatórias` : "selecção inteligente"}
-                </span>
+                <span className="text-xs text-muted-foreground">selecção inteligente</span>
               </button>
             ))}
           </div>
@@ -120,6 +114,13 @@ const Quiz = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
+        <p className="text-sm text-muted-foreground animate-pulse">A preparar o seu simulado…</p>
+      </div>
+    );
+  }
   if (!questao) return <Navigate to="/concursos" replace />;
 
 
@@ -241,8 +242,8 @@ const Quiz = () => {
 
         <div className="mt-6">
           {!revealed ? (
-            <Button onClick={confirmar} disabled={escolhida === null || !answersReady} size="lg" className="w-full rounded-full font-semibold">
-              {answersReady ? "Confirmar resposta" : "A carregar…"}
+            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold">
+              Confirmar resposta
             </Button>
           ) : (
             <Button onClick={proxima} size="lg" className="w-full rounded-full font-semibold bg-gradient-primary">
