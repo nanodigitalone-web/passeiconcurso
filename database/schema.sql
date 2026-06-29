@@ -235,6 +235,23 @@ create table if not exists push_subscriptions (
 create trigger trg_push_updated before update on push_subscriptions
   for each row execute function set_updated_at();
 
+-- ---------- questions (question bank — seedable + AI-generated) ------
+create table if not exists questions (
+  id            text primary key,
+  concurso_id   text not null,
+  categoria_id  text not null,
+  disciplina    text,
+  enunciado     text not null,
+  opcoes        jsonb not null,
+  correta       integer not null,
+  comentario    text,
+  source        text not null default 'seed',  -- 'seed' | 'ai'
+  active        boolean not null default true,
+  created_at    timestamptz not null default now()
+);
+create index if not exists idx_questions_cat
+  on questions(concurso_id, categoria_id) where active;
+
 -- ---------- question_attempts (adaptive learning signal) -------------
 -- One row per answered question. This is the raw data the recommendation /
 -- spaced-repetition engine learns from (weak disciplinas, mastery, etc.).

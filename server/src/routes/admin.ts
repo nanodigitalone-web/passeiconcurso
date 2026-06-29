@@ -1,9 +1,31 @@
 import { Router } from "express";
 import { one, pool, query } from "../lib/db.js";
 import { requireAdmin } from "../lib/auth.js";
+import { generateQuestions, aiEnabled } from "../lib/generateQuestions.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
+
+// ---- AI question generation (Claude Haiku) ----
+// Drafts MCQs for a disciplina, validates + dedups, and inserts them
+// (source='ai', auto-published). Requires ANTHROPIC_API_KEY on the server.
+adminRouter.post("/questions/generate", async (req, res) => {
+  if (!aiEnabled()) return res.status(501).json({ error: "anthropic_not_configured" });
+  const { concursoId, categoriaId, disciplina, count } = req.body || {};
+  if (!concursoId || !categoriaId || !disciplina)
+    return res.status(400).json({ error: "missing_params" });
+  try {
+    const result = await generateQuestions({
+      concursoId,
+      categoriaId,
+      disciplina,
+      count: Number(count) || 5,
+    });
+    res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "generation_failed" });
+  }
+});
 
 const genCode = () => Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join("");
 
