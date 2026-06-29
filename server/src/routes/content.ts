@@ -79,3 +79,77 @@ contentRouter.post("/attempts", requireAuth, async (req: AuthedRequest, res) => 
   );
   res.json({ ok: true, saved: rows.length });
 });
+
+// Shuffle a question's option positions and remap `correta`, so the correct
+// answer is never stuck in the same slot (kills the "always option B" bias).
+function shuffleOptions(q: any) {
+  const opcoes: string[] = Array.isArray(q.opcoes) ? q.opcoes : JSON.parse(q.opcoes);
+  const order = opcoes.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return {
+    id: q.id,
+    disciplina: q.disciplina,
+    enunciado: q.enunciado,
+    opcoes: order.map((i) => opcoes[i]),
+    correta: order.indexOf(q.correta),
+    comentario: q.comentario,
+    source: q.source,
+  };
+}
+
+// Smart question set: mixes old (seed = real-exam, weighted higher) and new
+// (ai) questions, personalizes by the user's weaknesses (unseen / previously
+// wrong first), and shuffles answer positions. The single source the quiz UI
+// should use going forward.
+contentRouter.post("/questions", requireAuth, async (req: AuthedRequest, res) => {
+  const { concursoId, categoriaId, limit } = req.body || {};
+  if (!concursoId || !categoriaId)
+    return res.status(400).json({ error: "missing_params" });
+  if (!(await hasCategoryAccess(req.userId!, concursoId, categoriaId)))
+    return res.status(403).json({ error: "Forbidden" });
+
+  const cap = Math.min(Math.max(1, Number(limit) || 20), 100);
+
+  const all = (
+    await query(
+      `select id, disciplina, enunciado, opcoes, correta, comentario, source
+         from questions
+        where concurso_id = $1 and categoria_id = $2 and active`,
+      [concursoId, categoriaId],
+    )
+  ).rows;
+  if (all.length === 0) return res.json({ questions: [] });
+
+  // The user's history for this category → drives personalization.
+  const att = (
+    await query(
+      `select question_id, correct from question_attempts
+        where user_id = $1 and concurso_id = $2 and categoria_id = $3`,
+      [req.userId, concursoId, categoriaId],
+    )
+  ).rows;
+  const seen = new Set<string>();
+  const wrong = new Set<string>();
+  for (const a of att) {
+    seen.add(a.question_id);
+    if (!a.correct) wrong.add(a.question_id);
+  }
+
+  // Score each question: unseen > previously-wrong > mastered; real-exam
+  // (seed) questions get a boost so they appear more often than AI ones.
+  const scored = all
+    .map((q: any) => {
+      let s = Math.random();
+      if (!seen.has(q.id)) s += 2;
+      else if (wrong.has(q.id)) s += 1.5;
+      if (q.source === "seed") s += 1;
+      return { q, s };
+    })
+    .sort((a, b) => b.s - a.s);
+
+  const questions = scored.slice(0, cap).map(({ q }) => shuffleOptions(q));
+  res.json({ questions });
+});
