@@ -104,8 +104,8 @@ const Perfil = () => {
     if (!user) return;
     setSaving(true);
     // Guardar o label legível, não o código interno do combobox
-    const uniLabel = escolaByValue(universidade)?.label ?? universidade || null;
-    const cursoLabel = cursoByValue(curso)?.label ?? curso || null;
+    const uniLabel = (escolaByValue(universidade)?.label ?? universidade) || null;
+    const cursoLabel = (cursoByValue(curso)?.label ?? curso) || null;
     const { error } = await authService.updateProfile(user.id, {
       nome, bio, avatar_url: avatar || null,
       universidade: uniLabel, curso: cursoLabel, ano: ano || null,
