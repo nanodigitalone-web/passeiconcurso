@@ -115,16 +115,28 @@ const Admin = () => {
 /* ---------------- Stats ---------------- */
 const StatsTab = () => {
   const [s, setS] = useState({ users: 0, blocked: 0, hidden: 0, paid: 0, codesUsed: 0, codesAvail: 0, payments: 0 });
-
-  // Questões disponíveis na plataforma (calculado dos dados locais)
-  const totalQuestoes = concursos.reduce((acc, c) => acc + c.categorias.reduce((a, cat) => a + cat.questoes.length, 0), 0);
-  const totalCategorias = concursos.reduce((acc, c) => acc + c.categorias.length, 0);
-  const porCategoria = concursos.flatMap(c => c.categorias.map(cat => ({ nome: cat.nome, n: cat.questoes.length })))
-    .sort((a, b) => b.n - a.n);
+  const [q, setQ] = useState<{
+    total: number;
+    bySource: { source: string; n: number }[];
+    byCat: { concurso_id: string; categoria_id: string; n: number }[];
+  }>({ total: 0, bySource: [], byCat: [] });
 
   useEffect(() => {
     adminService.getStats().then(setS);
+    adminService.getQuestionsStats().then(setQ);
   }, []);
+
+  // Real counts from the DB (inclui as geradas por IA).
+  const totalQuestoes = q.total;
+  const seedCount = q.bySource.find((b) => b.source === "seed")?.n ?? 0;
+  const aiCount = q.bySource.find((b) => b.source === "ai")?.n ?? 0;
+  const totalCategorias = q.byCat.length || concursos.reduce((acc, c) => acc + c.categorias.length, 0);
+  const porCategoria = q.byCat
+    .map((r) => ({
+      nome: quizService.getCategoria(r.concurso_id, r.categoria_id)?.nome ?? r.categoria_id,
+      n: r.n,
+    }))
+    .sort((a, b) => b.n - a.n);
 
 
   const groups: { title: string; items: { label: string; value: number; icon: any; grad: string }[] }[] = [
@@ -176,7 +188,9 @@ const StatsTab = () => {
       ))}
 
       <section>
-        <h2 className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">Questões por categoria</h2>
+        <h2 className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
+          Questões por categoria · <span className="text-white/70">{seedCount.toLocaleString("pt-PT")} originais + {aiCount.toLocaleString("pt-PT")} IA</span>
+        </h2>
         <Card className={`${PANEL} p-5`}>
           <div className="space-y-3.5">
             {porCategoria.map(c => {

@@ -43,6 +43,25 @@ adminRouter.get("/stats", async (_req, res) => {
   });
 });
 
+// ---- Question bank stats (real counts from the DB, incl. AI-generated) ----
+adminRouter.get("/questions-stats", async (_req, res) => {
+  try {
+    const total = Number((await one<{ n: string }>("select count(*)::int n from questions"))?.n ?? 0);
+    const bySource = (
+      await query("select source, count(*)::int n from questions group by source")
+    ).rows;
+    const byCat = (
+      await query(
+        `select concurso_id, categoria_id, count(*)::int n
+           from questions where active group by 1,2 order by 3 desc`,
+      )
+    ).rows;
+    res.json({ total, bySource, byCat });
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
 // ---- Users ----
 adminRouter.get("/profiles", async (req, res) => {
   const limit = Number(req.query.limit) || 500;

@@ -1,28 +1,35 @@
-// bulk-generate.mjs — fill the `questions` table toward a target using Claude
-// Haiku. Resumable (counts from DB on start), round-robin over disciplinas,
+// bulk-generate.mjs — fill the `questions` table toward a target.
+// Provider: Google Gemini (GEMINI_API_KEY) by default, else Anthropic Claude
+// Haiku (ANTHROPIC_API_KEY). Resumable, prioritizes the smallest categories,
 // validates + dedups before inserting (source='ai').
 //
 // Usage (from server/):
-//   ANTHROPIC_API_KEY=... DATABASE_URL=<neon> DATABASE_SSL=true \
+//   GEMINI_API_KEY=... DATABASE_URL=<neon> DATABASE_SSL=true \
 //     node scripts/bulk-generate.mjs <target_total> [per_batch]
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import Anthropic from "@anthropic-ai/sdk";
 import pg from "pg";
 
 const TARGET = Number(process.argv[2]) || 10000;
 const BATCH = Number(process.argv[3]) || 15;
 
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+// Gemini free tier is ~15 req/min → pace ~4.5s between calls; Anthropic faster.
+const PACE_MS = GEMINI_KEY ? 4500 : 600;
+
 const url = process.env.DATABASE_URL;
 if (!url) { console.error("DATABASE_URL not set"); process.exit(1); }
-if (!process.env.ANTHROPIC_API_KEY) { console.error("ANTHROPIC_API_KEY not set"); process.exit(1); }
+if (!GEMINI_KEY && !ANTHROPIC_KEY) { console.error("Set GEMINI_API_KEY or ANTHROPIC_API_KEY"); process.exit(1); }
+console.log(`Provider: ${GEMINI_KEY ? "Gemini (" + GEMINI_MODEL + ")" : "Anthropic Haiku"}`);
 const ssl = process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined;
 // Pool (not a single Client) so dropped connections (Neon closes long-lived
 // ones) are transparently replaced instead of crashing the whole run.
 const db = new pg.Pool({ connectionString: url, ssl, max: 2, idleTimeoutMillis: 10000 });
 db.on("error", (e) => console.log(`  (pool warning: ${e.message})`));
-const ai = new Anthropic();
 
+let anthropic = null;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function extractJsonArray(text) {
@@ -30,6 +37,30 @@ function extractJsonArray(text) {
   const s = t.indexOf("["), e = t.lastIndexOf("]");
   if (s !== -1 && e !== -1 && e > s) t = t.slice(s, e + 1);
   return JSON.parse(t);
+}
+
+async function callModel(system, prompt) {
+  if (GEMINI_KEY) {
+    const u = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+    const resp = await fetch(u, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: system }] },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 4000, temperature: 0.9, responseMimeType: "application/json" },
+      }),
+    });
+    if (!resp.ok) throw new Error(`gemini_${resp.status}: ${(await resp.text()).slice(0, 160)}`);
+    const data = await resp.json();
+    return data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") ?? "";
+  }
+  if (!anthropic) anthropic = new (await import("@anthropic-ai/sdk")).default();
+  const r = await anthropic.messages.create({
+    model: "claude-haiku-4-5", max_tokens: 4000, system,
+    messages: [{ role: "user", content: prompt }],
+  });
+  return r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
 }
 
 async function genOne(target) {
@@ -44,13 +75,7 @@ async function genOne(target) {
     `Varia a posição da resposta correta. ` +
     `Formato (array JSON, nada mais): ` +
     `[{"enunciado":"...","opcoes":["...","...","...","..."],"correta":0,"comentario":"..."}]`;
-  const resp = await ai.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: 4000,
-    system,
-    messages: [{ role: "user", content: prompt }],
-  });
-  const text = resp.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+  const text = await callModel(system, prompt);
   const arr = extractJsonArray(text);
   return Array.isArray(arr) ? arr : [];
 }
@@ -143,7 +168,7 @@ async function main() {
       continue;
     }
     console.log(`  [${total}/${TARGET}] +${inserted} (${target.concurso_id}/${target.categoria_id}/${target.disciplina})`);
-    await sleep(500); // gentle pacing
+    await sleep(PACE_MS); // pacing (respeita o limite grátis do Gemini)
   }
   console.log(`✅ Concluído: ${total} questões.`);
   await db.end();

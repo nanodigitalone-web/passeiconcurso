@@ -3,6 +3,19 @@
 import { api } from "@/lib/api";
 
 export const adminService = {
+  // ---- Question bank stats (real DB counts, incl. AI-generated) ----
+  async getQuestionsStats(): Promise<{
+    total: number;
+    bySource: { source: string; n: number }[];
+    byCat: { concurso_id: string; categoria_id: string; n: number }[];
+  }> {
+    try {
+      return await api.get("/admin/questions-stats");
+    } catch {
+      return { total: 0, bySource: [], byCat: [] };
+    }
+  },
+
   // ---- Stats ----
   async getStats() {
     try {

@@ -1,19 +1,57 @@
-// generateQuestions — uses Claude Haiku to draft multiple-choice questions for
-// a given concurso/categoria/disciplina, validates them, dedups against the
-// existing bank, and inserts them into `questions` (source='ai', auto-published).
+// generateQuestions — drafts multiple-choice questions for a given
+// concurso/categoria/disciplina, validates them, dedups against the bank, and
+// inserts them into `questions` (source='ai', auto-published).
 //
-// Reads ANTHROPIC_API_KEY from the environment (never hardcode it). When the key
-// is absent the feature is disabled and the route returns 501.
+// Provider: uses Google Gemini when GEMINI_API_KEY is set (free tier, the
+// default going forward), otherwise falls back to Anthropic Claude Haiku if
+// ANTHROPIC_API_KEY is set. Reads keys from the environment — never hardcode.
 import { randomUUID } from "node:crypto";
-import Anthropic from "@anthropic-ai/sdk";
 import { query } from "./db.js";
 
-const client = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
-export const aiEnabled = () => client !== null;
+export const aiEnabled = () => !!(GEMINI_KEY || ANTHROPIC_KEY);
 
-// Strip ```json … ``` fences and grab the outermost JSON array if the model
-// wrapped it in prose.
+// Call the configured model and return its raw text response.
+async function callModel(system: string, prompt: string): Promise<string> {
+  if (GEMINI_KEY) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: system }] },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 4000,
+          temperature: 0.9,
+          responseMimeType: "application/json",
+        },
+      }),
+    });
+    if (!resp.ok) throw new Error(`gemini_${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+    const data: any = await resp.json();
+    return (
+      data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("") ?? ""
+    );
+  }
+  // Anthropic fallback (dynamic import so the SDK is optional).
+  const Anthropic = (await import("@anthropic-ai/sdk")).default;
+  const client = new Anthropic();
+  const r = await client.messages.create({
+    model: "claude-haiku-4-5",
+    max_tokens: 4000,
+    system,
+    messages: [{ role: "user", content: prompt }],
+  });
+  return r.content
+    .filter((b: any) => b.type === "text")
+    .map((b: any) => b.text)
+    .join("");
+}
+
 function extractJsonArray(text: string): any {
   let t = text.trim();
   t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
@@ -31,7 +69,7 @@ export async function generateQuestions(opts: {
   disciplina: string;
   count: number;
 }): Promise<{ requested: number; valid: number; inserted: number }> {
-  if (!client) throw new Error("anthropic_not_configured");
+  if (!aiEnabled()) throw new Error("ai_not_configured");
   const count = Math.min(Math.max(1, Math.trunc(opts.count) || 1), 20);
 
   const system =
@@ -42,21 +80,11 @@ export async function generateQuestions(opts: {
   const prompt =
     `Gera ${count} questões de escolha múltipla sobre a disciplina "${opts.disciplina}" ` +
     `(concurso "${opts.concursoId}", categoria "${opts.categoriaId}").\n` +
-    `Regras: cada questão tem exatamente 4 opções, apenas 1 correta, e um comentário curto que explica a resposta.\n` +
+    `Regras: cada questão tem exatamente 4 opções, apenas 1 correta, e um comentário curto que explica a resposta. Varia a posição da resposta correta.\n` +
     `Formato (array JSON, nada mais):\n` +
     `[{"enunciado":"...","opcoes":["...","...","...","..."],"correta":0,"comentario":"..."}]`;
 
-  const resp = await client.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: 4000,
-    system,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const text = resp.content
-    .filter((b): b is Anthropic.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("");
+  const text = await callModel(system, prompt);
 
   let arr: unknown;
   try {
@@ -66,7 +94,6 @@ export async function generateQuestions(opts: {
   }
   if (!Array.isArray(arr)) throw new Error("not_an_array");
 
-  // Dedup against existing questions in this categoria (by normalized enunciado).
   const existing = new Set(
     (
       await query(
@@ -90,7 +117,7 @@ export async function generateQuestions(opts: {
       enunciado: raw.enunciado.trim(),
       opcoes: raw.opcoes.map((o: string) => o.trim()),
       correta: raw.correta,
-      comentario: typeof raw.comentario === "string" ? raw.comentario.trim() : null as any,
+      comentario: typeof raw.comentario === "string" ? raw.comentario.trim() : (null as any),
     });
   }
 

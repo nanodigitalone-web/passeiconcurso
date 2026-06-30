@@ -88,8 +88,13 @@ Todas aplicadas em local **e** Neon.
   Anthropic ficou **SEM CRÉDITOS** (a geração parou em ≈6.600). Assim que o dono
   adicionar créditos (console.anthropic.com → Plans & Billing), reiniciar
   `bulk-generate.mjs` (já prioriza as categorias mais pequenas).
-- Comando p/ retomar a geração (de `server/`, com chave VÁLIDA):
-  `ANTHROPIC_API_KEY=... DATABASE_URL=<neon> DATABASE_SSL=true node scripts/bulk-generate.mjs 10000 15`
+- **Provider de geração migrado para Gemini** (grátis): `generateQuestions.ts` e
+  `bulk-generate.mjs` usam Gemini se `GEMINI_API_KEY` (modelo `gemini-2.0-flash`),
+  senão Anthropic Haiku. Por o `GEMINI_API_KEY` no Render (e dar-mo p/ correr o lote).
+- Comando p/ retomar a geração (de `server/`):
+  `GEMINI_API_KEY=... DATABASE_URL=<neon> DATABASE_SSL=true node scripts/bulk-generate.mjs 10000 15`
+- O admin já mostra o total REAL da BD (endpoint `/admin/questions-stats`); antes
+  contava só a lista embutida (1072).
 - Bundle frontend ~2.1MB (code-splitting é melhoria futura).
 - Segurança: o servidor tem rede global (unhandledRejection/uncaughtException)
   para nunca crashar; novos endpoints devem ter try/catch.
