@@ -125,4 +125,22 @@ export const authService = {
   hideAccount(hidden: boolean) {
     return api.post("/profile/hide", { hidden });
   },
+
+  /** Current "Aprender" lives (recharge applied server-side). */
+  async getLives(): Promise<{ vidas: number; max: number; nextInMs: number }> {
+    try {
+      return await api.get("/profile/lives");
+    } catch {
+      return { vidas: 5, max: 5, nextInMs: 0 };
+    }
+  },
+
+  /** Consume one life (on a wrong answer in Aprender). */
+  async loseLife(): Promise<{ vidas: number; max: number; nextInMs: number }> {
+    try {
+      return await api.post("/profile/lives/lose");
+    } catch {
+      return { vidas: 0, max: 5, nextInMs: 0 };
+    }
+  },
 };

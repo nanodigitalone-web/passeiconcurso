@@ -17,10 +17,87 @@ const SELF_EDITABLE = new Set([
   "last_seen",
 ]);
 
+// ---- "Aprender" lives ------------------------------------------------
+// 5 lives max; 1 recharges every 3 hours. Time-based so it can't be cheated
+// client-side and survives across devices. Defined BEFORE "/:id" so the path
+// "/lives" isn't swallowed by the id route.
+const MAX_VIDAS = 5;
+const RECHARGE_MS = 3 * 60 * 60 * 1000;
+
+function recharge(vidas: number, updatedAt: Date | string) {
+  const base = new Date(updatedAt).getTime();
+  if (vidas >= MAX_VIDAS) return { vidas: MAX_VIDAS, updatedAt: new Date(base) };
+  const gained = Math.floor((Date.now() - base) / RECHARGE_MS);
+  if (gained <= 0) return { vidas, updatedAt: new Date(base) };
+  const nv = Math.min(MAX_VIDAS, vidas + gained);
+  const nu = nv >= MAX_VIDAS ? new Date() : new Date(base + gained * RECHARGE_MS);
+  return { vidas: nv, updatedAt: nu };
+}
+
+const livesState = (vidas: number, updatedAt: Date) => ({
+  vidas,
+  max: MAX_VIDAS,
+  nextInMs:
+    vidas >= MAX_VIDAS ? 0 : Math.max(0, RECHARGE_MS - (Date.now() - updatedAt.getTime())),
+});
+
+// Current lives (recharge applied + persisted).
+profileRouter.get("/lives", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const p = await one<{ vidas: number; vidas_updated_at: Date }>(
+      "select vidas, vidas_updated_at from profiles where id = $1",
+      [req.userId],
+    );
+    if (!p) return res.status(404).json({ error: "not_found" });
+    const r = recharge(p.vidas, p.vidas_updated_at);
+    if (r.vidas !== p.vidas) {
+      await query("update profiles set vidas = $2, vidas_updated_at = $3 where id = $1", [
+        req.userId,
+        r.vidas,
+        r.updatedAt,
+      ]);
+    }
+    res.json(livesState(r.vidas, r.updatedAt));
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// Consume one life (on a wrong answer in Aprender).
+profileRouter.post("/lives/lose", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const p = await one<{ vidas: number; vidas_updated_at: Date }>(
+      "select vidas, vidas_updated_at from profiles where id = $1",
+      [req.userId],
+    );
+    if (!p) return res.status(404).json({ error: "not_found" });
+    const r = recharge(p.vidas, p.vidas_updated_at);
+    if (r.vidas <= 0) return res.json(livesState(0, r.updatedAt));
+    const wasFull = r.vidas >= MAX_VIDAS;
+    const nv = r.vidas - 1;
+    const nu = wasFull ? new Date() : r.updatedAt; // start the clock when leaving full
+    await query("update profiles set vidas = $2, vidas_updated_at = $3 where id = $1", [
+      req.userId,
+      nv,
+      nu,
+    ]);
+    res.json(livesState(nv, nu));
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
 // Public-ish: a single profile by id (used for friend/opponent display).
+// Guard against non-uuid ids so a bad path can never crash the query.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 profileRouter.get("/:id", requireAuth, async (req, res) => {
-  const p = await one("select * from profiles where id = $1", [req.params.id]);
-  res.json(p);
+  if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
+  try {
+    const p = await one("select * from profiles where id = $1", [req.params.id]);
+    res.json(p);
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
 });
 
 // Update own profile.

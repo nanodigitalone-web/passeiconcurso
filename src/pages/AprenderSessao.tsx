@@ -11,7 +11,7 @@ import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 
 const SESSION_SIZE = 5;
-const POINTS_PER_HIT = 10;
+const POINTS_PER_HIT = 4; // 5 acertos x 4 = 20 pontos máx. por sessão
 
 
 
@@ -32,14 +32,16 @@ const AprenderSessao = () => {
   const [escolhida, setEscolhida] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [hits, setHits] = useState(0);
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState<number | null>(null);
+  const [livesInfo, setLivesInfo] = useState<{ max: number; nextInMs: number }>({ max: 5, nextInMs: 0 });
+  const [outOfLives, setOutOfLives] = useState(false);
   const [combo, setCombo] = useState(0);
   const [done, setDone] = useState(false);
   const [answersReady, setAnswersReady] = useState(false);
 
   useEffect(() => {
     if (done && user) {
-      const pontosGanhos = hits * POINTS_PER_HIT + (hits === SESSION_SIZE ? 20 : 0);
+      const pontosGanhos = Math.min(20, hits * POINTS_PER_HIT);
       authService
         .addPoints(user.id, profile?.pontos || 0, pontosGanhos)
         .then(() => refreshProfile());
@@ -62,6 +64,15 @@ const AprenderSessao = () => {
     }
   }, [gate.hasAccess, concursoId, categoriaId]);
 
+  // Load persistent lives (recharge applied server-side) once access is confirmed.
+  useEffect(() => {
+    if (!gate.hasAccess) return;
+    authService.getLives().then((r) => {
+      setLives(r.vidas);
+      setLivesInfo({ max: r.max, nextInMs: r.nextInMs });
+    });
+  }, [gate.hasAccess]);
+
 
 
   if (!cat) return <Navigate to="/aprender" replace />;
@@ -76,6 +87,38 @@ const AprenderSessao = () => {
   }
   if (questoes.length === 0) return <Navigate to="/aprender" replace />;
 
+  // Lives still loading.
+  if (lives === null) {
+    return (
+      <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
+        <p className="text-sm text-muted-foreground animate-pulse">A carregar…</p>
+      </div>
+    );
+  }
+
+  // Entered with no lives → block practice and show the recharge countdown.
+  if (lives <= 0 && !done && !revealed && idx === 0) {
+    const horas = Math.floor(livesInfo.nextInMs / 3600000);
+    const mins = Math.ceil((livesInfo.nextInMs % 3600000) / 60000);
+    return (
+      <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-6">
+        <Card className="w-full max-w-md p-8 text-center border-border/60 shadow-card">
+          <Heart className="mx-auto h-14 w-14 text-destructive/40" />
+          <h2 className="mt-3 font-display text-2xl font-bold">Sem vidas</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ficaste sem vidas no Aprender. Recebes 1 vida a cada 3 horas.
+            {livesInfo.nextInMs > 0 && (
+              <> Próxima vida em ~{horas > 0 ? `${horas}h ` : ""}{mins}min.</>
+            )}
+          </p>
+          <Button asChild className="mt-6 w-full rounded-full bg-gradient-primary">
+            <Link to="/aprender">Voltar</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   const q = questoes[idx];
   const total = questoes.length;
   const isLast = idx === total - 1;
@@ -87,8 +130,13 @@ const AprenderSessao = () => {
       setHits((h) => h + 1);
       setCombo((c) => c + 1);
     } else {
-      setLives((l) => l - 1);
       setCombo(0);
+      // Wrong answer → consume a persistent life on the server.
+      authService.loseLife().then((r) => {
+        setLives(r.vidas);
+        setLivesInfo({ max: r.max, nextInMs: r.nextInMs });
+        if (r.vidas <= 0) setOutOfLives(true);
+      });
     }
     setRevealed(true);
   };
@@ -96,7 +144,7 @@ const AprenderSessao = () => {
   const proxima = () => {
     setEscolhida(null);
     setRevealed(false);
-    if (lives - (escolhida !== q.correta ? 1 : 0) <= 0 || isLast) {
+    if (outOfLives || isLast) {
       setDone(true);
     } else {
       setIdx((i) => i + 1);
@@ -105,7 +153,7 @@ const AprenderSessao = () => {
 
   if (done) {
     const perfect = hits === total;
-    const pontos = hits * POINTS_PER_HIT + (perfect ? 20 : 0);
+    const pontos = Math.min(20, hits * POINTS_PER_HIT);
     return (
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-6">
         <Card className="w-full max-w-md p-8 text-center border-0 bg-gradient-to-br from-warning to-accent text-white shadow-elegant animate-scale-in">

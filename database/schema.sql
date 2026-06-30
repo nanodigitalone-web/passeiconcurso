@@ -57,6 +57,8 @@ create table if not exists profiles (
   friend_code    text unique,
   moedas         integer not null default 0,
   iban           text,
+  vidas          integer not null default 5,           -- "Aprender" lives
+  vidas_updated_at timestamptz not null default now(), -- recharge clock
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
