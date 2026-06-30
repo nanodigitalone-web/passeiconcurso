@@ -78,8 +78,10 @@ Online: **www.passeii.com**. Criada originalmente no Lovable.
 001 attempts+trial · 002 questions · 003 pontos_globais · 004 vidas ·
 005 referrals · 006 fix points drift · 007 attempt.mode · 008 perfil
 académico+interesses · 009 follows · 010 interesses_ativo.
-Todas aplicadas em local **e** Neon, **exceto 010** (criada em 2026-06-30,
-ainda por aplicar — ver Registo de sessões).
+Todas aplicadas em **Neon**. 010 ainda **não confirmada em local** (Docker
+indisponível nesta sessão) — aplicar com
+`cd server && node scripts/apply-migration.mjs ../database/migrations/010_interesses_ativo.sql`
+quando voltares a correr o ambiente local.
 
 ## 6. Ações pendentes do DONO (externas)
 - **Rotar a ANTHROPIC_API_KEY** antes do lançamento (foi colada no chat → exposta).
@@ -109,11 +111,11 @@ ainda por aplicar — ver Registo de sessões).
   para nunca crashar; novos endpoints devem ter try/catch.
 - **Lovable**: o editor faz commits diretos na `main` e já re-adicionou Supabase
   (código morto). Cuidado ao integrar.
-- **Migração 010 (`interesses_ativo`) por aplicar**: criada nesta sessão mas não
-  corrida (sandbox sem Docker/Neon). Aplicar com
-  `cd server && node scripts/apply-migration.mjs ../database/migrations/010_interesses_ativo.sql`
-  local, e com `DATABASE_URL="<neon>" DATABASE_SSL=true` prefixado para a Neon.
-  Sem isto, o toggle "marcar para estudo" em `/interesses` falha ao gravar.
+- **Migração 010 (`interesses_ativo`) aplicada na Neon** em 2026-06-30 (via
+  psycopg2, sandbox sem `node`/`psql`). Ainda por confirmar/aplicar no Postgres
+  **local** (Docker) quando o dono voltar a correr o ambiente de dev.
+  ⚠️ A password da Neon foi colada no chat nesta sessão (autorizado pelo dono)
+  — **rotar de novo** assim que possível, como já indicado na secção 6.
 - Esta sessão correu num sandbox **sem Node/npm** instalado — as alterações
   foram revistas manualmente (sem `npm run build`/tsc). Confirmar build antes
   do deploy seguinte.
@@ -152,8 +154,10 @@ ainda por aplicar — ver Registo de sessões).
   só lhe soma espaço para fora do ecrã → ficava deslocado para um lado. Corrigido
   para `w-[calc(100%-2rem)] max-w-sm` (a largura encolhe, a centragem por
   transform volta a bater certo).
-- **Por aplicar**: migração 010 ainda não corrida (nem local nem Neon — sandbox
-  sem Docker/credenciais). Build não verificado por ferramenta (sandbox sem
+- **Migração 010 aplicada na Neon** (dono colou a connection string no chat;
+  corrida via psycopg2 já que o sandbox não tem `node`/`psql` — ver secção 7
+  sobre a necessidade de rotar a password de novo). Ainda por confirmar no
+  Postgres local (Docker). Build não verificado por ferramenta (sandbox sem
   Node/npm) — apenas revisão manual de código.
 
 ### 2026-06-30 (design)
