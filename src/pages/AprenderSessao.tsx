@@ -12,6 +12,7 @@ import { AccessGate } from "@/components/AccessGate";
 
 const SESSION_SIZE = 5;
 const POINTS_PER_HIT = 4; // 5 acertos x 4 = 20 pontos máx. por sessão
+const SECONDS_PER_QUESTION = 5; // tempo para responder; depois salta sozinho
 
 
 
@@ -38,6 +39,7 @@ const AprenderSessao = () => {
   const [combo, setCombo] = useState(0);
   const [done, setDone] = useState(false);
   const [answersReady, setAnswersReady] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
 
   useEffect(() => {
     if (done && user) {
@@ -72,6 +74,22 @@ const AprenderSessao = () => {
       setLivesInfo({ max: r.max, nextInMs: r.nextInMs });
     });
   }, [gate.hasAccess]);
+
+  // 5-second timer per question. When it runs out before answering, the
+  // question is skipped automatically (no point, no life lost).
+  useEffect(() => {
+    if (lives === null || done || revealed) return; // only while answering
+    if (timeLeft <= 0) {
+      setEscolhida(null);
+      setRevealed(false);
+      setTimeLeft(SECONDS_PER_QUESTION);
+      if (outOfLives || idx >= questoes.length - 1) setDone(true);
+      else setIdx((i) => i + 1);
+      return;
+    }
+    const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timeLeft, revealed, done, lives, outOfLives, idx, questoes.length]);
 
 
 
@@ -144,6 +162,7 @@ const AprenderSessao = () => {
   const proxima = () => {
     setEscolhida(null);
     setRevealed(false);
+    setTimeLeft(SECONDS_PER_QUESTION);
     if (outOfLives || isLast) {
       setDone(true);
     } else {
@@ -181,6 +200,16 @@ const AprenderSessao = () => {
         <header className="mb-4 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/aprender")}>Sair</Button>
           <div className="flex-1" />
+          {!revealed && (
+            <span
+              className={cn(
+                "inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition-colors",
+                timeLeft <= 2 ? "bg-destructive text-white animate-pulse" : "bg-muted text-foreground",
+              )}
+            >
+              {timeLeft}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1 text-sm font-bold text-destructive">
             <Heart className="h-4 w-4 fill-destructive" /> {lives}
           </span>
