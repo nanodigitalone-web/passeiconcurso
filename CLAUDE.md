@@ -111,6 +111,17 @@ Todas aplicadas em local **e** Neon.
 
 ## 9. Registo de sessões (mais recente no topo)
 
+### 2026-06-30 (cont.)
+- Pivô multi-área (deixa de ser só saúde): taxonomia `src/data/disciplinas.ts`
+  (10 áreas, flag `saude`). Migração 008: profiles.universidade/curso/ano/
+  interesses(jsonb). Perfil com campos académicos. Ecrã `/interesses` (só
+  áreas de saúde por agora — decisão do dono; resto "em breve"). Início
+  (`Index.tsx`) redesenhado: hero gradiente, "os teus temas", ações rápidas
+  coloridas, concursos. Geração para áreas novas = próximo (precisa Gemini key).
+- Admin mostra total real da BD (6.608: 1072 seed + 5536 ai). Geração migrada
+  p/ Gemini. UptimeRobot "down" = era a raiz 404 (corrigido com rota /).
+  ⚠️ Anthropic SEM CRÉDITOS → geração parou; usar Gemini.
+
 ### 2026-06-30
 - UptimeRobot reportava "down" → era a raiz `/` (404). Adicionada rota `GET /`.
 - Trilha do Aprender: agora infinita por níveis (300 q/nível), usa o motor IA,
