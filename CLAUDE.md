@@ -56,7 +56,7 @@ Online: **www.passeii.com**. Criada originalmente no Lovable.
 - **Simulado** (`src/pages/Quiz.tsx`): máx. **50 pontos**, **sem limite diário**.
 - **Aprender** (`src/pages/Aprender.tsx` + `AprenderSessao.tsx`): trilha
   **infinita por níveis**, cada nível = **300 questões** (`/content/aprender-level`);
-  **5 vidas** (recarrega 1/3h, server-side, `/profile/lives`); **5s por questão**
+  **5 vidas** (recarrega 1/3h, server-side, `/profile/lives`); **10s por questão**
   (salta sozinho); máx. **20 pontos**/sessão.
 - **Pontos/Ranking**: `profiles.pontos` = saldo gastável; `profiles.pontos_globais`
   = total ganho (NUNCA desce, usado no ranking). Trocar moedas baixa só o saldo.

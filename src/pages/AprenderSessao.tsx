@@ -12,7 +12,7 @@ import { AccessGate } from "@/components/AccessGate";
 
 const SESSION_SIZE = 5;
 const POINTS_PER_HIT = 4; // 5 acertos x 4 = 20 pontos máx. por sessão
-const SECONDS_PER_QUESTION = 5; // tempo para responder; depois salta sozinho
+const SECONDS_PER_QUESTION = 10; // tempo para responder; depois salta sozinho
 
 
 
@@ -74,7 +74,7 @@ const AprenderSessao = () => {
     });
   }, [gate.hasAccess]);
 
-  // 5-second timer per question. When it runs out before answering, the
+  // 10-second timer per question. When it runs out before answering, the
   // question is skipped automatically (no point, no life lost).
   useEffect(() => {
     if (lives === null || qLoading || done || revealed || questoes.length === 0) return; // only while answering
