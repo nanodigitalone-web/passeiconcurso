@@ -11,6 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { authService, accessService, quizService } from "@/services";
 import { AREAS, slugify } from "@/data/disciplinas";
+import { ESCOLAS, escolaByValue } from "@/data/escolas";
+import { CURSOS, cursoByValue } from "@/data/cursos";
+import { Combobox } from "@/components/ui/combobox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Check, CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing, Coins, ChevronRight, Gift, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
@@ -48,8 +52,15 @@ const Perfil = () => {
       setBio(profile.bio || "");
       setAvatar(profile.avatar_url || "");
       setHidden(!!profile.hidden);
-      setUniversidade(profile.universidade || "");
-      setCurso(profile.curso || "");
+      // Encontrar o value do combobox pelo label guardado na BD (ou valor direto se já for um code)
+      const uniMatch = ESCOLAS.find(
+        (e) => e.label === profile.universidade || e.value === profile.universidade
+      );
+      setUniversidade(uniMatch?.value ?? profile.universidade ?? "");
+      const cursoMatch = CURSOS.find(
+        (c) => c.label === profile.curso || c.value === profile.curso
+      );
+      setCurso(cursoMatch?.value ?? profile.curso ?? "");
       setAno(profile.ano || "");
     }
   }, [profile]);
@@ -92,9 +103,12 @@ const Perfil = () => {
   const save = async () => {
     if (!user) return;
     setSaving(true);
+    // Guardar o label legível, não o código interno do combobox
+    const uniLabel = escolaByValue(universidade)?.label ?? universidade || null;
+    const cursoLabel = cursoByValue(curso)?.label ?? curso || null;
     const { error } = await authService.updateProfile(user.id, {
       nome, bio, avatar_url: avatar || null,
-      universidade: universidade || null, curso: curso || null, ano: ano || null,
+      universidade: uniLabel, curso: cursoLabel, ano: ano || null,
     });
     setSaving(false);
     if (error) return toast.error("Erro ao salvar perfil");
@@ -278,18 +292,53 @@ const Perfil = () => {
             <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" placeholder="Conte um pouco sobre você..." />
           </div>
           <div>
-            <Label htmlFor="uni">Universidade / Escola</Label>
-            <Input id="uni" value={universidade} onChange={(e) => setUniversidade(e.target.value)} className="mt-1" placeholder="Ex.: Universidade Agostinho Neto" />
+            <Label>Universidade / Escola</Label>
+            <div className="mt-1">
+              <Combobox
+                options={ESCOLAS}
+                value={universidade}
+                onChange={setUniversidade}
+                placeholder="Selecionar escola…"
+                searchPlaceholder="Pesquisar escola…"
+                emptyMessage="Escola não encontrada."
+                grouped
+              />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="curso">Curso</Label>
-              <Input id="curso" value={curso} onChange={(e) => setCurso(e.target.value)} className="mt-1" placeholder="Ex.: Medicina" />
+          <div>
+            <Label>Curso</Label>
+            <div className="mt-1">
+              <Combobox
+                options={CURSOS}
+                value={curso}
+                onChange={setCurso}
+                placeholder="Selecionar curso…"
+                searchPlaceholder="Pesquisar curso…"
+                emptyMessage="Curso não encontrado."
+                grouped
+              />
             </div>
-            <div>
-              <Label htmlFor="ano">Ano</Label>
-              <Input id="ano" value={ano} onChange={(e) => setAno(e.target.value)} className="mt-1" placeholder="Ex.: 3º ano" />
-            </div>
+          </div>
+          <div>
+            <Label>Ano / Nível</Label>
+            <Select value={ano} onValueChange={setAno}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Selecionar ano…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1º Ano">1º Ano</SelectItem>
+                <SelectItem value="2º Ano">2º Ano</SelectItem>
+                <SelectItem value="3º Ano">3º Ano</SelectItem>
+                <SelectItem value="4º Ano">4º Ano</SelectItem>
+                <SelectItem value="5º Ano">5º Ano</SelectItem>
+                <SelectItem value="6º Ano">6º Ano</SelectItem>
+                <SelectItem value="Internato / Residência">Internato / Residência</SelectItem>
+                <SelectItem value="Pós-Graduação">Pós-Graduação</SelectItem>
+                <SelectItem value="Mestrado">Mestrado</SelectItem>
+                <SelectItem value="Doutoramento">Doutoramento</SelectItem>
+                <SelectItem value="Já Formado/a">Já Formado/a</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={save} disabled={saving} className="w-full rounded-full bg-gradient-primary">
             <Save className="mr-2 h-4 w-4" /> {saving ? "Salvando..." : "Salvar alterações"}

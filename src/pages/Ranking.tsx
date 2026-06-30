@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
@@ -93,7 +93,7 @@ const GeralRanking = () => {
                     {isFirst && (
                       <Crown className="mb-1 h-7 w-7 fill-amber-400 text-amber-400 animate-float drop-shadow" />
                     )}
-                    <div className="relative">
+                    <Link to={`/perfil/${u.id}`} className="relative">
                       <Avatar className={cn(avatarSize, "ring-4 ring-offset-2 ring-offset-background shadow-elegant", ringColor)}>
                         <AvatarImage src={u.avatar_url || undefined} />
                         <AvatarFallback className="bg-gradient-primary font-display text-lg font-bold text-primary-foreground">
@@ -106,7 +106,7 @@ const GeralRanking = () => {
                       )}>
                         {rankNum}
                       </span>
-                    </div>
+                    </Link>
                     <div className="mt-3 mb-2 text-center">
                       <p className={cn("max-w-[92px] truncate text-xs font-bold", isMe && "text-primary")}>
                         {u.nome}{isMe ? " (você)" : ""}
@@ -135,34 +135,36 @@ const GeralRanking = () => {
               {data.map((u, i) => {
                 const isMe = u.id === user?.id;
                 return (
-                  <li
-                    key={u.id}
-                    className={cn(
-                      "flex items-center gap-3 p-3",
-                      isMe && "rounded-xl bg-primary/5"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold",
-                      i < 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                    )}>
-                      {i < 3 ? <Trophy className="h-4 w-4" /> : i + 1}
-                    </div>
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={u.avatar_url || undefined} />
-                      <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
-                        {u.nome?.charAt(0).toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className={cn("truncate text-sm font-medium", isMe && "text-primary")}>
-                        {u.nome}{isMe ? " (você)" : ""}
-                      </p>
-                      {u.categoria_nome && (
-                        <p className="truncate text-[11px] text-muted-foreground">{u.categoria_nome}</p>
+                  <li key={u.id}>
+                    <Link
+                      to={`/perfil/${u.id}`}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-muted/50 active:bg-muted",
+                        isMe && "bg-primary/5 hover:bg-primary/10"
                       )}
-                    </div>
-                    <p className="font-display text-sm font-bold">{u.pontos}<span className="ml-1 text-xs font-normal text-muted-foreground">pts</span></p>
+                    >
+                      <div className={cn(
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold",
+                        i < 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      )}>
+                        {i < 3 ? <Trophy className="h-4 w-4" /> : i + 1}
+                      </div>
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={u.avatar_url || undefined} />
+                        <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                          {u.nome?.charAt(0).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("truncate text-sm font-medium", isMe && "text-primary")}>
+                          {u.nome}{isMe ? " (você)" : ""}
+                        </p>
+                        {u.categoria_nome && (
+                          <p className="truncate text-[11px] text-muted-foreground">{u.categoria_nome}</p>
+                        )}
+                      </div>
+                      <p className="font-display text-sm font-bold">{u.pontos}<span className="ml-1 text-xs font-normal text-muted-foreground">pts</span></p>
+                    </Link>
                   </li>
                 );
               })}

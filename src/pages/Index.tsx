@@ -4,13 +4,15 @@ import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { quizService, resultsService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Target, Trophy, Zap, Gift, ChevronRight } from "lucide-react";
+import { ArrowRight, Target, Trophy, Zap, Gift, ChevronRight, BookMarked, Banknote } from "lucide-react";
 
 const acoes = [
-  { to: "/concursos", label: "Simulado",  desc: "Questões comentadas", icon: Target,  cls: "bg-primary" },
-  { to: "/aprender",  label: "Aprender",  desc: "Trilha por níveis",   icon: Zap,     cls: "bg-amber-500" },
-  { to: "/ranking",   label: "Ranking",   desc: "Compete e sobe",      icon: Trophy,  cls: "bg-emerald-600" },
-  { to: "/partilhar", label: "Convidar",  desc: "+100 pontos",         icon: Gift,    cls: "bg-violet-600" },
+  { to: "/concursos",  label: "Simulado",          desc: "Questões comentadas",   icon: Target,    cls: "bg-primary" },
+  { to: "/aprender",   label: "Aprender",           desc: "Trilha por níveis",     icon: Zap,       cls: "bg-amber-500" },
+  { to: "/ranking",    label: "Ranking",            desc: "Compete e sobe",        icon: Trophy,    cls: "bg-emerald-600" },
+  { to: "/partilhar",  label: "Convidar",           desc: "+100 pontos",           icon: Gift,      cls: "bg-violet-600" },
+  { to: "/interesses", label: "Por Interesses",     desc: "Estuda o que escolhes", icon: BookMarked,cls: "bg-sky-600" },
+  { to: "/carteira",   label: "Sacar Dinheiro",     desc: "Levanta os teus pontos",icon: Banknote,  cls: "bg-rose-600" },
 ];
 
 const concursoColors = ["bg-primary", "bg-violet-600", "bg-emerald-600", "bg-amber-500", "bg-rose-600"];
@@ -60,16 +62,16 @@ const Index = () => {
       {/* Ações rápidas */}
       <section className="mt-5">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Acesso rápido</h2>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {acoes.map((a) => (
             <Link key={a.to} to={a.to}>
-              <Card className="group flex items-center gap-3 border-border/60 p-4 shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:shadow-elegant active:scale-95">
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${a.cls} text-white`}>
-                  <a.icon className="h-5 w-5" />
+              <Card className="group flex items-center gap-3 border-border/60 p-3.5 shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:shadow-elegant active:scale-95">
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${a.cls} text-white`}>
+                  <a.icon className="h-4.5 w-4.5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-semibold leading-none text-foreground">{a.label}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{a.desc}</p>
+                  <p className="text-sm font-semibold leading-none text-foreground">{a.label}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground leading-tight">{a.desc}</p>
                 </div>
               </Card>
             </Link>

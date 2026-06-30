@@ -277,6 +277,17 @@ create table if not exists question_attempts (
   answered_at   timestamptz not null default now()
 );
 
+-- ---------- follows ---------------------------------------------------
+create table if not exists follows (
+  follower_id  uuid not null references users(id) on delete cascade,
+  following_id uuid not null references users(id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  primary key (follower_id, following_id),
+  check (follower_id != following_id)
+);
+create index if not exists idx_follows_follower  on follows(follower_id);
+create index if not exists idx_follows_following on follows(following_id);
+
 -- ---------- indexes ---------------------------------------------------
 create index if not exists idx_attempts_user_time on question_attempts(user_id, answered_at desc);
 create index if not exists idx_attempts_user_q on question_attempts(user_id, question_id);

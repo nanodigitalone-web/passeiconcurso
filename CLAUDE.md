@@ -124,6 +124,20 @@ Todas aplicadas em local **e** Neon.
   (área em caps small → disciplinas selecionadas em tags azuis com checkmark).
   Botão "Editar" navega para `/interesses`. Sem emojis.
 
+### 2026-06-30 (follow system)
+- Sistema de seguir utilizadores completo:
+  - Migração 009: tabela `follows` (follower_id, following_id, PK composta, CHECK self-follow).
+  - `database/schema.sql` atualizado com tabela follows + índices.
+  - Backend `GET /profile/:id` aumentado: devolve `followers_count`, `following_count`, `is_following`.
+  - Novos endpoints: `POST /profile/:id/follow`, `DELETE /profile/:id/follow`.
+  - Frontend: `src/pages/PerfilPublico.tsx` (hero gradiente, avatar, stats 3 col, info académica, botão seguir/a seguir).
+  - Rota `/perfil/:id` adicionada em `App.tsx`.
+  - Ranking: todos os utilizadores (pódio + lista) clicáveis → `/perfil/:id`.
+- Design/home: escolas e cursos como combobox pesquisável; ano como select.
+  `src/data/escolas.ts`, `src/data/cursos.ts`, `src/components/ui/combobox.tsx`.
+- Home (`Index.tsx`): 6 ações rápidas incluindo "Por Interesses" e "Sacar Dinheiro".
+- Modal de interesses após 1.º login (`src/components/InteressesModal.tsx`).
+
 ### 2026-06-30 (cont.)
 - Pivô multi-área (deixa de ser só saúde): taxonomia `src/data/disciplinas.ts`
   (10 áreas, flag `saude`). Migração 008: profiles.universidade/curso/ano/

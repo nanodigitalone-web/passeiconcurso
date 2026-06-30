@@ -94,11 +94,48 @@ profileRouter.post("/lives/lose", requireAuth, async (req: AuthedRequest, res) =
 // Public-ish: a single profile by id (used for friend/opponent display).
 // Guard against non-uuid ids so a bad path can never crash the query.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-profileRouter.get("/:id", requireAuth, async (req, res) => {
+profileRouter.get("/:id", requireAuth, async (req: AuthedRequest, res) => {
   if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
   try {
-    const p = await one("select * from profiles where id = $1", [req.params.id]);
+    const p = await one(
+      `select p.*,
+        (select count(*) from follows where following_id = p.id)::int as followers_count,
+        (select count(*) from follows where follower_id = p.id)::int  as following_count,
+        exists(select 1 from follows where follower_id = $2 and following_id = p.id) as is_following
+       from profiles p where p.id = $1`,
+      [req.params.id, req.userId],
+    );
+    if (!p) return res.status(404).json({ error: "not_found" });
     res.json(p);
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// Follow a user.
+profileRouter.post("/:id/follow", requireAuth, async (req: AuthedRequest, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
+  if (req.params.id === req.userId) return res.status(400).json({ error: "cannot_follow_self" });
+  try {
+    await query(
+      "insert into follows (follower_id, following_id) values ($1, $2) on conflict do nothing",
+      [req.userId, req.params.id],
+    );
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// Unfollow a user.
+profileRouter.delete("/:id/follow", requireAuth, async (req: AuthedRequest, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
+  try {
+    await query(
+      "delete from follows where follower_id = $1 and following_id = $2",
+      [req.userId, req.params.id],
+    );
+    res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "server_error" });
   }

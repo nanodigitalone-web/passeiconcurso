@@ -29,6 +29,7 @@ import Batalha from "./pages/Batalha";
 import Carteira from "./pages/Carteira";
 import Partilhar from "./pages/Partilhar";
 import Interesses from "./pages/Interesses";
+import PerfilPublico from "./pages/PerfilPublico";
 import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient({
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/ranking" element={<P><Ranking /></P>} />
             <Route path="/batalha/:id" element={<P><Batalha /></P>} />
             <Route path="/perfil" element={<P><Perfil /></P>} />
+            <Route path="/perfil/:id" element={<P><PerfilPublico /></P>} />
             <Route path="/carteira" element={<P><Carteira /></P>} />
             <Route path="/partilhar" element={<P><Partilhar /></P>} />
             <Route path="/interesses" element={<P><Interesses /></P>} />
