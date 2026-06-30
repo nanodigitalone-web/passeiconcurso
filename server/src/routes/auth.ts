@@ -34,9 +34,38 @@ async function profilePayload(userId: string) {
   return { profile, isAdmin: admin };
 }
 
+// Reward the inviter with 100 points when a NEW user signs up with their code.
+// Granted exactly once (referred_by is set-once); never breaks signup on error.
+async function applyReferral(newUserId: string, inviteCode?: string) {
+  if (!inviteCode) return;
+  try {
+    const ref = await one<{ id: string }>(
+      "select id from profiles where friend_code = $1",
+      [String(inviteCode).trim().toUpperCase()],
+    );
+    if (!ref || ref.id === newUserId) return;
+    const r = await query(
+      "update profiles set referred_by = $2 where id = $1 and referred_by is null",
+      [newUserId, ref.id],
+    );
+    if (r.rowCount === 0) return; // already referred — no double reward
+    await query(
+      "update profiles set pontos = pontos + 100, pontos_globais = pontos_globais + 100, updated_at = now() where id = $1",
+      [ref.id],
+    );
+    await query("insert into points_log (user_id, delta) values ($1, 100)", [ref.id]);
+    await query(
+      "insert into notifications (user_id, title, body) values ($1, 'Convite aceite! 🎉', 'Um amigo entrou com o teu convite. Ganhaste 100 pontos!')",
+      [ref.id],
+    );
+  } catch {
+    /* referral is best-effort; never block signup */
+  }
+}
+
 // ---- Register --------------------------------------------------------
 authRouter.post("/register", async (req, res) => {
-  const { email, password, nome } = req.body || {};
+  const { email, password, nome, inviteCode } = req.body || {};
   if (!email || !password || password.length < 6)
     return res.status(400).json({ error: "invalid_input" });
 
@@ -52,6 +81,7 @@ authRouter.post("/register", async (req, res) => {
   );
   await ensureProfile(u!.id, email.toLowerCase(), nome);
   await maybeGrantAdmin(u!.id, email);
+  await applyReferral(u!.id, inviteCode);
 
   const token = signToken(u!.id);
   res.json({ token, ...(await profilePayload(u!.id)) });
@@ -82,7 +112,7 @@ authRouter.post("/login", async (req, res) => {
 authRouter.post("/google", async (req, res) => {
   if (!googleClient)
     return res.status(501).json({ error: "google_not_configured" });
-  const { idToken } = req.body || {};
+  const { idToken, inviteCode } = req.body || {};
   if (!idToken) return res.status(400).json({ error: "missing_token" });
 
   let payload;
@@ -99,12 +129,14 @@ authRouter.post("/google", async (req, res) => {
 
   const email = payload.email.toLowerCase();
   let u = await one<{ id: string }>("select id from users where email = $1", [email]);
+  let isNew = false;
   if (!u) {
     u = await one<{ id: string }>(
       "insert into users (email, google_id) values ($1,$2) returning id",
       [email, payload.sub],
     );
     await ensureProfile(u!.id, email, payload.name);
+    isNew = true;
   } else {
     await query("update users set google_id = $2 where id = $1 and google_id is null", [
       u.id,
@@ -113,6 +145,7 @@ authRouter.post("/google", async (req, res) => {
     await ensureProfile(u.id, email, payload.name);
   }
   await maybeGrantAdmin(u!.id, email);
+  if (isNew) await applyReferral(u!.id, inviteCode);
 
   const token = signToken(u!.id);
   res.json({ token, ...(await profilePayload(u!.id)) });

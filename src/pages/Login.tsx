@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, BookOpen, Trophy, Target } from "lucide-react";
 import { LegalModal } from "@/components/LegalModal";
@@ -9,10 +9,17 @@ import { Seo } from "@/components/Seo";
 const Login = () => {
   const { user, loading, refresh } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
 
   useEffect(() => {
     if (!loading && user) navigate("/", { replace: true });
   }, [user, loading, navigate]);
+
+  // Remember an invite code so the inviter gets rewarded after Google sign-up.
+  useEffect(() => {
+    const code = params.get("convite");
+    if (code) localStorage.setItem("passei.invite", code.trim().toUpperCase());
+  }, [params]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-hero text-primary-foreground">

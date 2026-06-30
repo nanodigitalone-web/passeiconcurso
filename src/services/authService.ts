@@ -66,8 +66,12 @@ export const authService = {
   /** Google sign-in using a Google ID token from Google Identity Services. */
   async signInWithGoogleToken(idToken: string) {
     try {
-      const r = await api.post<AuthResponse>("/auth/google", { idToken });
+      // Carry an invite code (set on the Login page from ?convite=...) so the
+      // inviter is rewarded when this is a brand-new account.
+      const inviteCode = localStorage.getItem("passei.invite") || undefined;
+      const r = await api.post<AuthResponse>("/auth/google", { idToken, inviteCode });
       tokenStore.set(r.token);
+      localStorage.removeItem("passei.invite");
       return { error: null, profile: r.profile, isAdmin: r.isAdmin };
     } catch (e: any) {
       return { error: e?.message || "error" };

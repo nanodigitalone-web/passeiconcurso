@@ -59,6 +59,7 @@ create table if not exists profiles (
   iban           text,
   vidas          integer not null default 5,           -- "Aprender" lives
   vidas_updated_at timestamptz not null default now(), -- recharge clock
+  referred_by    uuid references users(id) on delete set null, -- who invited (set once)
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
