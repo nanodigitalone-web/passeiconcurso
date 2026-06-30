@@ -55,22 +55,40 @@ async function genOne(target) {
   return Array.isArray(arr) ? arr : [];
 }
 
-async function main() {
-  const targets = (
+// Pick the category with the FEWEST active questions, then its smallest
+// disciplina. This fills small categories first, which is where users hit
+// repeats. Recomputed each batch so everything balances over time.
+async function pickSmallestTarget() {
+  const cat = (
     await db.query(
-      `select distinct concurso_id, categoria_id, coalesce(disciplina,'Geral') disciplina
-         from questions where disciplina is not null order by 1,2,3`,
+      `select concurso_id, categoria_id from questions where active
+        group by 1,2 order by count(*) asc, random() limit 1`,
     )
-  ).rows;
-  console.log(`Disciplinas: ${targets.length} | alvo total: ${TARGET}`);
+  ).rows[0];
+  if (!cat) return null;
+  const disc = (
+    await db.query(
+      `select coalesce(disciplina,'Geral') disciplina from questions
+        where concurso_id=$1 and categoria_id=$2 and disciplina is not null
+        group by 1 order by count(*) asc, random() limit 1`,
+      [cat.concurso_id, cat.categoria_id],
+    )
+  ).rows[0];
+  return {
+    concurso_id: cat.concurso_id,
+    categoria_id: cat.categoria_id,
+    disciplina: disc?.disciplina || "Geral",
+  };
+}
 
+async function main() {
   let total = Number((await db.query("select count(*)::int c from questions")).rows[0].c);
-  console.log(`Início: ${total} questões na BD`);
+  console.log(`Início: ${total} questões na BD | alvo: ${TARGET}`);
 
-  let ti = 0, fails = 0;
+  let fails = 0;
   while (total < TARGET) {
-    const target = targets[ti % targets.length];
-    ti++;
+    const target = await pickSmallestTarget();
+    if (!target) break;
     let drafts;
     try {
       drafts = await genOne(target);

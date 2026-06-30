@@ -83,11 +83,13 @@ Todas aplicadas em local **e** Neon.
 - **Google Cloud Console**: origens de produção autorizadas (já feito; confirmar).
 
 ## 7. Problemas conhecidos / em curso
-- **Repetição de questões**: causada por categorias com poucas questões (algumas
-  77–200). Mitigação: gerador IA a encher (alvo 10.000), priorizar categorias
-  pequenas. Motor já evita repetir <5h e acertadas.
-- Geração IA a correr em segundo plano (`bulk-generate.mjs`) — pode parar por
-  queda de ligação; é resumível (reiniciar o script retoma).
+- **Repetição de questões**: categorias pequenas (77–200 q) esgotam → motor
+  cai no fallback e repete. SOLUÇÃO = encher com IA. **BLOQUEADO**: a conta
+  Anthropic ficou **SEM CRÉDITOS** (a geração parou em ≈6.600). Assim que o dono
+  adicionar créditos (console.anthropic.com → Plans & Billing), reiniciar
+  `bulk-generate.mjs` (já prioriza as categorias mais pequenas).
+- Comando p/ retomar a geração (de `server/`, com chave VÁLIDA):
+  `ANTHROPIC_API_KEY=... DATABASE_URL=<neon> DATABASE_SSL=true node scripts/bulk-generate.mjs 10000 15`
 - Bundle frontend ~2.1MB (code-splitting é melhoria futura).
 - Segurança: o servidor tem rede global (unhandledRejection/uncaughtException)
   para nunca crashar; novos endpoints devem ter try/catch.
