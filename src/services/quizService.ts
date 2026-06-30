@@ -119,6 +119,24 @@ export const quizService = {
     return local;
   },
 
+  /** Infinite "Aprender" trail level (each level = 300 answered questions). */
+  async getAprenderLevel(
+    concursoId: string,
+    categoriaId: string,
+  ): Promise<{ level: number; doneInLevel: number; perLevel: number; total: number }> {
+    try {
+      return await api.post("/content/aprender-level", { concursoId, categoriaId });
+    } catch {
+      return { level: 1, doneInLevel: 0, perLevel: 300, total: 0 };
+    }
+  },
+
+  /** Record answered questions from an Aprender session (fire-and-forget). */
+  recordAprenderAttempts(attempts: any[]) {
+    if (!attempts?.length) return;
+    api.post("/content/attempts", { attempts, mode: "aprender" }).catch(() => {});
+  },
+
   /** A randomized, capped set of questions for a single quiz session. */
   getSimuladoQuestions(concursoId: string, categoriaId: string, limit = 20): Question[] {
     return this.getSmartQuestions(concursoId, categoriaId, limit);

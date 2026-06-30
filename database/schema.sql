@@ -269,6 +269,7 @@ create table if not exists question_attempts (
   correct       boolean not null,
   selected      integer,                     -- chosen option index (-1 = none)
   duration_ms   integer,                     -- time spent on the question
+  mode          text not null default 'simulado', -- 'simulado' | 'aprender'
   answered_at   timestamptz not null default now()
 );
 

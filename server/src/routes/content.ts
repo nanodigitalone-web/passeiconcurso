@@ -2,7 +2,7 @@ import { Router } from "express";
 import { createRequire } from "module";
 import { requireAuth, type AuthedRequest } from "../lib/auth.js";
 import { hasCategoryAccess } from "../lib/access.js";
-import { query } from "../lib/db.js";
+import { one, query } from "../lib/db.js";
 // @ts-ignore - resolved at runtime by tsx
 import { getRecursos } from "../../data/_source/recursos.ts";
 
@@ -52,6 +52,7 @@ contentRouter.post("/attempts", requireAuth, async (req: AuthedRequest, res) => 
   if (!Array.isArray(attempts) || attempts.length === 0)
     return res.status(400).json({ error: "no_attempts" });
 
+  const mode = req.body?.mode === "aprender" ? "aprender" : "simulado";
   const rows = attempts.slice(0, 200); // cap per request
   const params: any[] = [];
   const tuples = rows
@@ -65,19 +66,44 @@ contentRouter.post("/attempts", requireAuth, async (req: AuthedRequest, res) => 
         !!a.correct,
         Number.isInteger(a.selected) ? a.selected : null,
         Number.isInteger(a.durationMs) ? a.durationMs : null,
+        mode,
       );
       const n = params.length;
-      return `($${n - 7},$${n - 6},$${n - 5},$${n - 4},$${n - 3},$${n - 2},$${n - 1},$${n})`;
+      return `($${n - 8},$${n - 7},$${n - 6},$${n - 5},$${n - 4},$${n - 3},$${n - 2},$${n - 1},$${n})`;
     })
     .join(",");
 
   await query(
     `insert into question_attempts
-       (user_id, question_id, concurso_id, categoria_id, disciplina, correct, selected, duration_ms)
+       (user_id, question_id, concurso_id, categoria_id, disciplina, correct, selected, duration_ms, mode)
      values ${tuples}`,
     params,
   );
   res.json({ ok: true, saved: rows.length });
+});
+
+// Infinite "Aprender" trail level: each level = 300 answered questions.
+contentRouter.post("/aprender-level", requireAuth, async (req: AuthedRequest, res) => {
+  const { concursoId, categoriaId } = req.body || {};
+  if (!concursoId || !categoriaId)
+    return res.status(400).json({ error: "missing_params" });
+  const PER_LEVEL = 300;
+  try {
+    const row = await one<{ n: number }>(
+      `select count(*)::int as n from question_attempts
+        where user_id = $1 and concurso_id = $2 and categoria_id = $3 and mode = 'aprender'`,
+      [req.userId, concursoId, categoriaId],
+    );
+    const total = row?.n ?? 0;
+    res.json({
+      level: Math.floor(total / PER_LEVEL) + 1,
+      doneInLevel: total % PER_LEVEL,
+      perLevel: PER_LEVEL,
+      total,
+    });
+  } catch {
+    res.json({ level: 1, doneInLevel: 0, perLevel: PER_LEVEL, total: 0 });
+  }
 });
 
 // Shuffle a question's option positions and remap `correta`, so the correct

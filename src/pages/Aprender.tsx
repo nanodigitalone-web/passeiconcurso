@@ -1,11 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { quizService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, Flame, Lock, Trophy, Check, Play } from "lucide-react";
+import { Zap, Flame, Lock, Check, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Aprender = () => {
@@ -14,20 +16,29 @@ const Aprender = () => {
   const categoriaId = profile?.categoria_id ?? null;
   const cat = concursoId && categoriaId ? quizService.getCategoria(concursoId, categoriaId) : null;
 
-  const pontos = profile?.pontos ?? 0;
+  const pontos = profile?.pontos_globais ?? profile?.pontos ?? 0;
 
-  // Build the trail: one "day" per topic block, plus a final review day with all themes.
-  const topicDays = cat ? (cat.topicos?.map((t) => t.titulo) ?? cat.disciplinas) : [];
-  const days = cat ? [...topicDays, "Revisão geral — todos os temas"] : [];
+  const [info, setInfo] = useState<{ level: number; doneInLevel: number; perLevel: number } | null>(null);
 
-  const completedDay = cat ? quizService.getLearnDay(concursoId!, categoriaId!) : -1;
-  const currentDay = completedDay + 1;
+  useEffect(() => {
+    if (!concursoId || !categoriaId) return;
+    quizService.getAprenderLevel(concursoId, categoriaId).then(setInfo);
+  }, [concursoId, categoriaId]);
+
+  const level = info?.level ?? 1;
+  const perLevel = info?.perLevel ?? 300;
+  const doneInLevel = info?.doneInLevel ?? 0;
+
+  // Infinite trail: render a window of levels around the current one.
+  const start = Math.max(1, level - 2);
+  const windowLevels = Array.from({ length: 10 }, (_, i) => start + i);
+  const wave = [0, 1, 2, 1, 0, -1, -2, -1];
 
   return (
     <AppShell>
       <Seo
         title="Aprender · Trilhas de Estudo para Concursos"
-        description="Estude com trilhas diárias e sessões rápidas de questões para concursos públicos da saúde em Angola e ganhe pontos."
+        description="Estude com trilhas infinitas por níveis e sessões rápidas de questões para concursos públicos da saúde em Angola e ganhe pontos."
         path="/aprender"
       />
       <header className="mb-5">
@@ -35,7 +46,7 @@ const Aprender = () => {
           <Zap className="h-6 w-6 text-warning" /> Aprender
         </h1>
         <p className="text-sm text-muted-foreground">
-          Trilha de dias — avance um tema por vez e ganhe pontos a cada dia concluído.
+          Trilha infinita por níveis — cada nível tem {perLevel} questões. Quanto mais avança, mais sobe.
         </p>
       </header>
 
@@ -43,7 +54,7 @@ const Aprender = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wider opacity-80">Seus pontos</p>
-            <p className="font-display text-4xl font-bold leading-none">{pontos}</p>
+            <p className="font-display text-4xl font-bold leading-none">{pontos.toLocaleString("pt-PT")}</p>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5">
             <Flame className="h-5 w-5" />
@@ -51,9 +62,13 @@ const Aprender = () => {
           </div>
         </div>
         {cat && (
-          <p className="mt-3 text-sm opacity-95">
-            Dia {Math.min(currentDay + 1, days.length)} de {days.length} · {cat.nome}
-          </p>
+          <div className="mt-4">
+            <div className="mb-1 flex items-center justify-between text-sm opacity-95">
+              <span className="font-semibold">Nível {level} · {cat.nome}</span>
+              <span>{doneInLevel}/{perLevel}</span>
+            </div>
+            <Progress value={(doneInLevel / perLevel) * 100} className="h-2 bg-white/25" />
+          </div>
         )}
       </Card>
 
@@ -68,25 +83,22 @@ const Aprender = () => {
         </Card>
       ) : (
         <ul className="relative mx-auto flex max-w-md flex-col items-center gap-6 py-4">
-          {days.map((titulo, i) => {
-            const done = i <= completedDay;
-            const current = i === currentDay;
-            const locked = i > currentDay;
-            const isReview = i === days.length - 1;
-            // Serpentine horizontal offset (Duolingo winding path)
-            const wave = [0, 1, 2, 1, 0, -1, -2, -1];
+          {windowLevels.map((lvl, i) => {
+            const done = lvl < level;
+            const current = lvl === level;
+            const locked = lvl > level;
             const offset = wave[i % wave.length] * 34;
 
             return (
               <li
-                key={i}
+                key={lvl}
                 className="flex w-full flex-col items-center"
                 style={{ transform: `translateX(${offset}px)` }}
               >
-                {(current || done) && !locked ? (
+                {current || done ? (
                   <Link
-                    to={`/aprender/sessao/${concursoId}/${categoriaId}?dia=${i}`}
-                    aria-label={titulo}
+                    to={`/aprender/sessao/${concursoId}/${categoriaId}`}
+                    aria-label={`Nível ${lvl}`}
                     className="group flex flex-col items-center"
                   >
                     <span
@@ -98,13 +110,7 @@ const Aprender = () => {
                         current && "animate-float",
                       )}
                     >
-                      {done ? (
-                        <Check className="h-7 w-7" strokeWidth={3} />
-                      ) : isReview ? (
-                        <Trophy className="h-7 w-7" />
-                      ) : (
-                        <Play className="h-7 w-7 fill-current" />
-                      )}
+                      {done ? <Check className="h-7 w-7" strokeWidth={3} /> : <Play className="h-7 w-7 fill-current" />}
                     </span>
                     {current && (
                       <span className="mt-2 rounded-xl border-2 border-border bg-card px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary shadow-card">
@@ -114,16 +120,16 @@ const Aprender = () => {
                   </Link>
                 ) : (
                   <span className="flex h-[68px] w-[72px] items-center justify-center rounded-[40%] bg-muted text-muted-foreground shadow-[0_6px_0_0_hsl(var(--border))]">
-                    {isReview ? <Trophy className="h-6 w-6" /> : <Lock className="h-5 w-5" />}
+                    <Lock className="h-5 w-5" />
                   </span>
                 )}
                 <p
                   className={cn(
-                    "mt-2 max-w-[180px] text-center text-xs font-semibold leading-snug",
+                    "mt-2 text-center text-xs font-semibold leading-snug",
                     locked ? "text-muted-foreground" : "text-foreground",
                   )}
                 >
-                  {isReview ? "Revisão geral" : titulo}
+                  Nível {lvl}
                 </p>
               </li>
             );

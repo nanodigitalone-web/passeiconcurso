@@ -20,6 +20,11 @@ import { pushRouter } from "./routes/push.js";
 import { adminRouter } from "./routes/admin.js";
 import { pool, query } from "./lib/db.js";
 
+// Safety net: a single unhandled async error must never take the whole server
+// down (Node crashes on unhandledRejection by default). Log and keep serving.
+process.on("unhandledRejection", (e) => console.error("unhandledRejection:", e));
+process.on("uncaughtException", (e) => console.error("uncaughtException:", e));
+
 const app = express();
 
 // Behind Render's proxy — needed so rate-limit & req.ip see the real client IP.

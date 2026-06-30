@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Navigate, useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -18,16 +18,13 @@ const SECONDS_PER_QUESTION = 5; // tempo para responder; depois salta sozinho
 
 const AprenderSessao = () => {
   const { concursoId, categoriaId } = useParams();
-  const [searchParams] = useSearchParams();
-  const dia = Number(searchParams.get("dia") ?? "0") || 0;
   const cat = quizService.getCategoria(concursoId!, categoriaId!);
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
 
-  const questoes = useMemo<Question[]>(
-    () => (cat ? quizService.getSmartQuestions(concursoId!, categoriaId!, SESSION_SIZE) : []),
-    [cat]
-  );
+  const [questoes, setQuestoes] = useState<Question[]>([]);
+  const [qLoading, setQLoading] = useState(true);
+  const answersRef = useRef<any[]>([]);
 
   const [idx, setIdx] = useState(0);
   const [escolhida, setEscolhida] = useState<number | null>(null);
@@ -38,7 +35,6 @@ const AprenderSessao = () => {
   const [outOfLives, setOutOfLives] = useState(false);
   const [combo, setCombo] = useState(0);
   const [done, setDone] = useState(false);
-  const [answersReady, setAnswersReady] = useState(false);
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
 
   useEffect(() => {
@@ -47,10 +43,8 @@ const AprenderSessao = () => {
       authService
         .addPoints(user.id, profile?.pontos || 0, pontosGanhos)
         .then(() => refreshProfile());
-      // Mark this trail day as completed (need at least a passing session).
-      if (hits >= Math.ceil(SESSION_SIZE / 2)) {
-        quizService.completeLearnDay(concursoId!, categoriaId!, dia);
-      }
+      // Record answered questions → feeds the infinite trail level (300/level).
+      quizService.recordAprenderAttempts(answersRef.current);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
@@ -58,12 +52,15 @@ const AprenderSessao = () => {
 
   const gate = useAccessGate(concursoId, categoriaId);
 
+  // Load the question set from the engine (mixes AI + real-exam questions, so
+  // the trail never runs out) once access is confirmed.
   useEffect(() => {
-    if (gate.hasAccess && cat) {
-      quizService.ensureAnswers(concursoId!, categoriaId!)
-        .then(() => setAnswersReady(true))
-        .catch(() => setAnswersReady(false));
-    }
+    if (!gate.hasAccess || !cat) return;
+    setQLoading(true);
+    quizService
+      .loadQuestionSet(concursoId!, categoriaId!, SESSION_SIZE)
+      .then((qs) => setQuestoes(qs))
+      .finally(() => setQLoading(false));
   }, [gate.hasAccess, concursoId, categoriaId]);
 
   // Load persistent lives (recharge applied server-side) once access is confirmed.
@@ -78,7 +75,7 @@ const AprenderSessao = () => {
   // 5-second timer per question. When it runs out before answering, the
   // question is skipped automatically (no point, no life lost).
   useEffect(() => {
-    if (lives === null || done || revealed) return; // only while answering
+    if (lives === null || qLoading || done || revealed || questoes.length === 0) return; // only while answering
     if (timeLeft <= 0) {
       setEscolhida(null);
       setRevealed(false);
@@ -89,7 +86,7 @@ const AprenderSessao = () => {
     }
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [timeLeft, revealed, done, lives, outOfLives, idx, questoes.length]);
+  }, [timeLeft, revealed, done, lives, qLoading, outOfLives, idx, questoes.length]);
 
 
 
@@ -103,16 +100,15 @@ const AprenderSessao = () => {
       </div>
     );
   }
-  if (questoes.length === 0) return <Navigate to="/aprender" replace />;
-
-  // Lives still loading.
-  if (lives === null) {
+  // Still loading lives or questions (async) — show a loader, don't redirect.
+  if (lives === null || qLoading) {
     return (
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
         <p className="text-sm text-muted-foreground animate-pulse">A carregar…</p>
       </div>
     );
   }
+  if (questoes.length === 0) return <Navigate to="/aprender" replace />;
 
   // Entered with no lives → block practice and show the recharge countdown.
   if (lives <= 0 && !done && !revealed && idx === 0) {
@@ -144,6 +140,14 @@ const AprenderSessao = () => {
   const confirmar = () => {
     if (escolhida === null) return;
     const correct = escolhida === q.correta;
+    answersRef.current.push({
+      questionId: q.id,
+      concursoId,
+      categoriaId,
+      disciplina: q.disciplina,
+      correct,
+      selected: escolhida,
+    });
     if (correct) {
       setHits((h) => h + 1);
       setCombo((c) => c + 1);
@@ -278,8 +282,8 @@ const AprenderSessao = () => {
 
         <div className="mt-5">
           {!revealed ? (
-            <Button onClick={confirmar} disabled={escolhida === null || !answersReady} size="lg" className="w-full rounded-full font-semibold bg-gradient-to-r from-warning to-accent text-white">
-              {answersReady ? "Confirmar" : "A carregar…"}
+            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold bg-gradient-to-r from-warning to-accent text-white">
+              Confirmar
             </Button>
           ) : (
             <Button onClick={proxima} size="lg" className="w-full rounded-full font-semibold bg-gradient-primary">
