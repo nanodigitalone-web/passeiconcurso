@@ -150,10 +150,11 @@ const Quiz = () => {
         startedAt: startedAtRef.current,
       });
       finishedRef.current = true;
-      // Pontos do simulado contam na cotação geral do usuário (1 pt por acerto).
+      // Pontos do simulado: 1 pt por acerto, no máximo 50 por simulado.
+      // Sem limite diário — pode fazer simulados as vezes que quiser.
       if (user && result.acertos > 0) {
         authService
-          .addPoints(user.id, profile?.pontos || 0, Math.min(100, result.acertos))
+          .addPoints(user.id, profile?.pontos || 0, Math.min(50, result.acertos))
           .then(() => refreshProfile())
           .catch(() => {});
       }
