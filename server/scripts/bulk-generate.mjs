@@ -17,7 +17,10 @@ const url = process.env.DATABASE_URL;
 if (!url) { console.error("DATABASE_URL not set"); process.exit(1); }
 if (!process.env.ANTHROPIC_API_KEY) { console.error("ANTHROPIC_API_KEY not set"); process.exit(1); }
 const ssl = process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined;
-const db = new pg.Client({ connectionString: url, ssl });
+// Pool (not a single Client) so dropped connections (Neon closes long-lived
+// ones) are transparently replaced instead of crashing the whole run.
+const db = new pg.Pool({ connectionString: url, ssl, max: 2, idleTimeoutMillis: 10000 });
+db.on("error", (e) => console.log(`  (pool warning: ${e.message})`));
 const ai = new Anthropic();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -53,7 +56,6 @@ async function genOne(target) {
 }
 
 async function main() {
-  await db.connect();
   const targets = (
     await db.query(
       `select distinct concurso_id, categoria_id, coalesce(disciplina,'Geral') disciplina
@@ -82,39 +84,45 @@ async function main() {
     }
     fails = 0;
 
-    const existing = new Set(
-      (
-        await db.query(
-          "select lower(trim(enunciado)) e from questions where concurso_id=$1 and categoria_id=$2",
-          [target.concurso_id, target.categoria_id],
-        )
-      ).rows.map((r) => r.e),
-    );
     let inserted = 0;
-    for (const q of drafts) {
-      if (!q || typeof q.enunciado !== "string" || !q.enunciado.trim()) continue;
-      if (!Array.isArray(q.opcoes) || q.opcoes.length < 2) continue;
-      if (!q.opcoes.every((o) => typeof o === "string" && o.trim())) continue;
-      if (!Number.isInteger(q.correta) || q.correta < 0 || q.correta >= q.opcoes.length) continue;
-      const key = q.enunciado.toLowerCase().trim();
-      if (existing.has(key)) continue;
-      existing.add(key);
-      await db.query(
-        `insert into questions (id,concurso_id,categoria_id,disciplina,enunciado,opcoes,correta,comentario,source)
-         values ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,'ai') on conflict (id) do nothing`,
-        [
-          "ai-" + randomUUID().slice(0, 12),
-          target.concurso_id,
-          target.categoria_id,
-          target.disciplina,
-          q.enunciado.trim(),
-          JSON.stringify(q.opcoes.map((o) => o.trim())),
-          q.correta,
-          typeof q.comentario === "string" ? q.comentario.trim() : null,
-        ],
+    try {
+      const existing = new Set(
+        (
+          await db.query(
+            "select lower(trim(enunciado)) e from questions where concurso_id=$1 and categoria_id=$2",
+            [target.concurso_id, target.categoria_id],
+          )
+        ).rows.map((r) => r.e),
       );
-      inserted++;
-      total++;
+      for (const q of drafts) {
+        if (!q || typeof q.enunciado !== "string" || !q.enunciado.trim()) continue;
+        if (!Array.isArray(q.opcoes) || q.opcoes.length < 2) continue;
+        if (!q.opcoes.every((o) => typeof o === "string" && o.trim())) continue;
+        if (!Number.isInteger(q.correta) || q.correta < 0 || q.correta >= q.opcoes.length) continue;
+        const key = q.enunciado.toLowerCase().trim();
+        if (existing.has(key)) continue;
+        existing.add(key);
+        await db.query(
+          `insert into questions (id,concurso_id,categoria_id,disciplina,enunciado,opcoes,correta,comentario,source)
+           values ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,'ai') on conflict (id) do nothing`,
+          [
+            "ai-" + randomUUID().slice(0, 12),
+            target.concurso_id,
+            target.categoria_id,
+            target.disciplina,
+            q.enunciado.trim(),
+            JSON.stringify(q.opcoes.map((o) => o.trim())),
+            q.correta,
+            typeof q.comentario === "string" ? q.comentario.trim() : null,
+          ],
+        );
+        inserted++;
+        total++;
+      }
+    } catch (e) {
+      console.log(`  (db erro: ${e.message}); a continuar`);
+      await sleep(2000);
+      continue;
     }
     console.log(`  [${total}/${TARGET}] +${inserted} (${target.concurso_id}/${target.categoria_id}/${target.disciplina})`);
     await sleep(500); // gentle pacing
