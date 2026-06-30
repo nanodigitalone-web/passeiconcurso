@@ -15,6 +15,10 @@ const SELF_EDITABLE = new Set([
   "categoria_nome",
   "iban",
   "last_seen",
+  "universidade",
+  "curso",
+  "ano",
+  "interesses",
 ]);
 
 // ---- "Aprender" lives ------------------------------------------------
@@ -106,8 +110,8 @@ profileRouter.patch("/", requireAuth, async (req: AuthedRequest, res) => {
   const keys = Object.keys(patch).filter((k) => SELF_EDITABLE.has(k));
   if (keys.length === 0) return res.json({ ok: true });
 
-  const sets = keys.map((k, i) => `${k} = $${i + 2}`);
-  const values = keys.map((k) => patch[k]);
+  const sets = keys.map((k, i) => (k === "interesses" ? `${k} = $${i + 2}::jsonb` : `${k} = $${i + 2}`));
+  const values = keys.map((k) => (k === "interesses" ? JSON.stringify(patch[k] ?? []) : patch[k]));
   await query(
     `update profiles set ${sets.join(", ")}, updated_at = now() where id = $1`,
     [req.userId, ...values],

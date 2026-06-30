@@ -20,6 +20,10 @@ export type Profile = {
   moedas?: number;
   iban?: string | null;
   friend_code?: string | null;
+  universidade?: string | null;
+  curso?: string | null;
+  ano?: string | null;
+  interesses?: string[];
 };
 
 export type AuthUser = { id: string; email: string | null; created_at: string };

@@ -60,6 +60,10 @@ create table if not exists profiles (
   vidas          integer not null default 5,           -- "Aprender" lives
   vidas_updated_at timestamptz not null default now(), -- recharge clock
   referred_by    uuid references users(id) on delete set null, -- who invited (set once)
+  universidade   text,                                 -- perfil académico
+  curso          text,
+  ano            text,
+  interesses     jsonb not null default '[]'::jsonb,   -- ids de disciplinas de interesse
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );

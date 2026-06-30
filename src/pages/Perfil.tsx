@@ -21,6 +21,9 @@ const Perfil = () => {
   const [nome, setNome] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [universidade, setUniversidade] = useState("");
+  const [curso, setCurso] = useState("");
+  const [ano, setAno] = useState("");
   const [saving, setSaving] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [canHide, setCanHide] = useState(false);
@@ -44,6 +47,9 @@ const Perfil = () => {
       setBio(profile.bio || "");
       setAvatar(profile.avatar_url || "");
       setHidden(!!profile.hidden);
+      setUniversidade(profile.universidade || "");
+      setCurso(profile.curso || "");
+      setAno(profile.ano || "");
     }
   }, [profile]);
 
@@ -73,7 +79,10 @@ const Perfil = () => {
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await authService.updateProfile(user.id, { nome, bio, avatar_url: avatar || null });
+    const { error } = await authService.updateProfile(user.id, {
+      nome, bio, avatar_url: avatar || null,
+      universidade: universidade || null, curso: curso || null, ano: ano || null,
+    });
     setSaving(false);
     if (error) return toast.error("Erro ao salvar perfil");
     await refreshProfile();
@@ -200,6 +209,20 @@ const Perfil = () => {
           <div>
             <Label htmlFor="bio">Bio</Label>
             <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" placeholder="Conte um pouco sobre você..." />
+          </div>
+          <div>
+            <Label htmlFor="uni">Universidade / Escola</Label>
+            <Input id="uni" value={universidade} onChange={(e) => setUniversidade(e.target.value)} className="mt-1" placeholder="Ex.: Universidade Agostinho Neto" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="curso">Curso</Label>
+              <Input id="curso" value={curso} onChange={(e) => setCurso(e.target.value)} className="mt-1" placeholder="Ex.: Medicina" />
+            </div>
+            <div>
+              <Label htmlFor="ano">Ano</Label>
+              <Input id="ano" value={ano} onChange={(e) => setAno(e.target.value)} className="mt-1" placeholder="Ex.: 3º ano" />
+            </div>
           </div>
           <Button onClick={save} disabled={saving} className="w-full rounded-full bg-gradient-primary">
             <Save className="mr-2 h-4 w-4" /> {saving ? "Salvando..." : "Salvar alterações"}
