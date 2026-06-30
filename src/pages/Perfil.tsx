@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   BookOpen, Check, CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff,
-  BellRing, Coins, ChevronRight, ChevronDown, Gift, Pencil, X, UserCheck, Users
+  BellRing, Coins, ChevronRight, ChevronDown, Gift, Pencil, X, UserCheck, Users,
+  Camera, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
@@ -38,6 +39,7 @@ const Perfil = () => {
   const [curso, setCurso] = useState("");
   const [ano, setAno] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // --- other state ---
   const [hidden, setHidden] = useState(false);
@@ -116,6 +118,26 @@ const Perfil = () => {
       ? "Vitalício"
       : new Date(ms).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" });
 
+  const handleAvatarFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (file.size > 4 * 1024 * 1024) return toast.error("Imagem deve ter no máximo 4MB");
+    if (!file.type.startsWith("image/")) return toast.error("Selecione um ficheiro de imagem");
+
+    setUploadingAvatar(true);
+    try {
+      const url = await authService.uploadAvatar(file);
+      setAvatar(url);
+      await refreshProfile();
+      toast.success("Foto de perfil atualizada!");
+    } catch {
+      toast.error("Erro ao enviar a foto");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const save = async () => {
     if (!user) return;
     setSaving(true);
@@ -178,12 +200,28 @@ const Perfil = () => {
         </div>
         <div className="px-5 pb-5 -mt-12">
           <div className="flex flex-col items-center text-center">
-            <Avatar className="h-24 w-24 ring-4 ring-card shadow-elegant">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl font-display font-bold">
-                {profile?.nome?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-24 w-24 ring-4 ring-card shadow-elegant">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl font-display font-bold">
+                  {profile?.nome?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <label className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elegant ring-2 ring-card transition-opacity hover:opacity-90">
+                {uploadingAvatar ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Camera className="h-3.5 w-3.5" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingAvatar}
+                  onChange={handleAvatarFile}
+                />
+              </label>
+            </div>
             <h1 className="mt-3 font-display text-xl font-bold">{profile?.nome || "Utilizador"}</h1>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
             {profile?.categoria_nome && (
@@ -320,7 +358,7 @@ const Perfil = () => {
             </span>
             <div>
               <p className="font-semibold">Partilhar & Convidar</p>
-              <p className="text-xs text-muted-foreground">Convida amigos (+100 pontos), banner e certificado</p>
+              <p className="text-xs text-muted-foreground">Convida amigos (+50 pontos), banner e certificado</p>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -388,10 +426,9 @@ const Perfil = () => {
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" placeholder="Conte um pouco sobre você..." />
             </div>
-            <div>
-              <Label htmlFor="avatar">URL do Avatar</Label>
-              <Input id="avatar" value={avatar} onChange={(e) => setAvatar(e.target.value)} className="mt-1" placeholder="https://..." />
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Para trocar a foto de perfil, toque no ícone de câmara sobre o seu avatar acima.
+            </p>
             <div>
               <Label>Universidade / Escola</Label>
               <div className="mt-1">

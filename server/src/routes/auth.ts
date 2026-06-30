@@ -34,7 +34,7 @@ async function profilePayload(userId: string) {
   return { profile, isAdmin: admin };
 }
 
-// Reward the inviter with 100 points when a NEW user signs up with their code.
+// Reward the inviter with 50 points when a NEW user signs up with their code.
 // Granted exactly once (referred_by is set-once); never breaks signup on error.
 async function applyReferral(newUserId: string, inviteCode?: string) {
   if (!inviteCode) return;
@@ -50,12 +50,12 @@ async function applyReferral(newUserId: string, inviteCode?: string) {
     );
     if (r.rowCount === 0) return; // already referred — no double reward
     await query(
-      "update profiles set pontos = pontos + 100, pontos_globais = pontos_globais + 100, updated_at = now() where id = $1",
+      "update profiles set pontos = pontos + 50, pontos_globais = pontos_globais + 50, updated_at = now() where id = $1",
       [ref.id],
     );
-    await query("insert into points_log (user_id, delta) values ($1, 100)", [ref.id]);
+    await query("insert into points_log (user_id, delta) values ($1, 50)", [ref.id]);
     await query(
-      "insert into notifications (user_id, title, body) values ($1, 'Convite aceite! 🎉', 'Um amigo entrou com o teu convite. Ganhaste 100 pontos!')",
+      "insert into notifications (user_id, title, body) values ($1, 'Convite aceite! 🎉', 'Um amigo entrou com o teu convite. Ganhaste 50 pontos!')",
       [ref.id],
     );
   } catch {

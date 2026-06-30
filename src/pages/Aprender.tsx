@@ -12,9 +12,12 @@ import { cn } from "@/lib/utils";
 
 const Aprender = () => {
   const { profile } = useAuth();
-  const concursoId = profile?.concurso_id ?? null;
-  const categoriaId = profile?.categoria_id ?? null;
-  const cat = concursoId && categoriaId ? quizService.getCategoria(concursoId, categoriaId) : null;
+  const interessesAtivo = !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
+  const concursoId = interessesAtivo ? "interesses" : profile?.concurso_id ?? null;
+  const categoriaId = interessesAtivo ? "interesses" : profile?.categoria_id ?? null;
+  const cat = !interessesAtivo && concursoId && categoriaId ? quizService.getCategoria(concursoId, categoriaId) : null;
+  const hasTrilha = interessesAtivo || !!cat;
+  const catNome = interessesAtivo ? "Interesses" : cat?.nome ?? "";
 
   const pontos = profile?.pontos_globais ?? profile?.pontos ?? 0;
 
@@ -61,10 +64,10 @@ const Aprender = () => {
             <span className="font-display text-lg font-bold leading-none">{profile?.streak ?? 0}</span>
           </div>
         </div>
-        {cat && (
+        {hasTrilha && (
           <div className="mt-4">
             <div className="mb-1 flex items-center justify-between text-sm opacity-95">
-              <span className="font-semibold">Nível {level} · {cat.nome}</span>
+              <span className="font-semibold">Nível {level} · {catNome}</span>
               <span>{doneInLevel}/{perLevel}</span>
             </div>
             <Progress value={(doneInLevel / perLevel) * 100} className="h-2 bg-white/25" />
@@ -72,7 +75,7 @@ const Aprender = () => {
         )}
       </Card>
 
-      {!cat ? (
+      {!hasTrilha ? (
         <Card className="rounded-3xl border-2 border-dashed p-6 text-center">
           <p className="text-sm text-muted-foreground">
             Escolha a sua categoria profissional para começar a trilha.

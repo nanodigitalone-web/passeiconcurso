@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { resultsService } from "@/services";
+import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { TrendingUp, Trash2, BookOpen, Target, Check, X, Layers } from "lucide-react";
@@ -22,8 +23,17 @@ import {
 type Agg = { total: number; acertos: number };
 
 const Percurso = () => {
+  const { profile } = useAuth();
   const [, setTick] = useState(0);
   const results = resultsService.getResults();
+
+  // Começar agora abre diretamente o simulado da categoria (ou interesses) do utilizador.
+  const interessesAtivo = !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
+  const simuladoTo = interessesAtivo
+    ? "/quiz/interesses/interesses"
+    : profile?.concurso_id && profile?.categoria_id
+      ? `/quiz/${profile.concurso_id}/${profile.categoria_id}`
+      : "/concursos";
 
   const totalQ = results.reduce((s, r) => s + r.total, 0);
   const acertos = results.reduce((s, r) => s + r.acertos, 0);
@@ -252,7 +262,7 @@ const Percurso = () => {
           <Card className="border-dashed bg-muted/30 p-8 text-center">
             <p className="text-sm text-muted-foreground">Você ainda não realizou nenhum simulado.</p>
             <Button asChild className="mt-4 rounded-full bg-gradient-primary">
-              <Link to="/concursos">Começar agora</Link>
+              <Link to={simuladoTo}>Começar agora</Link>
             </Button>
           </Card>
         ) : (

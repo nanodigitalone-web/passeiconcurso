@@ -193,7 +193,7 @@ export const PlatformAlertModal = () => {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && advance()}>
-      <DialogContent className="mx-4 overflow-hidden rounded-2xl border-0 p-0 sm:mx-auto sm:max-w-sm">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-2xl border-0 p-0">
         <div className={cn("relative p-8 text-center text-white", GRADIENT[current.color ?? "primary"])}>
           <div className="pointer-events-none absolute inset-0 opacity-25">
             {[Sparkles, Zap, Sparkles, Zap].map((S, i) => (

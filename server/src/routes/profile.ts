@@ -1,8 +1,59 @@
 import { Router } from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 import { one, query } from "../lib/db.js";
 import { requireAuth, type AuthedRequest } from "../lib/auth.js";
 
 export const profileRouter = Router();
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
+const useCloudinary = !!process.env.CLOUDINARY_URL;
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024 },
+});
+
+// Upload/replace the user's profile photo. Stores on Cloudinary (overwriting
+// the previous one via a stable public_id) or disk in dev, and persists the
+// resulting URL straight onto the profile.
+profileRouter.post(
+  "/avatar",
+  requireAuth,
+  avatarUpload.single("file"),
+  async (req: AuthedRequest, res) => {
+    if (!req.file) return res.status(400).json({ error: "no_file" });
+
+    if (useCloudinary) {
+      try {
+        const result = await new Promise<any>((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "passei/avatars", public_id: req.userId, overwrite: true, resource_type: "image" },
+            (err, r) => (err ? reject(err) : resolve(r)),
+          );
+          stream.end(req.file!.buffer);
+        });
+        await query("update profiles set avatar_url = $2, updated_at = now() where id = $1", [
+          req.userId,
+          result.secure_url,
+        ]);
+        return res.json({ url: result.secure_url });
+      } catch {
+        return res.status(500).json({ error: "upload_failed" });
+      }
+    }
+
+    const dir = path.join(UPLOAD_DIR, "avatars");
+    fs.mkdirSync(dir, { recursive: true });
+    const ext = path.extname(req.file.originalname) || ".jpg";
+    const filename = `${req.userId}${ext}`;
+    fs.writeFileSync(path.join(dir, filename), req.file.buffer);
+    const url = `/uploads/avatars/${filename}?t=${Date.now()}`;
+    await query("update profiles set avatar_url = $2, updated_at = now() where id = $1", [req.userId, url]);
+    res.json({ url });
+  },
+);
 
 // Columns a user may edit on their own profile (mirrors the old RLS trigger:
 // pontos, streak, blocked, hidden, email, moedas are NOT self-editable).
@@ -19,6 +70,7 @@ const SELF_EDITABLE = new Set([
   "curso",
   "ano",
   "interesses",
+  "interesses_ativo",
 ]);
 
 // ---- "Aprender" lives ------------------------------------------------

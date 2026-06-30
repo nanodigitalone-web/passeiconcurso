@@ -62,15 +62,24 @@ Online: **www.passeii.com**. Criada originalmente no Lovable.
   = total ganho (NUNCA desce, usado no ranking). Trocar moedas baixa só o saldo.
   Perfil mostra totais/disponíveis/trocados.
 - **Convites**: link `/login?convite=CODE` (= `friend_code`). Convidador ganha
-  **100 pontos** por novo registo (`profiles.referred_by`, uma vez). Página
+  **50 pontos** por novo registo (`profiles.referred_by`, uma vez). Página
   `/partilhar` (convite, partilhar app, banner, certificado).
+- **Interesses + personalização**: `/interesses` tem um interruptor "marcar
+  para estudo" (`profiles.interesses_ativo`). Quando ativo, o **Aprender** e o
+  **Simulado** GERAIS (Index/Aprender/Percurso) passam a abrir a categoria
+  virtual `interesses/interesses` (filtra por disciplina ∈ `profiles.interesses`)
+  em vez da categoria normal do utilizador — não existe página separada.
+- **Foto de perfil**: upload real em `POST /profile/avatar` (multer + Cloudinary
+  ou disco), ícone de câmara sobre o avatar em `Perfil.tsx`.
 - **Banner/Certificado**: `src/lib/share.ts` (canvas → imagem). Certificado aos
   **100.000 pontos**.
 
 ## 5. Migrações (estado)
 001 attempts+trial · 002 questions · 003 pontos_globais · 004 vidas ·
-005 referrals · 006 fix points drift · 007 attempt.mode.
-Todas aplicadas em local **e** Neon.
+005 referrals · 006 fix points drift · 007 attempt.mode · 008 perfil
+académico+interesses · 009 follows · 010 interesses_ativo.
+Todas aplicadas em local **e** Neon, **exceto 010** (criada em 2026-06-30,
+ainda por aplicar — ver Registo de sessões).
 
 ## 6. Ações pendentes do DONO (externas)
 - **Rotar a ANTHROPIC_API_KEY** antes do lançamento (foi colada no chat → exposta).
@@ -100,6 +109,14 @@ Todas aplicadas em local **e** Neon.
   para nunca crashar; novos endpoints devem ter try/catch.
 - **Lovable**: o editor faz commits diretos na `main` e já re-adicionou Supabase
   (código morto). Cuidado ao integrar.
+- **Migração 010 (`interesses_ativo`) por aplicar**: criada nesta sessão mas não
+  corrida (sandbox sem Docker/Neon). Aplicar com
+  `cd server && node scripts/apply-migration.mjs ../database/migrations/010_interesses_ativo.sql`
+  local, e com `DATABASE_URL="<neon>" DATABASE_SSL=true` prefixado para a Neon.
+  Sem isto, o toggle "marcar para estudo" em `/interesses` falha ao gravar.
+- Esta sessão correu num sandbox **sem Node/npm** instalado — as alterações
+  foram revistas manualmente (sem `npm run build`/tsc). Confirmar build antes
+  do deploy seguinte.
 
 ## 8. Convenções
 - Commits e push só quando o dono pede (ele autorizou push direto à `main` no
@@ -110,6 +127,34 @@ Todas aplicadas em local **e** Neon.
 ---
 
 ## 9. Registo de sessões (mais recente no topo)
+
+### 2026-06-30 (correção de arquitetura interesses + extras)
+- **Correção de arquitetura**: a página separada `EstudarInteresses.tsx`
+  (Simulado/Aprender isolados dentro de Interesses) criada na sessão anterior
+  foi **removida** — o dono pediu explicitamente que não existisse essa página.
+  Em vez disso: `/interesses` ganhou um interruptor "marcar para estudo"
+  (`profiles.interesses_ativo`, migração 010). Quando ativo, as rotas GERAIS
+  `Index.tsx`, `Aprender.tsx` e `Percurso.tsx` passam a apontar para a categoria
+  virtual `interesses/interesses` (mecanismo já existente em `Quiz.tsx`/
+  `AprenderSessao.tsx`/`access.ts`/`content.ts`, reaproveitado sem alterações).
+- **Percurso → "Começar agora"**: abre diretamente `/quiz/{concurso}/{categoria}`
+  do utilizador (ou `interesses/interesses` se ativo) em vez de `/concursos`.
+- **Pontos de convite**: 100 → **50 pontos** (`auth.ts` `applyReferral`,
+  `Partilhar.tsx`, `Perfil.tsx`).
+- **Foto de perfil**: novo endpoint `POST /profile/avatar` (multer memoryStorage
+  → Cloudinary `upload_stream` com `public_id` estável + `overwrite:true`, ou
+  disco em dev) grava `avatar_url` direto na BD. `Perfil.tsx` ganhou um botão de
+  câmara sobre o avatar (substituiu o campo de texto "URL do avatar").
+- **Bio no perfil público**: confirmado que já funcionava (`PerfilPublico.tsx` +
+  `GET /profile/:id`), sem alterações necessárias.
+- **Bug de centragem** (`PlatformAlertModal.tsx`): `mx-4 ... sm:mx-auto` num
+  `DialogContent` com `width:100%` + `translate-x-[-50%]` não encolhe a caixa,
+  só lhe soma espaço para fora do ecrã → ficava deslocado para um lado. Corrigido
+  para `w-[calc(100%-2rem)] max-w-sm` (a largura encolhe, a centragem por
+  transform volta a bater certo).
+- **Por aplicar**: migração 010 ainda não corrida (nem local nem Neon — sandbox
+  sem Docker/credenciais). Build não verificado por ferramenta (sandbox sem
+  Node/npm) — apenas revisão manual de código.
 
 ### 2026-06-30 (design)
 - **Index.tsx** redesenhado de raiz: limpo, profissional, sem emojis no texto.

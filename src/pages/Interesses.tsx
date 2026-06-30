@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { authService } from "@/services";
 import { AREAS, slugify } from "@/data/disciplinas";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -14,11 +15,13 @@ const Interesses = () => {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [ativo, setAtivo] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (profile?.interesses) setSelected(new Set(profile.interesses));
-  }, [profile?.interesses]);
+    setAtivo(!!profile?.interesses_ativo);
+  }, [profile?.interesses, profile?.interesses_ativo]);
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -31,10 +34,20 @@ const Interesses = () => {
   const areasAtivas = AREAS.filter((a) => a.saude);
   const areasEmBreve = AREAS.filter((a) => !a.saude);
 
+  const toggleAtivo = (value: boolean) => {
+    if (value && selected.size === 0) {
+      return toast.error("Seleciona pelo menos uma disciplina antes de ativar.");
+    }
+    setAtivo(value);
+  };
+
   const guardar = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await authService.updateProfile(user.id, { interesses: [...selected] });
+    const { error } = await authService.updateProfile(user.id, {
+      interesses: [...selected],
+      interesses_ativo: ativo && selected.size > 0,
+    });
     setSaving(false);
     if (error) return toast.error("Erro ao guardar interesses");
     await refreshProfile();
@@ -98,6 +111,21 @@ const Interesses = () => {
           </section>
         )}
       </div>
+
+      <Card className="mt-5 border-primary/30 bg-primary/5 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 font-semibold">
+              <Target className="h-4 w-4 text-primary" /> Marcar para estudo
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Quando ativo, o <strong>Aprender</strong> e o <strong>Simulado</strong> gerais passam a usar
+              apenas as disciplinas que escolheste acima, em vez da tua categoria normal.
+            </p>
+          </div>
+          <Switch checked={ativo} onCheckedChange={toggleAtivo} />
+        </div>
+      </Card>
 
       <div className="sticky bottom-4 mt-6">
         <Button

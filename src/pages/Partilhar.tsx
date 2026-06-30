@@ -82,7 +82,7 @@ const Partilhar = () => {
           <Gift className="h-4 w-4 text-primary" /> Convidar amigos
         </div>
         <p className="text-sm text-muted-foreground">
-          Por cada amigo que criar conta com o teu convite, ganhas <b className="text-primary">100 pontos</b>.
+          Por cada amigo que criar conta com o teu convite, ganhas <b className="text-primary">50 pontos</b>.
         </p>
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-2">
           <span className="truncate text-xs text-muted-foreground">{inviteLink}</span>

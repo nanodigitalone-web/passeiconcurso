@@ -24,6 +24,7 @@ export type Profile = {
   curso?: string | null;
   ano?: string | null;
   interesses?: string[];
+  interesses_ativo?: boolean;
 };
 
 export type AuthUser = { id: string; email: string | null; created_at: string };
@@ -114,6 +115,13 @@ export const authService = {
 
   updateProfile(_uid: string, patch: Record<string, any>) {
     return wrap(() => api.patch("/profile", patch));
+  },
+
+  async uploadAvatar(file: File): Promise<string> {
+    const form = new FormData();
+    form.append("file", file);
+    const r = await api.upload<{ url: string }>("/profile/avatar", form);
+    return r.url;
   },
 
   addPoints(_uid: string, _currentPoints: number, delta: number) {

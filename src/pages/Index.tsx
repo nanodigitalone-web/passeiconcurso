@@ -12,19 +12,22 @@ const Index = () => {
   const { profile } = useAuth();
   const concursos = quizService.getConcursos();
 
-  // Se o utilizador já tem categoria, vai direto ao simulado dela.
-  const simuladoTo =
-    profile?.concurso_id && profile?.categoria_id
+  // Se o estudo por interesses está ativo, o simulado vai direto à categoria
+  // virtual "interesses"; senão vai à categoria normal do utilizador.
+  const interessesAtivo = !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
+  const simuladoTo = interessesAtivo
+    ? "/quiz/interesses/interesses"
+    : profile?.concurso_id && profile?.categoria_id
       ? `/quiz/${profile.concurso_id}/${profile.categoria_id}`
       : "/concursos";
 
   const acoes = [
-    { to: simuladoTo,            label: "Simulado",          desc: "Questões comentadas",   icon: Target,    cls: "bg-primary" },
-    { to: "/aprender",           label: "Aprender",           desc: "Trilha por níveis",     icon: Zap,       cls: "bg-amber-500" },
-    { to: "/ranking",            label: "Ranking",            desc: "Compete e sobe",        icon: Trophy,    cls: "bg-emerald-600" },
-    { to: "/partilhar",          label: "Convidar",           desc: "+100 pontos",           icon: Gift,      cls: "bg-violet-600" },
-    { to: "/estudar-interesses", label: "Por Interesses",     desc: "Estuda o que escolhes", icon: BookMarked,cls: "bg-sky-600" },
-    { to: "/carteira",           label: "Sacar Dinheiro",     desc: "Levanta os teus pontos",icon: Banknote,  cls: "bg-rose-600" },
+    { to: simuladoTo,    label: "Simulado",      desc: "Questões comentadas",   icon: Target,    cls: "bg-primary" },
+    { to: "/aprender",   label: "Aprender",       desc: "Trilha por níveis",     icon: Zap,       cls: "bg-amber-500" },
+    { to: "/ranking",    label: "Ranking",        desc: "Compete e sobe",        icon: Trophy,    cls: "bg-emerald-600" },
+    { to: "/partilhar",  label: "Convidar",       desc: "+50 pontos",            icon: Gift,      cls: "bg-violet-600" },
+    { to: "/interesses", label: "Por Interesses", desc: "Estuda o que escolhes", icon: BookMarked,cls: "bg-sky-600" },
+    { to: "/carteira",   label: "Sacar Dinheiro", desc: "Levanta os teus pontos",icon: Banknote,  cls: "bg-rose-600" },
   ];
   const results   = resultsService.getResults();
 
