@@ -111,6 +111,19 @@ Todas aplicadas em local **e** Neon.
 
 ## 9. Registo de sessões (mais recente no topo)
 
+### 2026-06-30 (design)
+- **Index.tsx** redesenhado de raiz: limpo, profissional, sem emojis no texto.
+  Hero com gradiente + stats (simulados/pontos/acertos). Ações rápidas como cards
+  com ícone colorido + texto. Lista de concursos limpa. Sem qualquer bloco de
+  interesses na home.
+- **InteressesModal.tsx** (novo): Dialog fullscreen que aparece automaticamente
+  após o primeiro login, quando `profile.interesses === undefined` (null na BD =
+  nunca configurado). "Pular" guarda `[]` para não voltar a aparecer. Integrado
+  no `AppShell.tsx`.
+- **Perfil.tsx**: interesses mostrados inline com hierarquia clara
+  (área em caps small → disciplinas selecionadas em tags azuis com checkmark).
+  Botão "Editar" navega para `/interesses`. Sem emojis.
+
 ### 2026-06-30 (cont.)
 - Pivô multi-área (deixa de ser só saúde): taxonomia `src/data/disciplinas.ts`
   (10 áreas, flag `saude`). Migração 008: profiles.universidade/curso/ano/

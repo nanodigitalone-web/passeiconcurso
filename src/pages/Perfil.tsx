@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { authService, accessService, quizService } from "@/services";
-import { CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing, Coins, ChevronRight, Gift, Sparkles } from "lucide-react";
+import { AREAS, slugify } from "@/data/disciplinas";
+import { BookOpen, Check, CreditCard, EyeOff, Lock, LogOut, Save, Bell, BellOff, BellRing, Coins, ChevronRight, Gift, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -70,6 +71,18 @@ const Perfil = () => {
       );
     });
   }, [user]);
+
+  // Interesses agrupados por área (apenas os selecionados)
+  const groupedInteresses = useMemo(() => {
+    const ids = new Set(profile?.interesses ?? []);
+    if (ids.size === 0) return [];
+    return AREAS.flatMap((a) => {
+      const selecionadas = a.disciplinas
+        .map((nome) => ({ id: slugify(nome), nome }))
+        .filter(({ id }) => ids.has(id));
+      return selecionadas.length > 0 ? [{ area: a.area, disciplinas: selecionadas }] : [];
+    });
+  }, [profile?.interesses]);
 
   const fmtDate = (ms: number | null) =>
     ms === null
@@ -151,7 +164,7 @@ const Perfil = () => {
                     <p className="text-[11px] text-muted-foreground">Trocados</p>
                   </div>
                   <div className="rounded-2xl bg-accent/5 p-3 text-center">
-                    <p className="font-display text-lg font-bold text-accent">{profile?.streak || 0}🔥</p>
+                    <p className="font-display text-lg font-bold text-accent">{profile?.streak || 0}</p>
                     <p className="text-[11px] text-muted-foreground">Sequência</p>
                   </div>
                 </div>
@@ -178,24 +191,59 @@ const Perfil = () => {
         </Card>
       </Link>
 
-      <Link to="/interesses" className="mb-4 block">
-        <Card className="flex items-center justify-between gap-3 p-4 shadow-card border-border/60 transition-colors hover:bg-muted/40">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="h-5 w-5" />
+      {/* Áreas de interesse — hierarquia área > disciplinas */}
+      <Card className="mb-4 border-border/60 shadow-card">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <BookOpen className="h-4 w-4" />
             </span>
-            <div>
-              <p className="font-semibold">Áreas de interesse</p>
-              <p className="text-xs text-muted-foreground">
-                {(profile?.interesses?.length ?? 0) > 0
-                  ? `${profile?.interesses?.length} temas escolhidos`
-                  : "Personaliza o teu estudo"}
+            <p className="font-semibold">Áreas de interesse</p>
+          </div>
+          <Link
+            to="/interesses"
+            className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+          >
+            <Pencil className="h-3 w-3" /> Editar
+          </Link>
+        </div>
+
+        <div className="px-4 pb-4">
+          {groupedInteresses.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Nenhuma área selecionada.{" "}
+                <Link to="/interesses" className="font-medium text-primary underline-offset-2 hover:underline">
+                  Personalizar agora
+                </Link>
               </p>
             </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </Card>
-      </Link>
+          ) : (
+            <div className="space-y-4">
+              {groupedInteresses.map(({ area, disciplinas }) => (
+                <div key={area}>
+                  {/* Cabeçalho da área */}
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {area}
+                  </p>
+                  {/* Disciplinas selecionadas */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {disciplinas.map((d) => (
+                      <span
+                        key={d.id}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                      >
+                        <Check className="h-3 w-3 shrink-0" />
+                        {d.nome}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
 
       <Link to="/partilhar" className="mb-6 block">
         <Card className="flex items-center justify-between gap-3 p-4 shadow-card border-border/60 transition-colors hover:bg-muted/40">
