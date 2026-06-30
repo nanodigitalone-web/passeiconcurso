@@ -1,0 +1,19 @@
+name: Keep Render awake
+
+# Pings the backend health endpoint so the Render free instance doesn't spin
+# down (it sleeps after ~15 min idle). Runs every 14 minutes.
+# NOTE: GitHub's scheduled runs are best-effort and can be delayed under load.
+# For a rock-solid keep-alive, also set up a free external monitor
+# (UptimeRobot / cron-job.org) pinging the same URL every 5 minutes.
+
+on:
+  schedule:
+    - cron: "*/14 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend /health
+        run: curl -fsS --max-time 30 https://passei-api.onrender.com/health || true
