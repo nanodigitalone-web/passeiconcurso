@@ -59,6 +59,9 @@ app.use(
 // Serve uploaded proofs.
 app.use("/uploads", express.static(path.resolve(process.env.UPLOAD_DIR || "./uploads")));
 
+// Root route so uptime monitors hitting the base URL get a 200 (not 404).
+app.get("/", (_req, res) => res.json({ ok: true, service: "passei-api" }));
+
 app.get("/health", async (_req, res) => {
   try {
     await pool.query("select 1");
