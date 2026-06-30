@@ -13,16 +13,27 @@ import {
 } from "@/services";
 import { Bell, Crown, Sparkles, Swords, UserPlus, Zap } from "lucide-react";
 
+type AlertColor = "primary" | "indigo" | "rose" | "amber" | "teal";
+
 type Alert = {
   key: string;
   emoji: string;
   icon: typeof Bell;
+  color: AlertColor;
   title: string;
   body: string;
   primary: { label: string; action: () => void | Promise<void> };
   secondary?: { label: string; action: () => void | Promise<void> };
   avatarUrl?: string | null;
   avatarName?: string | null;
+};
+
+const GRADIENT: Record<AlertColor, string> = {
+  primary: "bg-gradient-primary",
+  indigo:  "bg-gradient-to-br from-indigo-500 to-violet-700",
+  rose:    "bg-gradient-to-br from-rose-500 to-pink-700",
+  amber:   "bg-gradient-to-br from-amber-400 to-orange-600",
+  teal:    "bg-gradient-to-br from-teal-500 to-emerald-700",
 };
 
 const MOTIVATION = [
@@ -66,6 +77,7 @@ export const PlatformAlertModal = () => {
             key: `friend-${f.friendship_id}`,
             emoji: "🤝",
             icon: UserPlus,
+            color: "indigo" as AlertColor,
             title: "Novo pedido de amizade",
             body: `${f.nome} quer conectar-se contigo para trilhas e batalhas da semana.`,
             avatarUrl: f.avatar_url,
@@ -92,6 +104,7 @@ export const PlatformAlertModal = () => {
             key: `battle-${b.id}`,
             emoji: "⚔️",
             icon: Swords,
+            color: "rose" as AlertColor,
             title: "Batalha de amigos!",
             body: `Tens uma batalha com ${b.opponent_nome} à tua espera. Mostra quem manda!`,
             avatarUrl: b.opponent_avatar,
@@ -111,6 +124,7 @@ export const PlatformAlertModal = () => {
           key: `notif-${n.id}`,
           emoji: "🔔",
           icon: Bell,
+          color: "teal" as AlertColor,
           title: n.title,
           body: n.body,
           primary: { label: "Ver notificações", action: () => navigate("/notificacoes") },
@@ -127,6 +141,7 @@ export const PlatformAlertModal = () => {
           key: "subscription",
           emoji: "🔓",
           icon: Crown,
+          color: "amber" as AlertColor,
           title: "Desbloqueia o acesso completo",
           body: "Tens acesso limitado. Ativa o acesso completo e estuda sem limites para garantir a tua aprovação.",
           primary: { label: "Obter acesso", action: () => navigate("/concursos") },
@@ -140,6 +155,7 @@ export const PlatformAlertModal = () => {
         key: "motivation",
         emoji: "🚀",
         icon: Sparkles,
+        color: "primary" as AlertColor,
         title: m.title,
         body: m.body,
         primary: { label: "Vamos lá", action: () => {} },
@@ -177,8 +193,8 @@ export const PlatformAlertModal = () => {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && advance()}>
-      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-sm">
-        <div className="relative bg-gradient-primary p-8 text-center text-primary-foreground">
+      <DialogContent className="mx-4 overflow-hidden rounded-2xl border-0 p-0 sm:mx-auto sm:max-w-sm">
+        <div className={cn("relative p-8 text-center text-white", GRADIENT[current.color ?? "primary"])}>
           <div className="pointer-events-none absolute inset-0 opacity-25">
             {[Sparkles, Zap, Sparkles, Zap].map((S, i) => (
               <S

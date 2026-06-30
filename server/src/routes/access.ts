@@ -23,8 +23,20 @@ accessRouter.get("/plans", requireAuth, async (req: AuthedRequest, res) => {
 });
 
 // Access for a specific category.
+// Special case: conc=interesses → grant access if user has any active paid plan.
 accessRouter.get("/check", requireAuth, async (req: AuthedRequest, res) => {
   const { conc, cat } = req.query as { conc?: string; cat?: string };
+
+  if (conc === "interesses") {
+    const r = await query(
+      `select 1 from category_access
+         where user_id = $1 and (expires_at is null or expires_at > now()) limit 1`,
+      [req.userId],
+    );
+    const hasPaid = !!r.rows[0];
+    return res.json({ hasPaidAccess: hasPaid, expiresAt: hasPaid ? Infinity : null });
+  }
+
   const r = await query(
     `select expires_at from category_access
        where user_id = $1 and concurso_id = $2 and categoria_id = $3 limit 1`,

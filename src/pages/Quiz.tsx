@@ -57,10 +57,13 @@ const Quiz = () => {
 
   const gate = useAccessGate(concursoId, categoriaId);
 
+  const isInteresses = concursoId === "interesses";
+  const catNome = cat?.nome ?? (isInteresses ? "Estudo por Interesses" : "");
+
   // Load the question set (mixed old+new, personalized, options shuffled
   // server-side) once access is confirmed and a length is chosen.
   useEffect(() => {
-    if (!gate.hasAccess || !cat || count === null) return;
+    if (!gate.hasAccess || (!cat && !isInteresses) || count === null) return;
     setLoading(true);
     quizService
       .loadQuestionSet(concursoId!, categoriaId!, count)
@@ -69,11 +72,11 @@ const Quiz = () => {
   }, [gate.hasAccess, concursoId, categoriaId, count]);
 
 
-  if (!cat) return <Navigate to="/concursos" replace />;
+  if (!cat && !isInteresses) return <Navigate to="/concursos" replace />;
   if (!gate.loading && !gate.hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-soft px-4 pt-10">
-        <AccessGate concursoId={concursoId!} categoriaId={categoriaId!} categoriaNome={cat.nome}>
+        <AccessGate concursoId={concursoId!} categoriaId={categoriaId!} categoriaNome={catNome}>
           <></>
         </AccessGate>
       </div>
@@ -94,7 +97,7 @@ const Quiz = () => {
           <header className="mb-4 flex items-center justify-between">
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>Sair</Button>
           </header>
-          <h1 className="font-display text-2xl font-bold">{cat.nome}</h1>
+          <h1 className="font-display text-2xl font-bold">{catNome}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Quantas questões quer no simulado? Priorizamos questões novas e as que você errou.
           </p>
@@ -144,7 +147,7 @@ const Quiz = () => {
         userId: user?.id ?? null,
         concursoId: concursoId!,
         categoriaId: categoriaId!,
-        categoriaNome: cat.nome,
+        categoriaNome: catNome,
         questoes,
         escolhidas: novas,
         startedAt: startedAtRef.current,

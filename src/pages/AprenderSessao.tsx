@@ -50,12 +50,14 @@ const AprenderSessao = () => {
   }, [done]);
 
 
+  const isInteresses = concursoId === "interesses";
+  const catNome = cat?.nome ?? (isInteresses ? "Estudo por Interesses" : "");
   const gate = useAccessGate(concursoId, categoriaId);
 
   // Load the question set from the engine (mixes AI + real-exam questions, so
   // the trail never runs out) once access is confirmed.
   useEffect(() => {
-    if (!gate.hasAccess || !cat) return;
+    if (!gate.hasAccess || (!cat && !isInteresses)) return;
     setQLoading(true);
     quizService
       .loadQuestionSet(concursoId!, categoriaId!, SESSION_SIZE)
@@ -90,11 +92,11 @@ const AprenderSessao = () => {
 
 
 
-  if (!cat) return <Navigate to="/aprender" replace />;
+  if (!cat && !isInteresses) return <Navigate to="/aprender" replace />;
   if (!gate.loading && !gate.hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-soft px-4 pt-10">
-        <AccessGate concursoId={concursoId!} categoriaId={categoriaId!} categoriaNome={cat.nome}>
+        <AccessGate concursoId={concursoId!} categoriaId={categoriaId!} categoriaNome={catNome}>
           <></>
         </AccessGate>
       </div>
