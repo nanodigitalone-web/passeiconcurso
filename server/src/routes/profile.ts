@@ -44,8 +44,9 @@ profileRouter.post("/points", requireAuth, async (req: AuthedRequest, res) => {
   const delta = Number(req.body?.delta);
   if (!Number.isFinite(delta) || delta < 0 || delta > 100)
     return res.status(400).json({ error: "invalid_delta" });
+  // Earn → grow BOTH the spendable balance and the lifetime total (ranking).
   await query(
-    "update profiles set pontos = pontos + $2, updated_at = now() where id = $1",
+    "update profiles set pontos = pontos + $2, pontos_globais = pontos_globais + $2, updated_at = now() where id = $1",
     [req.userId, delta],
   );
   await query("insert into points_log (user_id, delta) values ($1,$2)", [

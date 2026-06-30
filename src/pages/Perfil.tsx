@@ -122,16 +122,33 @@ const Perfil = () => {
             )}
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-primary/5 p-4 text-center">
-              <p className="font-display text-2xl font-bold text-primary">{profile?.pontos || 0}</p>
-              <p className="text-xs text-muted-foreground">Pontos</p>
-            </div>
-            <div className="rounded-2xl bg-accent/5 p-4 text-center">
-              <p className="font-display text-2xl font-bold text-accent">{profile?.streak || 0}🔥</p>
-              <p className="text-xs text-muted-foreground">Sequência</p>
-            </div>
-          </div>
+          {(() => {
+            const disponiveis = profile?.pontos ?? 0;
+            const totais = profile?.pontos_globais ?? disponiveis;
+            const trocados = Math.max(0, totais - disponiveis);
+            return (
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl bg-primary/5 p-4 text-center">
+                  <p className="font-display text-3xl font-bold text-primary">{totais.toLocaleString("pt-PT")}</p>
+                  <p className="text-xs text-muted-foreground">Pontos totais · contam no ranking</p>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-2xl bg-muted/40 p-3 text-center">
+                    <p className="font-display text-lg font-bold">{disponiveis.toLocaleString("pt-PT")}</p>
+                    <p className="text-[11px] text-muted-foreground">Disponíveis</p>
+                  </div>
+                  <div className="rounded-2xl bg-muted/40 p-3 text-center">
+                    <p className="font-display text-lg font-bold">{trocados.toLocaleString("pt-PT")}</p>
+                    <p className="text-[11px] text-muted-foreground">Trocados</p>
+                  </div>
+                  <div className="rounded-2xl bg-accent/5 p-3 text-center">
+                    <p className="font-display text-lg font-bold text-accent">{profile?.streak || 0}🔥</p>
+                    <p className="text-[11px] text-muted-foreground">Sequência</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </Card>
 

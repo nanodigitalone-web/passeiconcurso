@@ -8,11 +8,11 @@ export const rankingRouter = Router();
 rankingRouter.get("/", requireAuth, async (req: AuthedRequest, res) => {
   const categoria = (req.query.categoria as string) || null;
   const r = await query(
-    `select id, nome, avatar_url, pontos, categoria_nome
+    `select id, nome, avatar_url, pontos_globais as pontos, categoria_nome
        from profiles
       where (hidden = false or id = $1)
         and ($2::text is null or categoria_id = $2)
-      order by pontos desc
+      order by pontos_globais desc
       limit 100`,
     [req.userId, categoria],
   );

@@ -8,7 +8,8 @@ export type Profile = {
   nome: string;
   avatar_url: string | null;
   bio: string | null;
-  pontos: number;
+  pontos: number;            // saldo disponível para troca
+  pontos_globais?: number;   // total ganho na vida (nunca desce) — usado no ranking
   streak: number;
   concurso_id: string | null;
   categoria_id: string | null;

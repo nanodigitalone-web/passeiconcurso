@@ -77,7 +77,7 @@ const Index = () => {
 
       <section className="mt-6 grid grid-cols-3 gap-3">
         <StatCard icon={Target} label="Simulados" value={results.length} />
-        <StatCard icon={BookOpen} label="Pontos" value={profile?.pontos || 0} />
+        <StatCard icon={BookOpen} label="Pontos" value={profile?.pontos_globais ?? profile?.pontos ?? 0} />
         <StatCard icon={TrendingUp} label="Acertos" value={`${taxa}%`} />
       </section>
 

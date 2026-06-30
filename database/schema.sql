@@ -44,7 +44,8 @@ create table if not exists profiles (
   nome           text not null default 'Candidato',
   avatar_url     text,
   bio            text,
-  pontos         integer not null default 0,
+  pontos         integer not null default 0,   -- spendable balance (drops on convert)
+  pontos_globais integer not null default 0,   -- lifetime earned (never drops; ranking)
   streak         integer not null default 0,
   concurso_id    text,
   categoria_id   text,
