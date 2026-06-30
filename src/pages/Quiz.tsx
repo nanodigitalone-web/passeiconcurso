@@ -85,6 +85,7 @@ const Quiz = () => {
     const start = (n: number) => {
       startedAtRef.current = Date.now();
       setSeconds(0);
+      setLoading(true); // show the loader immediately, before questions arrive
       setCount(n);
     };
     return (
