@@ -143,6 +143,107 @@ profileRouter.post("/lives/lose", requireAuth, async (req: AuthedRequest, res) =
   }
 });
 
+// ---- Dashboard: aggregated stats for the Percurso page ----------------------
+// GET /profile/dashboard?period=week|month
+profileRouter.get("/dashboard", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const isMonth = req.query.period === "month";
+    const days = isMonth ? 30 : 7;
+
+    const [dailyR, discR, ptsR, battlesR, profileR, streakR] = await Promise.all([
+      // Per-day question stats
+      query(
+        `select (answered_at at time zone 'Africa/Luanda')::date as day,
+                count(*)::int as total,
+                count(*) filter (where correct)::int as correct
+           from question_attempts
+          where user_id = $1
+            and answered_at >= now() - ($2 || ' days')::interval
+          group by 1 order by 1`,
+        [req.userId, days],
+      ),
+      // Discipline breakdown (top 10 by volume)
+      query(
+        `select coalesce(disciplina,'—') as disciplina,
+                count(*)::int as total,
+                count(*) filter (where correct)::int as correct
+           from question_attempts
+          where user_id = $1
+            and answered_at >= now() - ($2 || ' days')::interval
+          group by 1 order by count(*) desc limit 10`,
+        [req.userId, days],
+      ),
+      // Points earned in period
+      one<{ pts: number }>(
+        `select coalesce(sum(delta),0)::int as pts
+           from points_log
+          where user_id = $1 and created_at >= now() - ($2 || ' days')::interval`,
+        [req.userId, days],
+      ),
+      // Battles in period
+      one<{ total: number; wins: number }>(
+        `select count(*)::int as total,
+                count(*) filter (where winner_id = $1)::int as wins
+           from battles
+          where (challenger_id = $1 or opponent_id = $1)
+            and status = 'finished'
+            and created_at >= now() - ($2 || ' days')::interval`,
+        [req.userId, days],
+      ),
+      // Profile basics
+      one<{ nome: string; pontos_globais: number; categoria_nome: string | null }>(
+        `select nome, pontos_globais, categoria_nome from profiles where id = $1`,
+        [req.userId],
+      ),
+      // All days with activity (for streak), up to 90 days back
+      query(
+        `select distinct (answered_at at time zone 'Africa/Luanda')::date as day
+           from question_attempts where user_id = $1
+            and answered_at >= now() - '90 days'::interval order by 1 desc`,
+        [req.userId],
+      ),
+    ]);
+
+    // Compute streak (consecutive days from today backwards)
+    const activeDays = new Set<string>(streakR.rows.map((r: any) => String(r.day)));
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 90; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split("T")[0];
+      if (activeDays.has(key)) streak++;
+      else if (i > 0) break;
+    }
+
+    const totalQ = dailyR.rows.reduce((s: number, r: any) => s + r.total, 0);
+    const correctQ = dailyR.rows.reduce((s: number, r: any) => s + r.correct, 0);
+
+    res.json({
+      period: isMonth ? "month" : "week",
+      days,
+      profile: profileR || {},
+      summary: {
+        total: totalQ,
+        correct: correctQ,
+        wrong: totalQ - correctQ,
+        accuracy: totalQ ? Math.round((correctQ / totalQ) * 100) : 0,
+        points_earned: ptsR?.pts ?? 0,
+        streak,
+      },
+      daily: dailyR.rows,
+      disciplines: discR.rows,
+      battles: {
+        total: battlesR?.total ?? 0,
+        wins: battlesR?.wins ?? 0,
+        losses: (battlesR?.total ?? 0) - (battlesR?.wins ?? 0),
+      },
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
 // Public-ish: a single profile by id (used for friend/opponent display).
 // Guard against non-uuid ids so a bad path can never crash the query.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
