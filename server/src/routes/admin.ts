@@ -284,19 +284,18 @@ adminRouter.get("/metrics", async (_req, res) => {
     );
 
     // ══ 3. RECEITA ═══════════════════════════════════════════════════════════
-    // payment_requests = subscrições de acesso.
-    // amount_aoa foi adicionado na migração 014 com DEFAULT 0 → registos antigos têm 0.
-    // Preço real: licenciatura-medicina=2000 AOA, resto=1000 AOA (igual a coins.ts).
-    // eff_amount usa o preço fixo quando amount_aoa=0.
-    const EFF = `COALESCE(NULLIF(amount_aoa,0), CASE WHEN concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END)`;
+    // Fonte de verdade = category_access (cobre pagamentos via comprovativo E via código).
+    // payment_requests cobre apenas 6 de 31 activações — o resto foi via códigos de acesso.
+    // Preço real: licenciatura-medicina=2000 AOA, todo o resto=1000 AOA (igual a coins.ts).
+    const CA_PRICE = `CASE WHEN concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END`;
     const [revAccess, revTopup, mrrAccess, mrrTopup, avgAccessOrder, countApprovedAccess] =
       await Promise.all([
-        sn(`SELECT COALESCE(sum(${EFF}),0)::int c FROM payment_requests WHERE status='approved'`),
+        sn(`SELECT COALESCE(sum(${CA_PRICE}),0)::int c FROM category_access`),
         sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved'"),
-        sn(`SELECT COALESCE(sum(${EFF}),0)::int c FROM payment_requests WHERE status='approved' AND updated_at > now()-interval'30 days'`),
+        sn(`SELECT COALESCE(sum(${CA_PRICE}),0)::int c FROM category_access WHERE activated_at > now()-interval'30 days'`),
         sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved' AND updated_at > now()-interval'30 days'"),
-        sn(`SELECT COALESCE(avg(${EFF}),0)::int c FROM payment_requests WHERE status='approved'`),
-        sn("SELECT count(*)::int c FROM payment_requests WHERE status='approved'"),
+        sn(`SELECT COALESCE(avg(${CA_PRICE}),0)::int c FROM category_access`),
+        sn("SELECT count(*)::int c FROM category_access"),
       ]);
     const totalRevenue = revAccess + revTopup;
     const mrr = mrrAccess + mrrTopup;
@@ -430,21 +429,22 @@ adminRouter.get("/metrics", async (_req, res) => {
          GROUP BY date_trunc('day',created_at) ORDER BY date_trunc('day',created_at)`,
       ),
       sq(
-        `SELECT to_char(date_trunc('month',updated_at),'Mon/YY') as month,
+        `SELECT to_char(date_trunc('month',ts),'Mon/YY') as month,
                 sum(eff)::int as total,
                 sum(CASE WHEN src='access' THEN eff ELSE 0 END)::int as acesso,
                 sum(CASE WHEN src='topup'  THEN eff ELSE 0 END)::int as topup
          FROM (
-           SELECT COALESCE(NULLIF(amount_aoa,0), CASE WHEN concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END) as eff,
-                  updated_at, 'access' as src
-             FROM payment_requests WHERE status='approved'
+           SELECT CASE WHEN concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END as eff,
+                  activated_at as ts, 'access' as src
+             FROM category_access
+             WHERE activated_at > now()-interval'12 months'
            UNION ALL
-           SELECT amount_aoa as eff, updated_at, 'topup' as src
+           SELECT amount_aoa as eff, updated_at as ts, 'topup' as src
              FROM coin_topup_requests WHERE status='approved'
+             AND updated_at > now()-interval'12 months'
          ) c
-         WHERE updated_at > now()-interval'12 months'
-         GROUP BY date_trunc('month',updated_at)
-         ORDER BY date_trunc('month',updated_at)`,
+         GROUP BY date_trunc('month',ts)
+         ORDER BY date_trunc('month',ts)`,
       ),
       sq(
         `SELECT to_char(date_trunc('month',updated_at),'Mon/YY') as month,
@@ -649,9 +649,9 @@ adminRouter.get("/users/:id/stats", async (req, res) => {
              + count(CASE WHEN qa.mode='aprender' THEN 1 END)::numeric * 0.25)::int as est_minutes,
          count(DISTINCT ca.id)::int                                              as access_count,
          (SELECT count(*)::int FROM profiles WHERE referred_by = p.id)           as referrals_given,
-         COALESCE((SELECT sum(COALESCE(NULLIF(pr.amount_aoa,0), CASE WHEN pr.concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END))
-                    FROM payment_requests pr
-                    WHERE pr.user_id = p.id AND pr.status = 'approved'), 0)::int as paid_subscriptions,
+         COALESCE((SELECT sum(CASE WHEN ca2.concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END)
+                    FROM category_access ca2
+                    WHERE ca2.user_id = p.id), 0)::int as paid_subscriptions,
          COALESCE((SELECT sum(ct.amount_aoa) FROM coin_topup_requests ct
                     WHERE ct.user_id = p.id AND ct.status = 'approved'), 0)::int as paid_topups
        FROM profiles p
