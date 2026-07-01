@@ -94,6 +94,32 @@ contentRouter.post("/attempts", requireAuth, async (req: AuthedRequest, res) => 
      values ${tuples}`,
     params,
   );
+
+  // Update streak + last_seen in profiles so the admin panel and ranking show current data.
+  try {
+    const streakRows = (await query(
+      `select distinct (answered_at at time zone 'Africa/Luanda')::date::text as day
+         from question_attempts
+        where user_id = $1 and answered_at >= now() - '90 days'::interval
+        order by 1 desc`,
+      [req.userId],
+    )).rows;
+    const activeDays = new Set(streakRows.map((r: any) => r.day));
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 90; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split("T")[0];
+      if (activeDays.has(key)) streak++;
+      else if (i > 0) break;
+    }
+    await query(
+      "update profiles set streak = $2, last_seen = now(), updated_at = now() where id = $1",
+      [req.userId, streak],
+    );
+  } catch { /* non-critical — never fail the attempt save because of this */ }
+
   res.json({ ok: true, saved: rows.length });
 });
 

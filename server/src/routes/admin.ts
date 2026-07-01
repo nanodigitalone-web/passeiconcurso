@@ -244,6 +244,13 @@ adminRouter.get("/metrics", async (_req, res) => {
   try {
     const n = async (sql: string, p?: any[]) =>
       Number((await one<{ c: string | number }>(sql, p))?.c ?? 0);
+    // Safe version: never throws — returns 0 if the query fails
+    const sn = async (sql: string, p?: any[]): Promise<number> => {
+      try { return await n(sql, p); } catch { return 0; }
+    };
+    const sq = async (sql: string, p?: any[]): Promise<any[]> => {
+      try { return (await query(sql, p)).rows; } catch { return []; }
+    };
 
     // ══ 1. UTILIZADORES ═════════════════════════════════════════════════════
     const [totalUsers, newToday, new7d, new30d, newPrev30d, dau, mau, mauPrev] = await Promise.all([
@@ -281,12 +288,12 @@ adminRouter.get("/metrics", async (_req, res) => {
     // coin_topup_requests = compras de moedas
     const [revAccess, revTopup, mrrAccess, mrrTopup, avgAccessOrder, countApprovedAccess] =
       await Promise.all([
-        n("SELECT COALESCE(sum(amount_aoa),0)::int c FROM payment_requests WHERE status='approved'"),
-        n("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved'"),
-        n("SELECT COALESCE(sum(amount_aoa),0)::int c FROM payment_requests WHERE status='approved' AND updated_at > now()-interval'30 days'"),
-        n("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved' AND updated_at > now()-interval'30 days'"),
-        n("SELECT COALESCE(avg(NULLIF(amount_aoa,0)),0)::int c FROM payment_requests WHERE status='approved' AND amount_aoa > 0"),
-        n("SELECT count(*)::int c FROM payment_requests WHERE status='approved'"),
+        sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM payment_requests WHERE status='approved'"),
+        sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved'"),
+        sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM payment_requests WHERE status='approved' AND updated_at > now()-interval'30 days'"),
+        sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved' AND updated_at > now()-interval'30 days'"),
+        sn("SELECT COALESCE(avg(NULLIF(amount_aoa,0)),0)::int c FROM payment_requests WHERE status='approved' AND amount_aoa > 0"),
+        sn("SELECT count(*)::int c FROM payment_requests WHERE status='approved'"),
       ]);
     const totalRevenue = revAccess + revTopup;
     const mrr = mrrAccess + mrrTopup;
@@ -295,28 +302,36 @@ adminRouter.get("/metrics", async (_req, res) => {
     const arpu = totalUsers > 0 ? Math.round(totalRevenue / totalUsers) : 0;
 
     // ══ 4. SAQUES (WITHDRAWALS) ══════════════════════════════════════════════
-    const saqRow = await one<{
-      paid_aoa: number; pending_aoa: number; rejected_aoa: number;
-      count_paid: number; count_pending: number; moedas_paid: number;
-    }>(
-      `SELECT
-         COALESCE(sum(CASE WHEN status='paid'     THEN aoa   ELSE 0 END),0)::int as paid_aoa,
-         COALESCE(sum(CASE WHEN status='pending'  THEN aoa   ELSE 0 END),0)::int as pending_aoa,
-         COALESCE(sum(CASE WHEN status='rejected' THEN aoa   ELSE 0 END),0)::int as rejected_aoa,
-         count(CASE WHEN status='paid'    THEN 1 END)::int as count_paid,
-         count(CASE WHEN status='pending' THEN 1 END)::int as count_pending,
-         COALESCE(sum(CASE WHEN status='paid' THEN moedas ELSE 0 END),0)::int as moedas_paid
-       FROM withdrawal_requests`,
-    );
+    const saqRow = await (async () => {
+      try {
+        return await one<{
+          paid_aoa: number; pending_aoa: number; rejected_aoa: number;
+          count_paid: number; count_pending: number; moedas_paid: number;
+        }>(
+          `SELECT
+             COALESCE(sum(CASE WHEN status='paid'     THEN aoa   ELSE 0 END),0)::int as paid_aoa,
+             COALESCE(sum(CASE WHEN status='pending'  THEN aoa   ELSE 0 END),0)::int as pending_aoa,
+             COALESCE(sum(CASE WHEN status='rejected' THEN aoa   ELSE 0 END),0)::int as rejected_aoa,
+             count(CASE WHEN status='paid'    THEN 1 END)::int as count_paid,
+             count(CASE WHEN status='pending' THEN 1 END)::int as count_pending,
+             COALESCE(sum(CASE WHEN status='paid' THEN moedas ELSE 0 END),0)::int as moedas_paid
+           FROM withdrawal_requests`,
+        );
+      } catch { return null; }
+    })();
     const totalWithdrawn  = Number(saqRow?.paid_aoa    ?? 0);
     const pendingWithdraw = Number(saqRow?.pending_aoa ?? 0);
     const netRevenue      = totalRevenue - totalWithdrawn;
 
     // Taxa de câmbio moedas→AOA (média de saques aprovados)
-    const exRow = await one<{ rate: string }>(
-      `SELECT round(avg(aoa::numeric / NULLIF(moedas,0))::numeric, 4) as rate
-       FROM withdrawal_requests WHERE status='paid' AND moedas>0 AND aoa>0`,
-    );
+    const exRow = await (async () => {
+      try {
+        return await one<{ rate: string }>(
+          `SELECT round(avg(aoa::numeric / NULLIF(moedas,0))::numeric, 4) as rate
+           FROM withdrawal_requests WHERE status='paid' AND moedas>0 AND aoa>0`,
+        );
+      } catch { return null; }
+    })();
     const ptsToAoa = Number(exRow?.rate ?? 0);
 
     // ══ 5. CAC (aquisição via referido) ══════════════════════════════════════
@@ -330,23 +345,27 @@ adminRouter.get("/metrics", async (_req, res) => {
 
     // ══ 6. TEMPO NA PLATAFORMA ═══════════════════════════════════════════════
     // Estimativa: simulado ≈ 2.5 min/questão, aprender ≈ 15 s/questão
-    const timeRow = await one<{
-      total_all: number; sim_all: number; apr_all: number;
-      total30: number; sim30: number; apr30: number; users30: number;
-      correct_all: number; correct30: number;
-    }>(
-      `SELECT
-         count(*)::int                                                                      as total_all,
-         count(CASE WHEN mode='simulado' THEN 1 END)::int                                  as sim_all,
-         count(CASE WHEN mode='aprender' THEN 1 END)::int                                  as apr_all,
-         count(CASE WHEN created_at > now()-interval'30 days' THEN 1 END)::int             as total30,
-         count(CASE WHEN mode='simulado' AND created_at>now()-interval'30 days' THEN 1 END)::int as sim30,
-         count(CASE WHEN mode='aprender' AND created_at>now()-interval'30 days' THEN 1 END)::int as apr30,
-         count(DISTINCT CASE WHEN created_at>now()-interval'30 days' THEN user_id END)::int as users30,
-         count(CASE WHEN correct THEN 1 END)::int                                          as correct_all,
-         count(CASE WHEN correct AND created_at>now()-interval'30 days' THEN 1 END)::int  as correct30
-       FROM question_attempts`,
-    );
+    const timeRow = await (async () => {
+      try {
+        return await one<{
+          total_all: number; sim_all: number; apr_all: number;
+          total30: number; sim30: number; apr30: number; users30: number;
+          correct_all: number; correct30: number;
+        }>(
+          `SELECT
+             count(*)::int                                                                      as total_all,
+             count(CASE WHEN mode='simulado' THEN 1 END)::int                                  as sim_all,
+             count(CASE WHEN mode='aprender' THEN 1 END)::int                                  as apr_all,
+             count(CASE WHEN answered_at > now()-interval'30 days' THEN 1 END)::int             as total30,
+             count(CASE WHEN mode='simulado' AND answered_at>now()-interval'30 days' THEN 1 END)::int as sim30,
+             count(CASE WHEN mode='aprender' AND answered_at>now()-interval'30 days' THEN 1 END)::int as apr30,
+             count(DISTINCT CASE WHEN answered_at>now()-interval'30 days' THEN user_id END)::int as users30,
+             count(CASE WHEN correct THEN 1 END)::int                                          as correct_all,
+             count(CASE WHEN correct AND answered_at>now()-interval'30 days' THEN 1 END)::int  as correct30
+           FROM question_attempts`,
+        );
+      } catch { return null; }
+    })();
     const totalAttempts    = Number(timeRow?.total_all ?? 0);
     const simAll           = Number(timeRow?.sim_all   ?? 0);
     const aprAll           = Number(timeRow?.apr_all   ?? 0);
@@ -366,42 +385,48 @@ adminRouter.get("/metrics", async (_req, res) => {
     const accuracyRate30d = totalAttempts30d > 0 ? Math.round((correct30d / totalAttempts30d) * 100) : 0;
 
     // ══ 7. RETENÇÃO ══════════════════════════════════════════════════════════
-    const retRow = await one<{ prev_mau: string; retained: string }>(
-      `WITH
-         curr AS (SELECT DISTINCT id FROM profiles WHERE last_seen > now()-interval'30 days'),
-         prev AS (SELECT DISTINCT id FROM profiles WHERE last_seen BETWEEN now()-interval'60 days' AND now()-interval'30 days'),
-         ret  AS (SELECT id FROM curr INTERSECT SELECT id FROM prev)
-       SELECT (SELECT count(*)::int FROM prev) as prev_mau,
-              (SELECT count(*)::int FROM ret)  as retained`,
-    );
+    const retRow = await (async () => {
+      try {
+        return await one<{ prev_mau: string; retained: string }>(
+          `WITH
+             curr AS (SELECT DISTINCT id FROM profiles WHERE last_seen > now()-interval'30 days'),
+             prev AS (SELECT DISTINCT id FROM profiles WHERE last_seen BETWEEN now()-interval'60 days' AND now()-interval'30 days'),
+             ret  AS (SELECT id FROM curr INTERSECT SELECT id FROM prev)
+           SELECT (SELECT count(*)::int FROM prev) as prev_mau,
+                  (SELECT count(*)::int FROM ret)  as retained`,
+        );
+      } catch { return null; }
+    })();
     const prevMAU        = Number(retRow?.prev_mau ?? 0);
     const retainedCount  = Number(retRow?.retained ?? 0);
     const retentionRate  = prevMAU > 0 ? Math.round((retainedCount / prevMAU) * 100) : null;
     const churnRate      = retentionRate !== null ? 100 - retentionRate : null;
 
-    // ══ 8. CHARTS ════════════════════════════════════════════════════════════
+    // ══ 8. CHARTS + MÉTRICAS ADICIONAIS ══════════════════════════════════════
     const [
-      userGrowthRaw,      // novos registos por mês (12m)
-      newUsersDailyRaw,   // novos registos por dia (30d)
-      revenueChartRaw,    // receita combinada por mês (12m)
-      saquesChartRaw,     // saques pagos por mês (12m)
-      dauTrendRaw,        // DAU por dia (30d)
-      mauCohortRaw,       // MAU por mês (6m)
-      attemptsChartRaw,   // tentativas por dia (30d)
-      modeChartRaw,       // breakdown por modo (total)
+      userGrowthRaw,
+      newUsersDailyRaw,
+      revenueChartRaw,
+      saquesChartRaw,
+      dauTrendRaw,
+      mauCohortRaw,
+      attemptsChartRaw,
+      modeChartRaw,
+      disciplinesRaw,         // questões por disciplina (top 20)
+      activationRaw,          // taxa de activação (registados que responderam ≥1 q)
+      retentionCohortRaw,     // retenção D1/D7/D30 (approx via last_seen vs created_at)
     ] = await Promise.all([
-      query(
+      sq(
         `SELECT to_char(date_trunc('month',created_at),'Mon/YY') as month, count(*)::int as n
          FROM profiles WHERE created_at > now()-interval'12 months'
          GROUP BY date_trunc('month',created_at) ORDER BY date_trunc('month',created_at)`,
       ),
-      query(
+      sq(
         `SELECT to_char(date_trunc('day',created_at),'DD/MM') as day, count(*)::int as n
          FROM profiles WHERE created_at > now()-interval'30 days'
          GROUP BY date_trunc('day',created_at) ORDER BY date_trunc('day',created_at)`,
       ),
-      // Receita combinada: subscrições + topups stacked bar
-      query(
+      sq(
         `SELECT to_char(date_trunc('month',updated_at),'Mon/YY') as month,
                 sum(amount_aoa)::int as total,
                 sum(CASE WHEN src='access' THEN amount_aoa ELSE 0 END)::int as acesso,
@@ -417,63 +442,104 @@ adminRouter.get("/metrics", async (_req, res) => {
          GROUP BY date_trunc('month',updated_at)
          ORDER BY date_trunc('month',updated_at)`,
       ),
-      query(
+      sq(
         `SELECT to_char(date_trunc('month',updated_at),'Mon/YY') as month,
                 COALESCE(sum(aoa),0)::int as aoa
          FROM withdrawal_requests WHERE status='paid' AND updated_at > now()-interval'12 months'
          GROUP BY date_trunc('month',updated_at) ORDER BY date_trunc('month',updated_at)`,
       ),
-      query(
+      sq(
         `SELECT to_char(date_trunc('day',last_seen),'DD/MM') as day, count(*)::int as dau
          FROM profiles WHERE last_seen > now()-interval'30 days'
          GROUP BY date_trunc('day',last_seen) ORDER BY date_trunc('day',last_seen)`,
       ),
-      query(
+      sq(
         `SELECT to_char(date_trunc('month',last_seen),'Mon/YY') as month,
                 count(DISTINCT id)::int as mau
          FROM profiles WHERE last_seen > now()-interval'6 months'
          GROUP BY date_trunc('month',last_seen) ORDER BY date_trunc('month',last_seen)`,
       ),
-      query(
-        `SELECT to_char(date_trunc('day',created_at),'DD/MM') as day,
+      sq(
+        `SELECT to_char(date_trunc('day',answered_at),'DD/MM') as day,
                 count(*)::int as n,
                 count(CASE WHEN correct THEN 1 END)::int as correct
-         FROM question_attempts WHERE created_at > now()-interval'30 days'
-         GROUP BY date_trunc('day',created_at) ORDER BY date_trunc('day',created_at)`,
+         FROM question_attempts WHERE answered_at > now()-interval'30 days'
+         GROUP BY date_trunc('day',answered_at) ORDER BY date_trunc('day',answered_at)`,
       ),
-      query(`SELECT mode, count(*)::int as n FROM question_attempts WHERE mode IS NOT NULL GROUP BY mode`),
+      sq(`SELECT mode, count(*)::int as n FROM question_attempts WHERE mode IS NOT NULL GROUP BY mode`),
+      // Questões por disciplina (top 20 — usadas nos interesses)
+      sq(`SELECT disciplina, count(*)::int as n FROM questions WHERE active AND disciplina IS NOT NULL GROUP BY disciplina ORDER BY count(*) DESC LIMIT 20`),
+      // Taxa de activação: quantos utilizadores registados responderam ≥1 questão
+      sq(
+        `SELECT
+           count(DISTINCT p.id)::int as registered,
+           count(DISTINCT qa.user_id)::int as activated
+         FROM profiles p
+         LEFT JOIN question_attempts qa ON qa.user_id = p.id`,
+      ),
+      // Retenção aproximada por coorte de registo (D1/D7/D30)
+      sq(
+        `SELECT
+           count(*) filter (where last_seen - created_at >= interval'1 day')::int  as ret_d1,
+           count(*) filter (where last_seen - created_at >= interval'7 days')::int  as ret_d7,
+           count(*) filter (where last_seen - created_at >= interval'30 days')::int as ret_d30,
+           count(*)::int as total
+         FROM profiles`,
+      ),
     ]);
+
+    // Métricas adicionais derivadas
+    const activatedUsers  = Number(activationRaw[0]?.activated ?? 0);
+    const registeredUsers = Number(activationRaw[0]?.registered ?? totalUsers);
+    const activationRate  = registeredUsers > 0 ? Math.round((activatedUsers / registeredUsers) * 100) : 0;
+
+    const retD1   = Number(retentionCohortRaw[0]?.ret_d1  ?? 0);
+    const retD7   = Number(retentionCohortRaw[0]?.ret_d7  ?? 0);
+    const retD30  = Number(retentionCohortRaw[0]?.ret_d30 ?? 0);
+    const retBase = Number(retentionCohortRaw[0]?.total   ?? totalUsers) || 1;
+    const retD1Rate  = Math.round((retD1  / retBase) * 100);
+    const retD7Rate  = Math.round((retD7  / retBase) * 100);
+    const retD30Rate = Math.round((retD30 / retBase) * 100);
+
+    // Período médio de payback (meses para recuperar CAC com MRR/MAU)
+    const revenuePerMAU = mau > 0 ? Math.round(mrr / mau) : 0;
+    const paybackMonths = revenuePerMAU > 0 && cacAoa > 0 ? Math.round(cacAoa / revenuePerMAU) : null;
 
     res.json({
       // Utilizadores
       totalUsers, newToday, new7d, new30d, growthRate,
       dau, mau, mauPrev, dauMauRatio,
+      // Activação
+      activatedUsers, activationRate,
       // Planos
       paidUsers, activeSubs, expiredSubs, expiringSoon, conversionRate,
       countApprovedAccess,
       // Receita
       totalRevenue, revAccess, revTopup, mrr, arr, ltv, arpu, avgAccessOrder, netRevenue,
+      revenuePerMAU,
       // Saques
       totalWithdrawn, pendingWithdraw,
       countSaquesPaid:    Number(saqRow?.count_paid    ?? 0),
       countSaquesPending: Number(saqRow?.count_pending ?? 0),
-      // CAC
-      ptsToAoa, referredUsers, referrers, cacAoa, ltvCacRatio,
+      // CAC & Unit Economics
+      ptsToAoa, referredUsers, referrers, cacAoa, ltvCacRatio, paybackMonths,
       // Tempo & Engajamento
       totalAttempts, totalAttempts30d, activeUsers30d, avgAttemptsPerUser,
       estHoursTotal, avgMinPerUser, accuracyRate, accuracyRate30d,
-      // Retenção
+      // Retenção D1/D7/D30 (cohort)
       retentionRate, churnRate, retainedCount, prevMAU,
+      retD1Rate, retD7Rate, retD30Rate,
       // Charts
-      userGrowth:     userGrowthRaw.rows,
-      newUsersDaily:  newUsersDailyRaw.rows,
-      revenue:        revenueChartRaw.rows,
-      saques:         saquesChartRaw.rows,
-      dauTrend:       dauTrendRaw.rows,
-      mauCohort:      mauCohortRaw.rows,
-      attemptsDaily:  attemptsChartRaw.rows,
-      modeBreakdown:  modeChartRaw.rows,
+      userGrowth:     userGrowthRaw,
+      newUsersDaily:  newUsersDailyRaw,
+      revenue:        revenueChartRaw,
+      saques:         saquesChartRaw,
+      dauTrend:       dauTrendRaw,
+      mauCohort:      mauCohortRaw,
+      attemptsDaily:  attemptsChartRaw,
+      modeBreakdown:  modeChartRaw,
       plans:          plansRaw.rows,
+      disciplines:    disciplinesRaw,
     });
   } catch (e: any) {
     console.error("/admin/metrics error:", e);
@@ -558,6 +624,36 @@ adminRouter.post("/users/:id/ban", async (req: any, res) => {
       );
     }
     res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "server_error" });
+  }
+});
+
+// ---- Full stats for a single user (used in admin user detail modal) ----
+adminRouter.get("/users/:id/stats", async (req, res) => {
+  try {
+    const r = await one<any>(
+      `SELECT
+         p.id, p.nome, p.email, p.avatar_url, p.pontos, p.pontos_globais, p.moedas,
+         p.streak, p.created_at, p.last_seen, p.universidade, p.curso, p.ano, p.bio,
+         p.friend_code, p.referred_by, p.blocked, p.hidden,
+         count(qa.id)::int                                                      as total_attempts,
+         count(CASE WHEN qa.correct      THEN 1 END)::int                       as correct_attempts,
+         count(CASE WHEN qa.mode='simulado' THEN 1 END)::int                    as simulado_count,
+         count(CASE WHEN qa.mode='aprender' THEN 1 END)::int                    as aprender_count,
+         round(count(CASE WHEN qa.mode='simulado' THEN 1 END)::numeric * 2.5
+             + count(CASE WHEN qa.mode='aprender' THEN 1 END)::numeric * 0.25)::int as est_minutes,
+         count(DISTINCT ca.id)::int                                             as access_count,
+         (SELECT count(*)::int FROM profiles WHERE referred_by = p.friend_code) as referrals_given
+       FROM profiles p
+       LEFT JOIN question_attempts qa ON qa.user_id = p.id
+       LEFT JOIN category_access   ca ON ca.user_id = p.id
+       WHERE p.id = $1
+       GROUP BY p.id`,
+      [req.params.id],
+    );
+    if (!r) return res.status(404).json({ error: "not_found" });
+    res.json(r);
   } catch (e: any) {
     res.status(500).json({ error: e?.message || "server_error" });
   }

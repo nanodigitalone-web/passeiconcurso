@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { quizService, notificationsService, authService } from "@/services";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BookOpen, Check, Clock, Flame, Lock, X, Zap } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
@@ -252,8 +253,11 @@ const Quiz = () => {
       if (user && result.acertos > 0) {
         authService
           .addPoints(user.id, profile?.pontos || 0, Math.min(50, result.acertos))
-          .then(() => refreshProfile())
-          .catch(() => {});
+          .then((res) => {
+            if (res?.error) toast.error("Não foi possível guardar os pontos. Verifica a tua ligação.");
+            else refreshProfile();
+          })
+          .catch(() => toast.error("Não foi possível guardar os pontos. Verifica a tua ligação."));
       }
       navigate(`/resultado/${result.id}`, { state: result });
     } else {

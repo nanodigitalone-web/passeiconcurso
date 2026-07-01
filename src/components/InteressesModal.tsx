@@ -40,7 +40,7 @@ export const InteressesModal = () => {
         next.delete(id);
       } else if (next.size >= interMax) {
         if (interMax === FREE_MAX) {
-          toast.error(`Plano gratuito: máx. ${FREE_MAX} interesses. Activa o Plano Pro no teu perfil para até ${PRO_MAX}.`);
+          toast.error(`Plano gratuito: máx. ${FREE_MAX} disciplinas. Activa o Plano Pro no teu perfil para até ${PRO_MAX}.`);
         }
         return prev;
       } else {
@@ -93,7 +93,7 @@ export const InteressesModal = () => {
             <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200/60 px-3 py-2">
               <Lock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
               <p className="text-xs text-amber-700">
-                Activa o <strong>Plano Pro</strong> no teu perfil para até {PRO_MAX} interesses.
+                Activa o <strong>Plano Pro</strong> no teu perfil para até {PRO_MAX} disciplinas.
               </p>
             </div>
           )}

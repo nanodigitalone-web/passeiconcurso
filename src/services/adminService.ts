@@ -46,9 +46,14 @@ export const adminService = {
     totalAttempts: number; totalAttempts30d: number; activeUsers30d: number;
     avgAttemptsPerUser: number; estHoursTotal: number; avgMinPerUser: number;
     accuracyRate: number; accuracyRate30d: number;
-    // Retenção
+    // Activação
+    activatedUsers: number; activationRate: number;
+    // Retenção D1/D7/D30
     retentionRate: number | null; churnRate: number | null;
     retainedCount: number; prevMAU: number;
+    retD1Rate: number; retD7Rate: number; retD30Rate: number;
+    // Unit Economics extras
+    revenuePerMAU: number; paybackMonths: number | null;
     // Charts
     userGrowth:    { month: string; n: number }[];
     newUsersDaily: { day: string; n: number }[];
@@ -59,6 +64,7 @@ export const adminService = {
     attemptsDaily: { day: string; n: number; correct: number }[];
     modeBreakdown: { mode: string; n: number }[];
     plans:         { concurso_id: string; categoria_id: string; total: number; active: number }[];
+    disciplines:   { disciplina: string; n: number }[];
   }> {
     try {
       return await api.get("/admin/metrics");
@@ -69,16 +75,18 @@ export const adminService = {
         paidUsers: 0, activeSubs: 0, expiredSubs: 0, expiringSoon: 0,
         conversionRate: 0, countApprovedAccess: 0,
         totalRevenue: 0, revAccess: 0, revTopup: 0, mrr: 0, arr: 0,
-        ltv: 0, arpu: 0, avgAccessOrder: 0, netRevenue: 0,
+        ltv: 0, arpu: 0, avgAccessOrder: 0, netRevenue: 0, revenuePerMAU: 0,
         totalWithdrawn: 0, pendingWithdraw: 0,
         countSaquesPaid: 0, countSaquesPending: 0,
-        ptsToAoa: 0, referredUsers: 0, referrers: 0, cacAoa: 0, ltvCacRatio: null,
+        ptsToAoa: 0, referredUsers: 0, referrers: 0, cacAoa: 0, ltvCacRatio: null, paybackMonths: null,
+        activatedUsers: 0, activationRate: 0,
         totalAttempts: 0, totalAttempts30d: 0, activeUsers30d: 0,
         avgAttemptsPerUser: 0, estHoursTotal: 0, avgMinPerUser: 0,
         accuracyRate: 0, accuracyRate30d: 0,
         retentionRate: null, churnRate: null, retainedCount: 0, prevMAU: 0,
+        retD1Rate: 0, retD7Rate: 0, retD30Rate: 0,
         userGrowth: [], newUsersDaily: [], revenue: [], saques: [],
-        dauTrend: [], mauCohort: [], attemptsDaily: [], modeBreakdown: [], plans: [],
+        dauTrend: [], mauCohort: [], attemptsDaily: [], modeBreakdown: [], plans: [], disciplines: [],
       };
     }
   },
@@ -276,5 +284,14 @@ export const adminService = {
 
   banUser(id: string, reason?: string, notify = true) {
     return api.post(`/admin/users/${id}/ban`, { reason, notify });
+  },
+
+  // ---- Individual user full stats (for admin detail modal) ----
+  async getUserStats(id: string): Promise<any | null> {
+    try {
+      return await api.get(`/admin/users/${id}/stats`);
+    } catch {
+      return null;
+    }
   },
 };

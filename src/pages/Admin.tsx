@@ -240,7 +240,71 @@ const ChartCard = ({ title, sub, children }: { title: string; sub?: string; chil
   </Card>
 );
 
-/* ── Top user card / detail modal ───────────────────────────────────────────── */
+/* ── Shared user detail modal (reused in Top 3 + UsersTab) ─────────────────── */
+const UserStatsModal = ({ user, open, onClose, badge }: { user: any; open: boolean; onClose: () => void; badge?: React.ReactNode }) => {
+  const accuracy = (user?.total_attempts ?? 0) > 0 ? Math.round(((user?.correct_attempts ?? 0) / user.total_attempts) * 100) : 0;
+  const hours    = Math.floor((user?.est_minutes ?? 0) / 60);
+  const mins     = (user?.est_minutes ?? 0) % 60;
+  const timeStr  = hours > 0 ? `${hours}h ${mins}m` : `${user?.est_minutes ?? 0}min`;
+  if (!user) return null;
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {badge} {user.nome}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-16 w-16 ring-2 ring-border/40">
+              <AvatarImage src={user.avatar_url || undefined} />
+              <AvatarFallback className="bg-primary/10 font-bold text-primary text-2xl">
+                {user.nome?.charAt(0)?.toUpperCase() || "?"}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-base">{user.nome}</p>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+              {user.universidade && <p className="text-xs text-muted-foreground">{user.universidade}{user.curso ? ` · ${user.curso}` : ""}{user.ano ? ` · ${user.ano}º ano` : ""}</p>}
+              {(user.blocked || user.hidden) && (
+                <div className="flex gap-1 mt-1">
+                  {user.blocked && <Badge variant="destructive" className="text-[10px]">Suspenso</Badge>}
+                  {user.hidden && <Badge variant="secondary" className="text-[10px]">Oculto</Badge>}
+                </div>
+              )}
+            </div>
+          </div>
+          {user.bio && <p className="text-sm italic text-muted-foreground border-l-2 border-primary/30 pl-3">{user.bio}</p>}
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "Pontos globais",       value: (user.pontos_globais ?? 0).toLocaleString("pt-PT") },
+              { label: "Saldo disponível",     value: (user.pontos ?? 0).toLocaleString("pt-PT") },
+              { label: "Moedas",               value: (user.moedas ?? 0).toLocaleString("pt-PT") },
+              { label: "Questões respondidas", value: (user.total_attempts ?? 0).toLocaleString("pt-PT") },
+              { label: "Precisão",             value: `${accuracy}%` },
+              { label: "Simulados",            value: (user.simulado_count ?? 0).toLocaleString("pt-PT") },
+              { label: "Aprender",             value: (user.aprender_count ?? 0).toLocaleString("pt-PT") },
+              { label: "Tempo estimado",       value: timeStr },
+              { label: "Sequência (streak)",   value: `${user.streak ?? 0} dias` },
+              { label: "Planos ativos",        value: user.access_count ?? 0 },
+              { label: "Utilizadores convidados", value: user.referrals_given ?? 0 },
+              { label: "Membro desde",         value: user.created_at ? new Date(user.created_at).toLocaleDateString("pt-PT") : "—" },
+              { label: "Último acesso",        value: user.last_seen ? formatRelative(user.last_seen) : "nunca" },
+            ].map(it => (
+              <div key={it.label} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+                <p className="text-[10px] uppercase font-semibold tracking-wide text-muted-foreground">{it.label}</p>
+                <p className="font-display font-bold text-base leading-tight">{it.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+/* ── Top user card ───────────────────────────────────────────────────────────── */
 const RANK_MEDAL = ["🥇", "🥈", "🥉"];
 const RANK_BORDER = ["border-amber-300", "border-slate-300", "border-slate-400/50"];
 const RANK_BG    = ["from-amber-50/80 to-amber-100/20", "from-slate-50 to-slate-100/20", "from-muted/40"];
@@ -248,9 +312,6 @@ const RANK_BG    = ["from-amber-50/80 to-amber-100/20", "from-slate-50 to-slate-
 const TopUserCard = ({ user, rank }: { user: any; rank: number }) => {
   const [open, setOpen] = useState(false);
   const accuracy = user.total_attempts > 0 ? Math.round((user.correct_attempts / user.total_attempts) * 100) : 0;
-  const hours = Math.floor((user.est_minutes ?? 0) / 60);
-  const mins  = (user.est_minutes ?? 0) % 60;
-  const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${user.est_minutes ?? 0}min`;
 
   return (
     <>
@@ -285,55 +346,7 @@ const TopUserCard = ({ user, rank }: { user: any; rank: number }) => {
         </div>
         <p className="mt-2 text-center text-[11px] text-primary/70">Ver detalhes →</p>
       </Card>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span className="text-xl">{RANK_MEDAL[rank - 1]}</span> {user.nome}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-16 w-16 ring-2 ring-border/40">
-                <AvatarImage src={user.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 font-bold text-primary text-2xl">
-                  {user.nome?.charAt(0)?.toUpperCase() || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold text-base">{user.nome}</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-                {user.universidade && <p className="text-xs text-muted-foreground">{user.universidade}{user.curso ? ` · ${user.curso}` : ""}{user.ano ? ` · ${user.ano}º ano` : ""}</p>}
-              </div>
-            </div>
-            {user.bio && (
-              <p className="text-sm italic text-muted-foreground border-l-2 border-primary/30 pl-3">{user.bio}</p>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: "Pontos globais",       value: (user.pontos_globais ?? 0).toLocaleString("pt-PT") },
-                { label: "Saldo disponível",     value: (user.pontos ?? 0).toLocaleString("pt-PT") },
-                { label: "Questões respondidas", value: (user.total_attempts ?? 0).toLocaleString("pt-PT") },
-                { label: "Precisão",             value: `${accuracy}%` },
-                { label: "Simulados",            value: (user.simulado_count ?? 0).toLocaleString("pt-PT") },
-                { label: "Aprender",             value: (user.aprender_count ?? 0).toLocaleString("pt-PT") },
-                { label: "Tempo estimado",       value: timeStr },
-                { label: "Streak",               value: `${user.streak ?? 0} dias` },
-                { label: "Planos ativos",        value: user.access_count ?? 0 },
-                { label: "Moedas",               value: (user.moedas ?? 0).toLocaleString("pt-PT") },
-                { label: "Membro desde",         value: user.created_at ? new Date(user.created_at).toLocaleDateString("pt-PT") : "—" },
-                { label: "Último acesso",        value: user.last_seen ? formatRelative(user.last_seen) : "nunca" },
-              ].map(it => (
-                <div key={it.label} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
-                  <p className="text-[10px] uppercase font-semibold tracking-wide text-muted-foreground">{it.label}</p>
-                  <p className="font-display font-bold text-base leading-tight">{it.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <UserStatsModal user={user} open={open} onClose={() => setOpen(false)} badge={<span className="text-xl">{RANK_MEDAL[rank - 1]}</span>} />
     </>
   );
 };
@@ -753,6 +766,19 @@ const StatsTab = () => {
         </Card>
       </div>
 
+      {/* ══ 6b. ACTIVAÇÃO & RETENÇÃO DETALHADA ═══════════════════════════════ */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Activação & Retenção Detalhada</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <MetricCard icon={<UserCheck className="h-5 w-5" />}  label="Activados"      value={m.activatedUsers.toLocaleString("pt-PT")} sub="Fizeram ≥1 questão" accent="bg-emerald-50 text-emerald-600" />
+          <MetricCard icon={<Percent className="h-5 w-5" />}    label="Taxa activação" value={`${m.activationRate}%`} sub="Activados / registados" accent={m.activationRate >= 50 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<Repeat2 className="h-5 w-5" />}    label="Retenção D1"    value={`${m.retD1Rate}%`} sub="Voltam no dia seguinte" accent={m.retD1Rate >= 30 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<Repeat2 className="h-5 w-5" />}    label="Retenção D7"    value={`${m.retD7Rate}%`} sub="Voltam na semana 1" accent={m.retD7Rate >= 20 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<Repeat2 className="h-5 w-5" />}    label="Retenção D30"   value={`${m.retD30Rate}%`} sub="Voltam no mês 1" accent={m.retD30Rate >= 15 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"} />
+          <MetricCard icon={<DollarSign className="h-5 w-5" />} label="Rev./MAU"       value={aoa(m.revenuePerMAU)} sub={m.paybackMonths !== null ? `Payback ≈ ${m.paybackMonths} meses` : "Payback: n/a"} accent="bg-violet-50 text-violet-600" />
+        </div>
+      </section>
+
       {/* ══ TOP 3 UTILIZADORES ════════════════════════════════════════════════ */}
       {topUsers.length > 0 && (
         <section>
@@ -797,6 +823,28 @@ const StatsTab = () => {
         </div>
       </ChartCard>
 
+      {/* Disciplinas dos interesses/temas */}
+      {(m.disciplines?.length ?? 0) > 0 && (
+        <ChartCard title="Questões por Disciplina (Temas)" sub="Disciplinas dos perfis de interesse — questões disponíveis">
+          <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+            {[...(m.disciplines ?? [])].sort((a, b) => b.n - a.n).map(d => {
+              const pct = Math.min(100, Math.round((d.n / 1000) * 100));
+              return (
+                <div key={d.disciplina}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium truncate max-w-[65%]">{d.disciplina}</span>
+                    <span className="text-muted-foreground tabular-nums text-xs">{d.n.toLocaleString("pt-PT")}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 80 ? C.emerald : pct >= 40 ? C.sky : C.amber }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ChartCard>
+      )}
+
     </div>
   );
 };
@@ -809,6 +857,13 @@ const UsersTab = () => {
   const [accessMap, setAccessMap] = useState<Record<string, AccessRow[]>>({});
   const [q, setQ] = useState("");
   const [uFilter, setUFilter] = useState<"todos" | "pagos" | "bloqueados">("todos");
+  const [detailUser, setDetailUser] = useState<any>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const openDetail = async (id: string) => {
+    const stats = await adminService.getUserStats(id);
+    if (stats) { setDetailUser(stats); setDetailOpen(true); }
+  };
 
   const load = async () => {
     const [profiles, acc] = await Promise.all([adminService.listProfiles(500), adminService.listAllAccess(2000)]);
@@ -858,19 +913,20 @@ const UsersTab = () => {
           </Button>
         ))}
       </div>
+      <UserStatsModal user={detailUser} open={detailOpen} onClose={() => setDetailOpen(false)} />
       <div className="space-y-2">
         {filtered.map(r => {
           const access = accessMap[r.id] ?? [];
           return (
             <Card key={r.id} className="border-border/60 p-3 shadow-card">
               <div className="flex flex-wrap items-center gap-3">
-                <Avatar className="h-11 w-11 ring-2 ring-border/40">
+                <Avatar className="h-11 w-11 ring-2 ring-border/40 cursor-pointer" onClick={() => openDetail(r.id)}>
                   <AvatarImage src={r.avatar_url || undefined} />
                   <AvatarFallback className="bg-primary/10 font-bold text-primary">
                     {r.nome?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => openDetail(r.id)}>
                   <p className="font-semibold truncate flex flex-wrap items-center gap-1.5">
                     {r.nome}
                     {r.blocked && <Badge variant="destructive" className="text-[10px]">Suspenso</Badge>}

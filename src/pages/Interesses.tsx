@@ -49,9 +49,9 @@ const Interesses = () => {
       interesses_ativo: ativo && selected.size > 0,
     });
     setSaving(false);
-    if (error) return toast.error("Erro ao guardar interesses");
+    if (error) return toast.error("Erro ao guardar disciplinas");
     await refreshProfile();
-    toast.success("Interesses guardados!");
+    toast.success("Disciplinas guardadas!");
     navigate("/");
   };
 

@@ -14,7 +14,7 @@ import { AccessGate } from "@/components/AccessGate";
 
 const SESSION_SIZE = 5;
 const POINTS_PER_HIT = 4; // 5 acertos x 4 = 20 pontos máx. por sessão
-const SECONDS_PER_QUESTION = 10; // tempo para responder; depois salta sozinho
+const SECONDS_PER_QUESTION = 15; // tempo para responder; depois salta sozinho
 
 
 

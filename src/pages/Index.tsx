@@ -313,7 +313,7 @@ const Index = () => {
               to: "/interesses",
               icon: BookMarked,
               label: "Disciplinas",
-              desc: temInteresses ? "Editar interesses" : "Personalizar estudo",
+              desc: temInteresses ? "Editar disciplinas" : "Personalizar estudo",
               accent: "bg-sky-100 text-sky-700",
             },
             {

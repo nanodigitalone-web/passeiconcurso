@@ -132,7 +132,7 @@ const Perfil = () => {
     setInteresses((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (prev.length >= interMax) {
-        toast.error(`Limite de ${interMax} interesses atingido. Faz upgrade para mais.`);
+        toast.error(`Limite de ${interMax} disciplinas atingido. Faz upgrade para mais.`);
         return prev;
       }
       return [...prev, id];
@@ -145,9 +145,9 @@ const Perfil = () => {
     try {
       await authService.updateProfile(user.id, { interesses });
       await refreshProfile();
-      toast.success("Interesses guardados!");
+      toast.success("Disciplinas guardadas!");
     } catch {
-      toast.error("Erro ao guardar interesses");
+      toast.error("Erro ao guardar disciplinas");
     } finally {
       setSavingInt(false);
     }
@@ -362,9 +362,9 @@ const Perfil = () => {
               <BookOpen className="h-4 w-4" />
             </span>
             <div>
-              <p className="font-semibold leading-tight">Interesses de estudo</p>
+              <p className="font-semibold leading-tight">Disciplinas de estudo</p>
               <p className="text-xs text-muted-foreground leading-tight">
-                {interesses.length}/{interMax} seleccionados
+                {interesses.length}/{interMax} seleccionadas
               </p>
             </div>
           </div>
@@ -406,7 +406,7 @@ const Perfil = () => {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Nenhum interesse seleccionado. Clica em <strong>Editar</strong> para escolher.
+                Nenhuma disciplina seleccionada. Clica em <strong>Editar</strong> para escolher.
               </p>
             )}
 
@@ -419,7 +419,7 @@ const Perfil = () => {
                       <Star className="h-5 w-5 text-sky-600 shrink-0" />
                       <div>
                         <p className="text-sm font-bold text-sky-900 leading-tight">Plano Básico</p>
-                        <p className="text-xs text-sky-700/80 leading-tight">Até {BASIC_MAX} interesses · {BASIC_COST.toLocaleString("pt-PT")} AOA</p>
+                        <p className="text-xs text-sky-700/80 leading-tight">Até {BASIC_MAX} disciplinas · {BASIC_COST.toLocaleString("pt-PT")} AOA</p>
                       </div>
                     </div>
                     <Button size="sm" className="rounded-full bg-sky-600 hover:bg-sky-700 text-white shrink-0" disabled={!!buyingTier} onClick={() => buyTier(10)}>
@@ -432,7 +432,7 @@ const Perfil = () => {
                     <Zap className="h-5 w-5 text-violet-600 shrink-0" />
                     <div>
                       <p className="text-sm font-bold text-violet-900 leading-tight">Plano Pro</p>
-                      <p className="text-xs text-violet-700/80 leading-tight">Até {PRO_MAX} interesses · {PRO_COST.toLocaleString("pt-PT")} AOA</p>
+                      <p className="text-xs text-violet-700/80 leading-tight">Até {PRO_MAX} disciplinas · {PRO_COST.toLocaleString("pt-PT")} AOA</p>
                     </div>
                   </div>
                   <Button size="sm" className="rounded-full bg-violet-600 hover:bg-violet-700 text-white shrink-0" disabled={!!buyingTier} onClick={() => buyTier(30)}>
