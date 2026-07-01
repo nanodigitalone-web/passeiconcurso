@@ -84,8 +84,9 @@ Todas aplicadas em **Neon**. 010–013 ainda **não confirmadas em local** (Dock
 indisponível) — aplicar quando o ambiente local estiver disponível.
 
 ## 6. Ações pendentes do DONO (externas)
-- **Rotar a ANTHROPIC_API_KEY** antes do lançamento (foi colada no chat → exposta).
-  Nova chave só no Render (env `ANTHROPIC_API_KEY`). Nunca no chat/código.
+- **Rotar a ANTHROPIC_API_KEY** após terminar a geração de questões (colada no chat
+  novamente em 2026-07-01). Chave guardada em `server/.env` (gitignored) com nome
+  "passeiclaude". Após rotação, actualizar `server/.env` E o Render.
 - **Rotar a password da Neon** (também foi partilhada no chat).
 - **UptimeRobot**: monitorizar `https://passei-api.onrender.com/health` (não a raiz).
 - Confirmar envs no Render: DATABASE_URL (Neon), GOOGLE_CLIENT_ID, CORS_ORIGINS
@@ -94,16 +95,17 @@ indisponível) — aplicar quando o ambiente local estiver disponível.
 - **Google Cloud Console**: origens de produção autorizadas (já feito; confirmar).
 
 ## 7. Problemas conhecidos / em curso
-- **Repetição de questões**: categorias pequenas (77–200 q) esgotam → motor
-  cai no fallback e repete. SOLUÇÃO = encher com IA. **BLOQUEADO**: a conta
-  Anthropic ficou **SEM CRÉDITOS** (a geração parou em ≈6.600). Assim que o dono
-  adicionar créditos (console.anthropic.com → Plans & Billing), reiniciar
-  `bulk-generate.mjs` (já prioriza as categorias mais pequenas).
-- **Provider de geração migrado para Gemini** (grátis): `generateQuestions.ts` e
-  `bulk-generate.mjs` usam Gemini se `GEMINI_API_KEY` (modelo `gemini-2.0-flash`),
-  senão Anthropic Haiku. Por o `GEMINI_API_KEY` no Render (e dar-mo p/ correr o lote).
-- Comando p/ retomar a geração (de `server/`):
-  `GEMINI_API_KEY=... DATABASE_URL=<neon> DATABASE_SSL=true node scripts/bulk-generate.mjs 10000 15`
+- **Questões por disciplinas de interesse**: geração em curso (2026-07-01).
+  Script: `server/scripts/generate-interests.mjs`. Alvo: **500 questões por disciplina**
+  (85 disciplinas × 500 = 42.500 questões de disciplinas). Progresso: BD em ~10.100+.
+  Retomar se interrompido (a partir de `server/`):
+  `node scripts/generate-interests.mjs 500`  (lê `server/.env` automaticamente).
+- **Disciplinas cobertas**: 75 disciplinas de saúde (Medicina 25, Enfermagem 15,
+  Fisioterapia 15, Farmácia 15, Análises Clínicas 15) + 10 extra. Cada uma usa slug
+  como campo `disciplina` na BD (ex: `anatomia-humana-sistemica`).
+- **Questões de categorias** (minsa/medico etc.): BD em ~10.000. Alvo 15.000.
+  Retomar: `node scripts/bulk-generate.mjs 15000 15` (usa Anthropic se sem Gemini key).
+- Bundle frontend ~2.1MB (code-splitting é melhoria futura).
 - O admin já mostra o total REAL da BD (endpoint `/admin/questions-stats`); antes
   contava só a lista embutida (1072).
 - Bundle frontend ~2.1MB (code-splitting é melhoria futura).
