@@ -9,9 +9,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Check, Star, Users, Zap, Crown, ArrowRight, Loader2, BookOpen,
   Calendar, Lock, Search, Plus, X, AlertTriangle,
+  Stethoscope, Heart, Activity, Pill, Microscope, TrendingUp, Scale, Calculator, Settings,
 } from "lucide-react";
 import { subscriptionService, type Plan, type UserSubscription, type UserMembership, type FamilyMember } from "@/services/subscriptionService";
 import { AREAS, slugify } from "@/data/disciplinas";
+
+const AREA_ICON: Record<string, React.ReactNode> = {
+  "Medicina":          <Stethoscope className="h-4 w-4" />,
+  "Enfermagem":        <Heart className="h-4 w-4" />,
+  "Fisioterapia":      <Activity className="h-4 w-4" />,
+  "Farmácia":          <Pill className="h-4 w-4" />,
+  "Análises Clínicas": <Microscope className="h-4 w-4" />,
+  "Economia":          <TrendingUp className="h-4 w-4" />,
+  "Direito":           <Scale className="h-4 w-4" />,
+  "Contabilidade":     <Calculator className="h-4 w-4" />,
+  "Gestão":            <BookOpen className="h-4 w-4" />,
+  "Engenharias":       <Settings className="h-4 w-4" />,
+};
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -72,6 +86,7 @@ const Planos = () => {
 
   // Discipline selection state
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [fixedDiscs, setFixedDiscs] = useState<Set<string>>(new Set()); // already saved, can't be removed
   const [saving, setSaving] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
@@ -91,8 +106,11 @@ const Planos = () => {
       setSub(subscription);
       setMembership(m);
       setMembers(mems);
-      const existing = subscription?.disciplines ?? m?.disciplines ?? [];
-      if (existing.length > 0) setSelected(new Set(existing));
+      const existing = (subscription?.disciplines ?? m?.disciplines ?? []) as string[];
+      if (existing.length > 0) {
+        setSelected(new Set(existing));
+        setFixedDiscs(new Set(existing));
+      }
       if (subscription?.status === "active" || m?.sub_status === "active") {
         setTab("meu");
       }
@@ -154,7 +172,7 @@ const Planos = () => {
   };
 
   const toggle = (slug: string) => {
-    if (isLocked) return;
+    if (isLocked || fixedDiscs.has(slug)) return; // fixed = already saved, can't remove
     setSelected(prev => {
       const next = new Set(prev);
       if (next.has(slug)) { next.delete(slug); }
@@ -167,15 +185,17 @@ const Planos = () => {
   };
 
   const confirmar = async () => {
+    const newOnes = Array.from(selected).filter(s => !fixedDiscs.has(s));
     if (selected.size === 0) return toast.error("Selecciona pelo menos 1 disciplina.");
+    if (newOnes.length === 0) return toast.info("Não há disciplinas novas para guardar.");
     if (!confirmed) { setConfirmed(true); return; }
     setSaving(true);
     try {
-      await subscriptionService.chooseDisciplines(subId, Array.from(selected));
-      toast.success("Disciplinas guardadas! Não podem ser alteradas.");
-      const arr = Array.from(selected);
-      setSub(p => p ? { ...p, disciplines: arr, disciplines_locked: true } : p);
-      setMembership(p => p ? { ...p, disciplines: arr, disciplines_locked: true } : p);
+      const result = await subscriptionService.chooseDisciplines(subId, Array.from(selected));
+      toast.success("Disciplinas guardadas.");
+      setSub(p => p ? { ...p, disciplines: result.disciplines, disciplines_locked: result.disciplines_locked } : p);
+      setMembership(p => p ? { ...p, disciplines: result.disciplines, disciplines_locked: result.disciplines_locked } : p);
+      setFixedDiscs(new Set(result.disciplines));
       setConfirmed(false);
     } catch (e: any) {
       if ((e?.message ?? "").includes("already_locked")) toast.info("As disciplinas já foram definidas.");
@@ -395,7 +415,7 @@ const Planos = () => {
                 </h2>
                 {!isLocked && (
                   <span className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                    {selected.size} / {maxDisc} seleccionadas
+                    {selected.size} / {maxDisc} escolhidas
                   </span>
                 )}
               </div>
@@ -417,7 +437,9 @@ const Planos = () => {
                 /* Discipline picker */
                 <>
                   <p className="mb-3 text-sm text-muted-foreground">
-                    Escolhe até <strong>{maxDisc}</strong> disciplina{maxDisc > 1 ? "s" : ""}. <strong>Esta escolha é permanente.</strong>
+                    Podes escolher até <strong>{maxDisc}</strong> disciplina{maxDisc > 1 ? "s" : ""}.
+                    {fixedDiscs.size > 0 && ` As ${fixedDiscs.size} já escolhidas não podem ser removidas.`}
+                    {maxDisc > selected.size && ` Podes adicionar mais ${maxDisc - selected.size}.`}
                   </p>
 
                   {confirmed && (
@@ -425,9 +447,9 @@ const Planos = () => {
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                         <div>
-                          <p className="text-sm font-semibold text-amber-800">Confirmar selecção permanente</p>
+                          <p className="text-sm font-semibold text-amber-800">Confirmar adição</p>
                           <p className="text-xs text-amber-700 mt-0.5">
-                            Depois de confirmares, <strong>não podes mudar</strong> as disciplinas.
+                            As disciplinas adicionadas não poderão ser removidas.
                           </p>
                         </div>
                       </div>
@@ -441,7 +463,9 @@ const Planos = () => {
                       return (
                         <div key={area.area}>
                           <div className="mb-2 flex items-center gap-2">
-                            <span className="text-base">{area.emoji}</span>
+                            <span className="flex h-5 w-5 items-center justify-center text-muted-foreground">
+                              {AREA_ICON[area.area] ?? <BookOpen className="h-4 w-4" />}
+                            </span>
                             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{area.area}</h3>
                             {anySelected && (
                               <Badge variant="secondary" className="ml-auto text-[10px]">
@@ -452,16 +476,17 @@ const Planos = () => {
                           <div className="grid gap-2 sm:grid-cols-2">
                             {areaDiscs.map(({ nome, slug }) => {
                               const isSel = selected.has(slug);
-                              const isDisabled = !isSel && selected.size >= maxDisc;
+                              const isFixed = fixedDiscs.has(slug);
+                              const isDisabled = isFixed || (!isSel && selected.size >= maxDisc);
                               return (
                                 <button key={slug} onClick={() => toggle(slug)}
                                   disabled={isDisabled}
                                   className={`flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition-all
                                     ${isSel ? "border-primary bg-primary/8 font-medium" : "border-border/60 bg-background"}
-                                    ${isDisabled ? "cursor-not-allowed opacity-40" : "hover:border-primary/40"}`}>
+                                    ${isFixed ? "cursor-default" : isDisabled ? "cursor-not-allowed opacity-40" : "hover:border-primary/40"}`}>
                                   <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all
                                     ${isSel ? "border-primary bg-primary text-white" : "border-muted-foreground/40"}`}>
-                                    {isSel && <Check className="h-3 w-3" />}
+                                    {isSel && (isFixed ? <Lock className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
                                   </div>
                                   <span className="leading-tight">{nome}</span>
                                 </button>
@@ -473,26 +498,28 @@ const Planos = () => {
                     })}
                   </div>
 
+                  {Array.from(selected).some(s => !fixedDiscs.has(s)) && (
                   <div className="sticky bottom-4 mt-6 space-y-2">
-                    <Button onClick={confirmar} disabled={saving || selected.size === 0}
+                    <Button onClick={confirmar} disabled={saving}
                       className={`w-full rounded-full py-3 text-base font-semibold shadow-lg ${confirmed ? "bg-amber-600 hover:bg-amber-700" : ""}`}>
                       {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       {confirmed
-                        ? `Confirmar ${selected.size} disciplina${selected.size !== 1 ? "s" : ""} (permanente)`
-                        : `Guardar ${selected.size} disciplina${selected.size !== 1 ? "s" : ""}`}
+                        ? `Confirmar adição (não reversível)`
+                        : `Guardar ${Array.from(selected).filter(s => !fixedDiscs.has(s)).length} nova${Array.from(selected).filter(s => !fixedDiscs.has(s)).length !== 1 ? "s" : ""} disciplina${Array.from(selected).filter(s => !fixedDiscs.has(s)).length !== 1 ? "s" : ""}`}
                     </Button>
                     {confirmed && (
                       <button onClick={() => setConfirmed(false)} className="w-full text-center text-xs text-muted-foreground underline">
-                        Cancelar e continuar a editar
+                        Cancelar
                       </button>
                     )}
                   </div>
+                  )}
                 </>
               )}
             </div>
 
-            {/* ── Estudar CTAs (only when disciplines locked) ── */}
-            {isLocked && discArr.length > 0 && (
+            {/* ── Estudar CTAs (once at least one discipline is saved) ── */}
+            {discArr.length > 0 && (
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button className="w-full rounded-full" onClick={() => navigate("/aprender/sessao/plano/meu-plano")}>
                   Modo Aprender

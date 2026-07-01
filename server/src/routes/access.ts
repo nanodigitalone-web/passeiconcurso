@@ -37,6 +37,22 @@ accessRouter.get("/check", requireAuth, async (req: AuthedRequest, res) => {
     return res.json({ hasPaidAccess: hasPaid, expiresAt: hasPaid ? Infinity : null });
   }
 
+  // Virtual "plano" category: grant access if user has an active subscription with disciplines locked.
+  if (conc === "plano") {
+    const r = await query(
+      `SELECT 1 FROM user_subscriptions
+       WHERE user_id = $1 AND status = 'active' AND expires_at > now() AND disciplines_locked = true
+       UNION ALL
+       SELECT 1 FROM subscription_members sm
+       JOIN user_subscriptions us ON us.id = sm.subscription_id
+       WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now() AND sm.disciplines_locked = true
+       LIMIT 1`,
+      [req.userId],
+    );
+    const hasPaid = !!r.rows[0];
+    return res.json({ hasPaidAccess: hasPaid, expiresAt: hasPaid ? Infinity : null });
+  }
+
   const r = await query(
     `select expires_at from category_access
        where user_id = $1 and concurso_id = $2 and categoria_id = $3 limit 1`,

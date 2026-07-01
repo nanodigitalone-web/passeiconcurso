@@ -148,34 +148,43 @@ subscriptionsRouter.post("/:id/disciplines", requireAuth, async (req: AuthedRequ
         [req.params.id, req.userId]
       );
       if (!memberRow) return res.status(403).json({ error: "forbidden" });
+      // Only block if already at max (fully locked)
       if (memberRow.disciplines_locked) return res.status(409).json({ error: "already_locked" });
     } else {
       if (sub.disciplines_locked) return res.status(409).json({ error: "already_locked" });
       if (sub.status !== 'active') return res.status(400).json({ error: "subscription_not_active" });
     }
 
-    const { disciplines } = req.body || {};
-    if (!Array.isArray(disciplines) || disciplines.length === 0) {
+    const { disciplines: incoming } = req.body || {};
+    if (!Array.isArray(incoming) || incoming.length === 0) {
       return res.status(400).json({ error: "disciplines required" });
     }
     const maxDisc = sub.max_disciplines;
-    if (disciplines.length > maxDisc) {
+
+    // UNION with existing: can add disciplines, cannot remove already-chosen ones
+    const existing: string[] = isMember
+      ? (Array.isArray(memberRow.disciplines) ? memberRow.disciplines : JSON.parse(memberRow.disciplines || '[]'))
+      : (Array.isArray(sub.disciplines) ? sub.disciplines : JSON.parse(sub.disciplines || '[]'));
+    const merged = Array.from(new Set([...existing, ...incoming]));
+    if (merged.length > maxDisc) {
       return res.status(400).json({ error: `max_${maxDisc}_disciplines` });
     }
+    // Only lock when all slots are filled
+    const shouldLock = merged.length >= maxDisc;
 
     if (isMember && memberRow) {
       await query(
-        "UPDATE subscription_members SET disciplines = $1, disciplines_locked = true WHERE id = $2",
-        [JSON.stringify(disciplines), memberRow.id]
+        "UPDATE subscription_members SET disciplines = $1, disciplines_locked = $2 WHERE id = $3",
+        [JSON.stringify(merged), shouldLock, memberRow.id]
       );
     } else {
       await query(
-        "UPDATE user_subscriptions SET disciplines = $1, disciplines_locked = true WHERE id = $2",
-        [JSON.stringify(disciplines), sub.id]
+        "UPDATE user_subscriptions SET disciplines = $1, disciplines_locked = $2 WHERE id = $3",
+        [JSON.stringify(merged), shouldLock, sub.id]
       );
     }
 
-    res.json({ ok: true, disciplines });
+    res.json({ ok: true, disciplines: merged, disciplines_locked: shouldLock });
   } catch (e: any) {
     res.status(500).json({ error: e?.message });
   }

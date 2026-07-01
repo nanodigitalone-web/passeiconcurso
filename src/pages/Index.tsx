@@ -334,13 +334,6 @@ const Index = () => {
               accent: "bg-violet-100 text-violet-700",
             },
             {
-              to: "/interesses",
-              icon: BookMarked,
-              label: "Disciplinas",
-              desc: temInteresses ? "Editar disciplinas" : "Personalizar estudo",
-              accent: "bg-sky-100 text-sky-700",
-            },
-            {
               to: "/partilhar",
               icon: Gift,
               label: "Convidar",

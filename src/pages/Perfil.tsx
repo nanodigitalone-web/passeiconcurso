@@ -353,8 +353,8 @@ const Perfil = () => {
         </Link>
       </div>
 
-      {/* ── INTERESSES ───────────────────────────────────────────────────────── */}
-      <Card className="mb-5 overflow-hidden border-border/60 shadow-card">
+      {/* ── INTERESSES removido — gerido em /planos ── */}
+      {false && <Card className="mb-5 overflow-hidden border-border/60 shadow-card">
         {/* Header sempre visível */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div className="flex items-center gap-2">
@@ -534,7 +534,7 @@ const Perfil = () => {
             </div>
           </div>
         )}
-      </Card>
+      </Card>}
 
       {/* ── INFORMAÇÕES PESSOAIS ─────────────────────────────────────────────── */}
       <Card className="mb-4 overflow-hidden border-border/60 shadow-card">

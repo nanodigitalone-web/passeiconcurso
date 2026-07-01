@@ -76,7 +76,7 @@ export const subscriptionService = {
     return r.url || r.path;
   },
 
-  async chooseDisciplines(subscriptionId: string, disciplines: string[]): Promise<{ ok: boolean }> {
+  async chooseDisciplines(subscriptionId: string, disciplines: string[]): Promise<{ ok: boolean; disciplines: string[]; disciplines_locked: boolean }> {
     return await api.post(`/subscriptions/${subscriptionId}/disciplines`, { disciplines });
   },
 

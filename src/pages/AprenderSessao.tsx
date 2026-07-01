@@ -63,13 +63,14 @@ const AprenderSessao = () => {
 
 
   const isInteresses = concursoId === "interesses";
-  const catNome = cat?.nome ?? (isInteresses ? "Estudo por Interesses" : "");
+  const isPlano = concursoId === "plano";
+  const catNome = cat?.nome ?? (isInteresses ? "Estudo por Interesses" : isPlano ? "Estudo por Disciplinas" : "");
   const gate = useAccessGate(concursoId, categoriaId);
 
   // Load the question set from the engine (mixes AI + real-exam questions, so
   // the trail never runs out) once access is confirmed.
   useEffect(() => {
-    if (!gate.hasAccess || (!cat && !isInteresses)) return;
+    if (!gate.hasAccess || (!cat && !isInteresses && !isPlano)) return;
     setQLoading(true);
     quizService
       .loadQuestionSet(concursoId!, categoriaId!, SESSION_SIZE)
@@ -128,7 +129,7 @@ const AprenderSessao = () => {
     );
   }
 
-  if (!cat && !isInteresses) return <Navigate to="/aprender" replace />;
+  if (!cat && !isInteresses && !isPlano) return <Navigate to="/aprender" replace />;
   if (!gate.loading && !gate.hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-soft px-4 pt-10">
@@ -138,11 +139,11 @@ const AprenderSessao = () => {
       </div>
     );
   }
-  // Still loading lives or questions (async) — show a loader, don't redirect.
-  if (lives === null || qLoading) {
+  // Still loading gate/lives/questions — show spinner, don't redirect.
+  if (gate.loading || lives === null || qLoading) {
     return (
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
-        <p className="text-sm text-muted-foreground animate-pulse">A carregar…</p>
+        <Zap className="h-8 w-8 animate-pulse text-primary" />
       </div>
     );
   }
