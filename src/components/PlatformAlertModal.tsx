@@ -5,43 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  accessService,
-  battlesService,
-  friendsService,
-  notificationsService,
-} from "@/services";
-import { Bell, Crown, Sparkles, Swords, UserPlus, Zap } from "lucide-react";
+import { battlesService, friendsService } from "@/services";
+import { Sparkles, Swords, UserPlus, Zap } from "lucide-react";
 
-type AlertColor = "primary" | "indigo" | "rose" | "amber" | "teal";
+type AlertColor = "rose" | "indigo";
 
 type Alert = {
   key: string;
   emoji: string;
-  icon: typeof Bell;
+  icon: typeof Swords;
   color: AlertColor;
   title: string;
   body: string;
   primary: { label: string; action: () => void | Promise<void> };
-  secondary?: { label: string; action: () => void | Promise<void> };
+  secondary?: { label: string; action: () => void };
   avatarUrl?: string | null;
   avatarName?: string | null;
 };
 
 const GRADIENT: Record<AlertColor, string> = {
-  primary: "bg-gradient-primary",
-  indigo:  "bg-gradient-to-br from-indigo-500 to-violet-700",
-  rose:    "bg-gradient-to-br from-rose-500 to-pink-700",
-  amber:   "bg-gradient-to-br from-amber-400 to-orange-600",
-  teal:    "bg-gradient-to-br from-teal-500 to-emerald-700",
+  rose:   "bg-gradient-to-br from-rose-500 to-pink-700",
+  indigo: "bg-gradient-to-br from-indigo-500 to-violet-700",
 };
-
-const MOTIVATION = [
-  { title: "Bom te ver de volta!", body: "Cada simulado aproxima-te da aprovação. Vamos a mais um hoje?" },
-  { title: "Constância vence talento!", body: "Os melhores candidatos treinam todos os dias. Continua o teu ritmo!" },
-  { title: "Hoje é dia de evoluir!", body: "Reserva uns minutos e responde a algumas questões. O teu futuro agradece." },
-  { title: "Foco no objetivo!", body: "Pequenos passos diários constroem grandes resultados. Bora estudar!" },
-];
 
 export const PlatformAlertModal = () => {
   const { user } = useAuth();
@@ -58,117 +43,65 @@ export const PlatformAlertModal = () => {
 
     let active = true;
     (async () => {
-      const [friends, battles, notifs, hasPaid] = await Promise.all([
+      const [friends, battles] = await Promise.all([
         friendsService.list().catch(() => []),
         battlesService.list().catch(() => []),
-        notificationsService.listForUser(user.id, 20).catch(() => []),
-        accessService.hasAnyPaidAccess(user.id).catch(() => true),
       ]);
       if (!active) return;
 
       const alerts: Alert[] = [];
 
-      // Friend requests (incoming pending)
-      friends
-        .filter((f) => f.status === "pending" && f.direction === "incoming")
-        .slice(0, 3)
-        .forEach((f) => {
-          alerts.push({
-            key: `friend-${f.friendship_id}`,
-            emoji: "🤝",
-            icon: UserPlus,
-            color: "indigo" as AlertColor,
-            title: "Novo pedido de amizade",
-            body: `${f.nome} quer conectar-se contigo para trilhas e batalhas da semana.`,
-            avatarUrl: f.avatar_url,
-            avatarName: f.nome,
-            primary: {
-              label: "Aceitar",
-              action: async () => {
-                await friendsService.respond(f.friendship_id, true);
-              },
-            },
-            secondary: {
-              label: "Agora não",
-              action: () => {},
-            },
-          });
-        });
-
-      // Battle invites / awaiting battles
-      battles
-        .filter((b) => b.status !== "finished")
-        .slice(0, 3)
-        .forEach((b) => {
-          alerts.push({
-            key: `battle-${b.id}`,
-            emoji: "⚔️",
-            icon: Swords,
-            color: "rose" as AlertColor,
-            title: "Batalha de amigos!",
-            body: `Tens uma batalha com ${b.opponent_nome} à tua espera. Mostra quem manda!`,
-            avatarUrl: b.opponent_avatar,
-            avatarName: b.opponent_nome,
-            primary: {
-              label: "Jogar agora",
-              action: () => navigate(`/batalha/${b.id}`),
-            },
-            secondary: { label: "Mais tarde", action: () => {} },
-          });
-        });
-
-      // Unread generic notifications
-      const unread = notifs.filter((n) => !n.read);
-      unread.slice(0, 3).forEach((n) => {
+      // Pedido de amizade pendente mais recente (máx 1)
+      const pendingFriend = friends.find(
+        (f) => f.status === "pending" && f.direction === "incoming",
+      );
+      if (pendingFriend) {
         alerts.push({
-          key: `notif-${n.id}`,
-          emoji: "🔔",
-          icon: Bell,
-          color: "teal" as AlertColor,
-          title: n.title,
-          body: n.body,
-          primary: { label: "Ver notificações", action: () => navigate("/notificacoes") },
-          secondary: { label: "Fechar", action: () => {} },
-        });
-      });
-      if (unread.length > 0) {
-        notificationsService.markAllRead(user.id).catch(() => {});
-      }
-
-      // Subscription / full access reminder
-      if (!hasPaid) {
-        alerts.push({
-          key: "subscription",
-          emoji: "🔓",
-          icon: Crown,
-          color: "amber" as AlertColor,
-          title: "Desbloqueia o acesso completo",
-          body: "Tens acesso limitado. Ativa o acesso completo e estuda sem limites para garantir a tua aprovação.",
-          primary: { label: "Obter acesso", action: () => navigate("/concursos") },
-          secondary: { label: "Talvez depois", action: () => {} },
+          key: `friend-${pendingFriend.friendship_id}`,
+          emoji: "🤝",
+          icon: UserPlus,
+          color: "indigo",
+          title: "Pedido de amizade",
+          body: `${pendingFriend.nome} quer conectar-se contigo para batalhas.`,
+          avatarUrl: pendingFriend.avatar_url,
+          avatarName: pendingFriend.nome,
+          primary: {
+            label: "Aceitar",
+            action: async () => {
+              await friendsService.respond(pendingFriend.friendship_id, true);
+            },
+          },
+          secondary: { label: "Agora não", action: () => {} },
         });
       }
 
-      // Always-on motivational card
-      const m = MOTIVATION[Math.floor(Math.random() * MOTIVATION.length)];
-      alerts.push({
-        key: "motivation",
-        emoji: "🚀",
-        icon: Sparkles,
-        color: "primary" as AlertColor,
-        title: m.title,
-        body: m.body,
-        primary: { label: "Vamos lá", action: () => {} },
-      });
+      // Batalha pendente mais recente (máx 1)
+      const pendingBattle = battles.find((b) => b.status !== "finished");
+      if (pendingBattle) {
+        alerts.push({
+          key: `battle-${pendingBattle.id}`,
+          emoji: "⚔️",
+          icon: Swords,
+          color: "rose",
+          title: "Batalha à tua espera!",
+          body: `${pendingBattle.opponent_nome} desafiou-te. Aceita e mostra quem manda!`,
+          avatarUrl: pendingBattle.opponent_avatar,
+          avatarName: pendingBattle.opponent_nome,
+          primary: {
+            label: "Jogar agora",
+            action: () => navigate(`/batalha/${pendingBattle.id}`),
+          },
+          secondary: { label: "Mais tarde", action: () => {} },
+        });
+      }
 
+      if (alerts.length === 0) return;
       setQueue(alerts);
       setIndex(0);
-      setOpen(alerts.length > 0);
+      setOpen(true);
     })();
 
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [user?.id]);
 
   const current = queue[index];
@@ -184,18 +117,14 @@ export const PlatformAlertModal = () => {
   };
 
   const run = async (action?: () => void | Promise<void>) => {
-    try {
-      await action?.();
-    } finally {
-      advance();
-    }
+    try { await action?.(); } finally { advance(); }
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && advance()}>
       <DialogContent className="w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-2xl border-0 p-0">
-        <div className={cn("relative p-8 text-center text-white", GRADIENT[current.color ?? "primary"])}>
-          <div className="pointer-events-none absolute inset-0 opacity-25">
+        <div className={cn("relative p-8 text-center text-white", GRADIENT[current.color])}>
+          <div className="pointer-events-none absolute inset-0 opacity-20">
             {[Sparkles, Zap, Sparkles, Zap].map((S, i) => (
               <S
                 key={i}
@@ -206,18 +135,12 @@ export const PlatformAlertModal = () => {
           </div>
 
           <div className="relative">
-            {current.avatarName ? (
-              <Avatar className="mx-auto h-20 w-20 ring-4 ring-white/40 shadow-elegant animate-scale-in">
-                <AvatarImage src={current.avatarUrl || undefined} />
-                <AvatarFallback className="bg-white/20 font-display text-3xl font-black text-white">
-                  {current.avatarName.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/20 animate-scale-in">
-                <Icon className="h-10 w-10 animate-float" />
-              </div>
-            )}
+            <Avatar className="mx-auto h-20 w-20 ring-4 ring-white/40 shadow-elegant animate-scale-in">
+              <AvatarImage src={current.avatarUrl || undefined} />
+              <AvatarFallback className="bg-white/20 font-display text-3xl font-black text-white">
+                {current.avatarName?.charAt(0).toUpperCase() ?? <Icon className="h-8 w-8" />}
+              </AvatarFallback>
+            </Avatar>
 
             <p className="mt-5 text-5xl">{current.emoji}</p>
             <h2 className="mt-2 font-display text-2xl font-bold">{current.title}</h2>
@@ -230,7 +153,7 @@ export const PlatformAlertModal = () => {
                     key={i}
                     className={cn(
                       "h-1.5 rounded-full transition-all",
-                      i === index ? "w-5 bg-white" : "w-1.5 bg-white/40"
+                      i === index ? "w-5 bg-white" : "w-1.5 bg-white/40",
                     )}
                   />
                 ))}
