@@ -122,5 +122,80 @@ app.post("/cron/push", async (req, res) => {
   res.json({ ok: true, sent });
 });
 
+// ---- Bulk question generation (triggered externally via x-cron-secret) ----
+// Runs in the background — returns 202 immediately so the caller doesn't time out.
+// Target: bring every weak category to ≥300 questions using Gemini.
+app.post("/cron/generate-bulk", async (req, res) => {
+  if (!process.env.CRON_SECRET || req.headers["x-cron-secret"] !== process.env.CRON_SECRET)
+    return res.status(401).json({ error: "unauthorized" });
+  if (!process.env.GEMINI_API_KEY)
+    return res.status(501).json({ error: "GEMINI_API_KEY not set" });
+
+  res.json({ ok: true, message: "Geração iniciada em background" });
+
+  // Runs entirely in the background after responding.
+  (async () => {
+    const { generateQuestions } = await import("./lib/generateQuestions.js");
+    const targets: Array<{ concursoId: string; categoriaId: string; disciplinas: string[] }> = [
+      { concursoId: "minsa", categoriaId: "psicologia",
+        disciplinas: ["Psicologia da Saúde", "Avaliação Psicológica", "Psicopatologia", "Ética em Psicologia", "Psicologia Clínica"] },
+      { concursoId: "uan", categoriaId: "medicina",
+        disciplinas: ["Língua Portuguesa", "Matemática", "Química", "Biologia", "Física"] },
+      { concursoId: "minsa", categoriaId: "cardiopneumologia",
+        disciplinas: ["Hipertensão Pulmonar", "Vascular", "Função Pulmonar", "ECG", "Cardiologia Clínica"] },
+      { concursoId: "minsa", categoriaId: "farmaceutico",
+        disciplinas: ["Farmacovigilância", "Farmacodinâmica", "Antibioterapia", "Vias de Administração",
+                      "Farmacocinética", "Legislação", "Farmacotécnica", "Farmacologia", "Farmácia Hospitalar"] },
+      { concursoId: "minsa", categoriaId: "fisioterapeuta",
+        disciplinas: ["Amputados", "Órteses", "Reabilitação Ortopédica", "Reabilitação cardio-respiratória",
+                      "Reabilitação Neuro", "Reabilitação Cardio", "Reabilitação Respiratória", "Cinesiologia", "Avaliação"] },
+      { concursoId: "minsa", categoriaId: "laboratorio",
+        disciplinas: ["Qualidade", "Biossegurança", "Urinálise", "Imunologia",
+                      "Parasitologia", "Imunohematologia", "Microbiologia", "Hematologia", "Bioquímica"] },
+      { concursoId: "minsa", categoriaId: "tec-enfermagem",
+        disciplinas: ["Farmacologia básica", "Sinais Vitais", "Medicamentos", "Procedimentos Básicos",
+                      "Ética", "Farmacologia", "Emergências", "Saúde Pública"] },
+      { concursoId: "licenciatura-medicina", categoriaId: "gineco-obstetricia",
+        disciplinas: ["Trabalho de Parto e Puerpério", "Ginecologia Geral",
+                      "Ciclo Menstrual e Endocrinologia Reprodutiva", "Assistência Pré-Natal", "Urgências Obstétricas"] },
+      { concursoId: "minsa", categoriaId: "enfermeiro",
+        disciplinas: ["Anatomia", "Fisiologia", "Farmacologia", "Saúde Pública", "Ética", "Emergências", "Pediatria"] },
+      { concursoId: "minsa", categoriaId: "medico",
+        disciplinas: ["Clínica Geral", "Cirurgia", "Saúde Pública", "Pediatria", "Farmacologia", "Ética Médica"] },
+    ];
+
+    let totalInserted = 0;
+    const BATCHES = 4;   // 4 × 20 = 80 questões por disciplina
+    const DELAY_MS = 4500; // 4.5s entre chamadas → fica abaixo dos 15 RPM
+
+    for (const { concursoId, categoriaId, disciplinas } of targets) {
+      for (const disciplina of disciplinas) {
+        for (let b = 0; b < BATCHES; b++) {
+          let wait = 15000;
+          for (let attempt = 0; attempt < 6; attempt++) {
+            try {
+              const r = await generateQuestions({ concursoId, categoriaId, disciplina, count: 20 });
+              totalInserted += r.inserted;
+              console.log(`[bulk] ${concursoId}/${categoriaId}/${disciplina} +${r.inserted} (total: ${totalInserted})`);
+              await new Promise((s) => setTimeout(s, DELAY_MS));
+              break;
+            } catch (e: any) {
+              if (e?.message?.includes("429") || e?.message?.includes("gemini_429")) {
+                console.log(`[bulk] rate-limit, aguardar ${wait / 1000}s...`);
+                await new Promise((s) => setTimeout(s, wait));
+                wait = Math.min(wait * 2, 300_000);
+              } else {
+                console.error(`[bulk] erro ${disciplina}:`, e?.message);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    console.log(`[bulk] Concluído. Total inserido: ${totalInserted}`);
+  })().catch((e) => console.error("[bulk] erro fatal:", e));
+});
+
 const port = Number(process.env.PORT) || 8787;
 app.listen(port, () => console.log(`Passei API listening on :${port}`));
