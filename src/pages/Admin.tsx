@@ -28,7 +28,7 @@ import {
   Clock, GraduationCap, Plus, Phone, Image as ImageIcon, Coins, Banknote,
   Tag, ToggleLeft, ToggleRight, Calendar, TrendingUp, Zap, ArrowUpRight,
   ArrowDownRight, Activity, Target, DollarSign, Percent, Repeat2,
-  UserCheck, Flame,
+  UserCheck, Flame, Trophy, AlertTriangle, RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -240,6 +240,181 @@ const ChartCard = ({ title, sub, children }: { title: string; sub?: string; chil
   </Card>
 );
 
+/* ── Top user card / detail modal ───────────────────────────────────────────── */
+const RANK_MEDAL = ["🥇", "🥈", "🥉"];
+const RANK_BORDER = ["border-amber-300", "border-slate-300", "border-slate-400/50"];
+const RANK_BG    = ["from-amber-50/80 to-amber-100/20", "from-slate-50 to-slate-100/20", "from-muted/40"];
+
+const TopUserCard = ({ user, rank }: { user: any; rank: number }) => {
+  const [open, setOpen] = useState(false);
+  const accuracy = user.total_attempts > 0 ? Math.round((user.correct_attempts / user.total_attempts) * 100) : 0;
+  const hours = Math.floor((user.est_minutes ?? 0) / 60);
+  const mins  = (user.est_minutes ?? 0) % 60;
+  const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${user.est_minutes ?? 0}min`;
+
+  return (
+    <>
+      <Card
+        className={cn("border-2 p-4 shadow-card cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-b", RANK_BORDER[rank - 1], RANK_BG[rank - 1])}
+        onClick={() => setOpen(true)}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className="relative">
+            <Avatar className="h-12 w-12 ring-2 ring-border/40">
+              <AvatarImage src={user.avatar_url || undefined} />
+              <AvatarFallback className="bg-primary/10 font-bold text-primary text-lg">
+                {user.nome?.charAt(0)?.toUpperCase() || "?"}
+              </AvatarFallback>
+            </Avatar>
+            <span className="absolute -top-1.5 -right-1.5 text-lg leading-none">{RANK_MEDAL[rank - 1]}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold truncate">{user.nome || "Sem nome"}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="rounded-xl bg-background/70 px-2 py-1.5">
+            <p className="font-display font-bold text-lg leading-none">{(user.pontos_globais ?? 0).toLocaleString("pt-PT")}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">pts globais</p>
+          </div>
+          <div className="rounded-xl bg-background/70 px-2 py-1.5">
+            <p className="font-display font-bold text-lg leading-none">{accuracy}%</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">precisão</p>
+          </div>
+        </div>
+        <p className="mt-2 text-center text-[11px] text-primary/70">Ver detalhes →</p>
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-xl">{RANK_MEDAL[rank - 1]}</span> {user.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-16 w-16 ring-2 ring-border/40">
+                <AvatarImage src={user.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary/10 font-bold text-primary text-2xl">
+                  {user.nome?.charAt(0)?.toUpperCase() || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-base">{user.nome}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+                {user.universidade && <p className="text-xs text-muted-foreground">{user.universidade}{user.curso ? ` · ${user.curso}` : ""}{user.ano ? ` · ${user.ano}º ano` : ""}</p>}
+              </div>
+            </div>
+            {user.bio && (
+              <p className="text-sm italic text-muted-foreground border-l-2 border-primary/30 pl-3">{user.bio}</p>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "Pontos globais",       value: (user.pontos_globais ?? 0).toLocaleString("pt-PT") },
+                { label: "Saldo disponível",     value: (user.pontos ?? 0).toLocaleString("pt-PT") },
+                { label: "Questões respondidas", value: (user.total_attempts ?? 0).toLocaleString("pt-PT") },
+                { label: "Precisão",             value: `${accuracy}%` },
+                { label: "Simulados",            value: (user.simulado_count ?? 0).toLocaleString("pt-PT") },
+                { label: "Aprender",             value: (user.aprender_count ?? 0).toLocaleString("pt-PT") },
+                { label: "Tempo estimado",       value: timeStr },
+                { label: "Streak",               value: `${user.streak ?? 0} dias` },
+                { label: "Planos ativos",        value: user.access_count ?? 0 },
+                { label: "Moedas",               value: (user.moedas ?? 0).toLocaleString("pt-PT") },
+                { label: "Membro desde",         value: user.created_at ? new Date(user.created_at).toLocaleDateString("pt-PT") : "—" },
+                { label: "Último acesso",        value: user.last_seen ? formatRelative(user.last_seen) : "nunca" },
+              ].map(it => (
+                <div key={it.label} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+                  <p className="text-[10px] uppercase font-semibold tracking-wide text-muted-foreground">{it.label}</p>
+                  <p className="font-display font-bold text-base leading-tight">{it.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+/* ── Warn user dialog ────────────────────────────────────────────────────────── */
+const WarnUserDialog = ({ user, onDone }: { user: any; onDone: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    if (!msg.trim()) return;
+    setBusy(true);
+    try {
+      await adminService.warnUser(user.id, msg.trim());
+      toast.success("Advertência enviada");
+      setOpen(false); setMsg(""); onDone();
+    } catch (e: any) { toast.error(e.message ?? "Erro"); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" title="Advertir utilizador"><AlertTriangle className="h-4 w-4" /></Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Advertência · {user.nome}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">A mensagem será enviada como notificação ao utilizador.</p>
+          <Textarea
+            placeholder="Motivo da advertência…"
+            value={msg}
+            onChange={e => setMsg(e.target.value)}
+            rows={4}
+          />
+          <Button onClick={send} disabled={busy || !msg.trim()} className="w-full rounded-full">
+            {busy ? "A enviar…" : "Enviar advertência"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+/* ── Ban user dialog ─────────────────────────────────────────────────────────── */
+const BanUserDialog = ({ user, onDone }: { user: any; onDone: () => void }) => {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const ban = async () => {
+    if (!confirm(`Suspender a conta de ${user.nome}? Esta ação pode ser revertida via edição de perfil.`)) return;
+    setBusy(true);
+    try {
+      await adminService.banUser(user.id, reason.trim() || undefined);
+      toast.success("Conta suspensa"); setOpen(false); setReason(""); onDone();
+    } catch (e: any) { toast.error(e.message ?? "Erro"); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="destructive" title="Suspender conta"><Ban className="h-4 w-4" /></Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Suspender conta · {user.nome}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">O utilizador ficará bloqueado e receberá uma notificação.</p>
+          <Textarea
+            placeholder="Motivo (opcional, será enviado ao utilizador)…"
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            rows={3}
+          />
+          <Button onClick={ban} disabled={busy} variant="destructive" className="w-full rounded-full">
+            {busy ? "A suspender…" : "Confirmar suspensão"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const StatsTab = () => {
   const [m, setM] = useState<Awaited<ReturnType<typeof adminService.getMetrics>> | null>(null);
   const [q, setQ] = useState<{
@@ -248,11 +423,13 @@ const StatsTab = () => {
     byCat: { concurso_id: string; categoria_id: string; n: number }[];
   }>({ total: 0, bySource: [], byCat: [] });
   const [s, setS] = useState({ users: 0, blocked: 0, hidden: 0, paid: 0, codesUsed: 0, codesAvail: 0, payments: 0 });
+  const [topUsers, setTopUsers] = useState<any[]>([]);
 
   useEffect(() => {
     adminService.getMetrics().then(setM);
     adminService.getQuestionsStats().then(setQ);
     adminService.getStats().then(setS);
+    adminService.getTopUsers().then(setTopUsers);
   }, []);
 
   const seedCount = q.bySource.find(b => b.source === "seed")?.n ?? 0;
@@ -264,16 +441,26 @@ const StatsTab = () => {
       .sort((a, b) => b.n - a.n)
   , [q.byCat]);
 
+  const plansChartData = useMemo(() =>
+    (m?.plans ?? []).slice(0, 8).map(p => ({
+      name: quizService.getCategoria(p.concurso_id, p.categoria_id)?.nome ?? p.categoria_id,
+      total: p.total,
+      ativo: p.active,
+    }))
+  , [m?.plans]);
+
   const funnelData = m ? [
-    { name: "Registados", value: m.totalUsers,  fill: C.sky    },
-    { name: "Ativos 30d", value: m.mau,          fill: C.indigo },
-    { name: "Pagantes",   value: m.paidUsers,    fill: C.emerald},
+    { name: "Registados", value: m.totalUsers,           fill: C.sky     },
+    { name: "Ativos 30d", value: m.mau,                  fill: C.indigo  },
+    { name: "Pagantes",   value: m.paidUsers,             fill: C.emerald },
   ] : [];
 
-  const pieData = m ? m.modeBreakdown.map(r => ({
-    name: r.mode === "simulado" ? "Simulado" : r.mode === "aprender" ? "Aprender" : r.mode,
-    value: r.n,
-  })) : [];
+  const pieData = m ? m.modeBreakdown
+    .filter(r => r.mode)
+    .map(r => ({
+      name: r.mode === "simulado" ? "Simulado" : r.mode === "aprender" ? "Aprender" : r.mode,
+      value: r.n,
+    })) : [];
   const PIE_COLORS = [C.sky, C.emerald, C.violet, C.amber];
 
   if (!m) return (
@@ -282,182 +469,318 @@ const StatsTab = () => {
     </div>
   );
 
-  const ltvCacRatio = m.ltv > 0 ? "> 10x (orgânico)" : "—";
+  const ltvCacLabel = m.ltvCacRatio !== null
+    ? `${m.ltvCacRatio}x`
+    : m.cacAoa > 0 ? `CAC ≈ ${aoa(m.cacAoa)} (referido)` : "orgânico";
 
   return (
     <div className="space-y-8 animate-fade-in">
 
-      {/* ── CRESCIMENTO ─────────────────────────────────────────────────────── */}
+      {/* ══ 1. CRESCIMENTO ════════════════════════════════════════════════════ */}
       <section>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Crescimento</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricCard icon={<Users className="h-5 w-5" />}       label="Utilizadores totais"  value={m.totalUsers.toLocaleString("pt-PT")} accent="bg-sky-50 text-sky-600" />
-          <MetricCard icon={<UserCheck className="h-5 w-5" />}   label="Novos (30d)"          value={m.newUsers30d.toLocaleString("pt-PT")} delta={m.growthRate} deltaLabel="vs. 30d anteriores" accent="bg-indigo-50 text-indigo-600" />
-          <MetricCard icon={<TrendingUp className="h-5 w-5" />}  label="Novos (7d)"           value={m.newUsers7d.toLocaleString("pt-PT")} accent="bg-violet-50 text-violet-600" />
-          <MetricCard icon={<Activity className="h-5 w-5" />}    label="Taxa crescimento MoM" value={m.growthRate !== null ? `${m.growthRate >= 0 ? "+" : ""}${m.growthRate}%` : "—"} sub="mês anterior como base" accent={m.growthRate !== null && m.growthRate >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"} />
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Crescimento de Utilizadores</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <MetricCard icon={<Users className="h-5 w-5" />}     label="Total registados"     value={m.totalUsers.toLocaleString("pt-PT")} accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<UserCheck className="h-5 w-5" />} label="Novos hoje"            value={m.newToday.toLocaleString("pt-PT")} accent="bg-indigo-50 text-indigo-600" />
+          <MetricCard icon={<UserCheck className="h-5 w-5" />} label="Novos 7 dias"          value={m.new7d.toLocaleString("pt-PT")} accent="bg-violet-50 text-violet-600" />
+          <MetricCard icon={<TrendingUp className="h-5 w-5" />} label="Novos 30 dias"        value={m.new30d.toLocaleString("pt-PT")} delta={m.growthRate} deltaLabel="vs. 30d ant." accent="bg-teal-50 text-teal-600" />
+          <MetricCard icon={<Activity className="h-5 w-5" />}  label="Crescimento MoM"       value={m.growthRate !== null ? `${m.growthRate >= 0 ? "+" : ""}${m.growthRate}%` : "—"} sub="vs. mês anterior" accent={m.growthRate !== null && m.growthRate >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"} />
         </div>
       </section>
 
-      {/* ── Evolução de utilizadores (área chart) + DAU trend ───────────────── */}
+      {/* Gráfico novos utilizadores por mês + dia */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard title="Novos utilizadores / mês" sub="Últimos 12 meses">
+        <ChartCard title="Novos utilizadores / mês" sub="Registos acumulados — últimos 12 meses">
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={m.userGrowth} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="gUsr" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={C.sky}    stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={C.sky}    stopOpacity={0.02} />
+                  <stop offset="5%"  stopColor={C.sky} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={C.sky} stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip contentStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="n" name="Registos" stroke={C.sky} fill="url(#gUsr)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="n" name="Novos" stroke={C.sky} fill="url(#gUsr)" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Utilizadores ativos / dia" sub="Últimos 30 dias (DAU)">
+        <ChartCard title="Novos utilizadores / dia" sub="Últimos 30 dias">
           <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={m.dauTrend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <BarChart data={m.newUsersDaily} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} interval={4} />
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip contentStyle={{ fontSize: 12 }} />
-              <Line type="monotone" dataKey="dau" name="DAU" stroke={C.indigo} strokeWidth={2} dot={false} />
-            </LineChart>
+              <Bar dataKey="n" name="Novos" fill={C.indigo} radius={[3, 3, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </ChartCard>
       </div>
 
-      {/* ── MONETIZAÇÃO ─────────────────────────────────────────────────────── */}
+      {/* ══ 2. ATIVIDADE (DAU/MAU) ═══════════════════════════════════════════ */}
       <section>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Monetização</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <MetricCard icon={<DollarSign className="h-5 w-5" />} label="Receita total"  value={aoa(m.totalRevenue)}       accent="bg-emerald-50 text-emerald-600" />
-          <MetricCard icon={<Repeat2   className="h-5 w-5" />} label="MRR"            value={aoa(m.mrr)}                 sub="Receita mensal recorrente" accent="bg-teal-50 text-teal-600" />
-          <MetricCard icon={<TrendingUp className="h-5 w-5"/>} label="ARR"            value={aoa(m.arr)}                 sub="MRR × 12 (projeção)" accent="bg-sky-50 text-sky-600" />
-          <MetricCard icon={<Users     className="h-5 w-5" />} label="ARPU"           value={aoa(m.arpu)}                sub="Por utilizador total" accent="bg-indigo-50 text-indigo-600" />
-          <MetricCard icon={<Target    className="h-5 w-5" />} label="LTV"            value={aoa(m.ltv)}                 sub="Receita / cliente pago" accent="bg-violet-50 text-violet-600" />
-        </div>
-      </section>
-
-      {/* ── Receita mensal (bar chart) ───────────────────────────────────────── */}
-      <ChartCard title="Receita mensal (Kz)" sub="Últimos 12 meses — subscrições de acesso">
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={m.revenue} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: any) => [`${Number(v).toLocaleString("pt-PT")} Kz`, "Receita"]} />
-            <Bar dataKey="aoa" name="Receita" fill={C.emerald} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-        {m.revenue.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Sem receita registada ainda.</p>}
-      </ChartCard>
-
-      {/* ── CONVERSÃO & SAÚDE ───────────────────────────────────────────────── */}
-      <section>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Conversão & Saúde</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Atividade Diária & Mensal</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricCard icon={<Percent    className="h-5 w-5" />} label="Taxa de conversão" value={`${m.conversionRate}%`}  sub="Free → Pagante" accent="bg-amber-50 text-amber-600" />
-          <MetricCard icon={<CheckCircle2 className="h-5 w-5"/>} label="Utilizadores pagantes" value={m.paidUsers.toLocaleString("pt-PT")} sub={`de ${m.totalUsers.toLocaleString("pt-PT")} registados`} accent="bg-emerald-50 text-emerald-600" />
-          <MetricCard icon={<Target    className="h-5 w-5" />} label="LTV / CAC"           value={ltvCacRatio}            sub="CAC ≈ 0 (referidos/orgânico)" accent="bg-violet-50 text-violet-600" />
-          <MetricCard icon={<DollarSign className="h-5 w-5"/>} label="Ticket médio"        value={aoa(m.avgOrder)}       sub="Por subscrição paga" accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<Zap className="h-5 w-5" />}      label="DAU (hoje)"      value={m.dau.toLocaleString("pt-PT")} sub="Utilizadores ativos hoje" accent="bg-amber-50 text-amber-600" />
+          <MetricCard icon={<Users className="h-5 w-5" />}    label="MAU (30d)"       value={m.mau.toLocaleString("pt-PT")} sub="Ativos nos últimos 30 dias" accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<Activity className="h-5 w-5" />} label="DAU/MAU"         value={`${m.dauMauRatio}%`} sub="Engajamento diário (>20% = bom)" accent={m.dauMauRatio >= 20 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<Clock className="h-5 w-5" />}    label="Tempo médio/user" value={`${m.avgMinPerUser} min`} sub="Estimativa — últimos 30 dias" accent="bg-violet-50 text-violet-600" />
         </div>
       </section>
 
-      {/* ── RETENÇÃO & ENGAJAMENTO ──────────────────────────────────────────── */}
-      <section>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Retenção & Engajamento</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <MetricCard icon={<Repeat2   className="h-5 w-5" />} label="Retenção 30d"   value={m.retentionRate !== null ? `${m.retentionRate}%` : "—"} sub={m.prevMAU > 0 ? `${m.retainedCount}/${m.prevMAU} ativos voltaram` : "dados insuficientes"} accent={m.retentionRate !== null && m.retentionRate >= 40 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
-          <MetricCard icon={<ArrowDownRight className="h-5 w-5"/>} label="Churn 30d"  value={m.churnRate !== null ? `${m.churnRate}%` : "—"} sub="1 − retenção" accent={m.churnRate !== null && m.churnRate <= 30 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"} />
-          <MetricCard icon={<Zap       className="h-5 w-5" />} label="DAU"            value={m.dau.toLocaleString("pt-PT")} sub="Hoje (last_seen)" accent="bg-sky-50 text-sky-600" />
-          <MetricCard icon={<Users     className="h-5 w-5" />} label="MAU"            value={m.mau.toLocaleString("pt-PT")} sub="Últimos 30 dias" accent="bg-indigo-50 text-indigo-600" />
-          <MetricCard icon={<Activity  className="h-5 w-5" />} label="DAU/MAU"        value={`${m.dauMauRatio}%`} sub="Índice de engajamento" accent={m.dauMauRatio >= 20 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
-          <MetricCard icon={<Flame     className="h-5 w-5" />} label="Questões/user"  value={m.avgAttemptsPerUser.toLocaleString("pt-PT")} sub="30d — por user ativo" accent="bg-orange-50 text-orange-600" />
-        </div>
-      </section>
-
-      {/* ── Retenção cohort (bar chart) + Funil + Modo estudo ───────────────── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard title="Evolução MAU" sub="Últimos 6 meses">
-          <ResponsiveContainer width="100%" height={160}>
-            <AreaChart data={m.retentionCohort} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-              <defs>
-                <linearGradient id="gMau" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={C.violet} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={C.violet} stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
+      {/* Gráfico DAU 30d + tentativas diárias */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Utilizadores ativos / dia (DAU)" sub="Últimos 30 dias">
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={m.dauTrend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} interval={4} />
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip contentStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="mau" name="MAU" stroke={C.violet} fill="url(#gMau)" strokeWidth={2} dot={false} />
-            </AreaChart>
+              <Line type="monotone" dataKey="dau" name="DAU" stroke={C.amber} strokeWidth={2} dot={false} />
+            </LineChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Funil de conversão" sub="Acumulado">
-          <ResponsiveContainer width="100%" height={160}>
+        <ChartCard title="Questões respondidas / dia" sub="Últimos 30 dias — total e corretas">
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={m.attemptsDaily} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} interval={4} />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Bar dataKey="n"       name="Total"   fill={C.sky}     radius={[3, 3, 0, 0]} />
+              <Bar dataKey="correct" name="Corretas" fill={C.emerald} radius={[3, 3, 0, 0]} />
+              <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {/* ══ 3. PLANOS PAGOS & CONVERSÃO ══════════════════════════════════════ */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Planos Pagos & Conversão</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Utilizadores pagantes"   value={m.paidUsers.toLocaleString("pt-PT")} sub={`de ${m.totalUsers.toLocaleString("pt-PT")} registados`} accent="bg-emerald-50 text-emerald-600" />
+          <MetricCard icon={<Percent className="h-5 w-5" />}      label="Taxa de conversão"       value={`${m.conversionRate}%`} sub="Free → Pagante" accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<ShieldCheck className="h-5 w-5" />}  label="Subscrições ativas"      value={m.activeSubs.toLocaleString("pt-PT")} sub={`${m.expiringSoon} a expirar em 14d`} accent="bg-teal-50 text-teal-600" />
+          <MetricCard icon={<Lock className="h-5 w-5" />}         label="Subscrições expiradas"   value={m.expiredSubs.toLocaleString("pt-PT")} sub="Total acumulado" accent="bg-slate-100 text-slate-600" />
+        </div>
+      </section>
+
+      {/* Planos mais populares + Funil */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Planos mais populares" sub="Por categoria — total vs. ativos">
+          {plansChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={plansChartData} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 4 }}>
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={110} />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Bar dataKey="total" name="Total"  fill={C.sky}     radius={[0, 3, 3, 0]} />
+                <Bar dataKey="ativo" name="Ativo"  fill={C.emerald} radius={[0, 3, 3, 0]} />
+                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">Sem subscrições ainda.</p>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Funil de conversão" sub="Registados → Ativos → Pagantes">
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={funnelData} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
               <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={72} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} width={80} />
               <Tooltip contentStyle={{ fontSize: 12 }} />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="value" name="Utilizadores" radius={[0, 5, 5, 0]}>
                 {funnelData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+      </div>
 
-        <ChartCard title="Modos de estudo" sub="Tentativas totais">
-          {pieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={160}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={68} paddingAngle={3} dataKey="value">
-                  {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: any) => [Number(v).toLocaleString("pt-PT"), ""]} />
-                <Legend iconType="circle" iconSize={9} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
-              </PieChart>
+      {/* ══ 4. RECEITA ═══════════════════════════════════════════════════════ */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Receita</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <MetricCard icon={<DollarSign className="h-5 w-5" />} label="Receita Bruta"        value={aoa(m.totalRevenue)}  sub="Subscrições + Moedas" accent="bg-emerald-50 text-emerald-600" />
+          <MetricCard icon={<Banknote className="h-5 w-5" />}   label="Saques pagos"          value={aoa(m.totalWithdrawn)} sub={`${m.countSaquesPaid} transferências`} accent="bg-rose-50 text-rose-600" />
+          <MetricCard icon={<TrendingUp className="h-5 w-5" />} label="Receita Líquida"       value={aoa(m.netRevenue)}    sub="Bruta − Saques" accent={m.netRevenue >= 0 ? "bg-teal-50 text-teal-600" : "bg-rose-50 text-rose-600"} />
+          <MetricCard icon={<Repeat2 className="h-5 w-5" />}    label="MRR"                   value={aoa(m.mrr)}           sub="Receita do último mês" accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<BarChart3 className="h-5 w-5" />}  label="ARR"                   value={aoa(m.arr)}           sub="MRR × 12" accent="bg-indigo-50 text-indigo-600" />
+          <MetricCard icon={<Clock className="h-5 w-5" />}      label="Saques pendentes"      value={aoa(m.pendingWithdraw)} sub={`${m.countSaquesPending} aguardam pagamento`} accent="bg-amber-50 text-amber-600" />
+        </div>
+      </section>
+
+      {/* Gráfico receita por mês (stacked: acesso + moedas) + saques */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Receita mensal (Kz)" sub="Subscrições de acesso vs. compras de moedas — últimos 12 meses">
+          {m.revenue.length > 0 ? (
+            <ResponsiveContainer width="100%" height={190}>
+              <BarChart data={m.revenue} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: any, name: string) => [`${Number(v).toLocaleString("pt-PT")} Kz`, name === "acesso" ? "Subscrições" : "Moedas"]} />
+                <Bar dataKey="acesso" name="acesso" stackId="a" fill={C.emerald} />
+                <Bar dataKey="topup"  name="topup"  stackId="a" fill={C.teal}    radius={[3, 3, 0, 0]} />
+                <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v === "acesso" ? "Subscrições" : "Compras moedas"}</span>} />
+              </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-center text-sm text-muted-foreground py-8">Sem tentativas registadas.</p>
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">Ainda sem receita registada.</p>
+              <p className="text-xs text-muted-foreground mt-1">Os valores aparecerão ao aprovar pagamentos com valor preenchido.</p>
+            </div>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Saques pagos / mês (Kz)" sub="Total transferido para utilizadores — últimos 12 meses">
+          {m.saques.length > 0 ? (
+            <ResponsiveContainer width="100%" height={190}>
+              <BarChart data={m.saques} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: any) => [`${Number(v).toLocaleString("pt-PT")} Kz`, "Saques"]} />
+                <Bar dataKey="aoa" name="Saques" fill={C.rose} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">Sem saques pagos ainda.</p>
           )}
         </ChartCard>
       </div>
 
-      {/* ── OPERAÇÕES ───────────────────────────────────────────────────────── */}
+      {/* ══ 5. LTV / CAC / AQUISIÇÃO ════════════════════════════════════════ */}
       <section>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Operações</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">LTV · CAC · Aquisição</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <MetricCard icon={<Target className="h-5 w-5" />}      label="LTV"           value={aoa(m.ltv)}           sub="Receita total / pagante" accent="bg-violet-50 text-violet-600" />
+          <MetricCard icon={<Users className="h-5 w-5" />}       label="ARPU"          value={aoa(m.arpu)}          sub="Receita total / utilizador" accent="bg-indigo-50 text-indigo-600" />
+          <MetricCard icon={<DollarSign className="h-5 w-5" />}  label="Ticket médio"  value={aoa(m.avgAccessOrder)} sub="Subscrição c/ valor preench." accent="bg-teal-50 text-teal-600" />
+          <MetricCard icon={<UserCheck className="h-5 w-5" />}   label="Indicações"    value={m.referredUsers.toLocaleString("pt-PT")} sub={`por ${m.referrers} referenciadores`} accent="bg-amber-50 text-amber-600" />
+          <MetricCard icon={<Target className="h-5 w-5" />}      label="LTV/CAC"       value={ltvCacLabel}          sub={m.ptsToAoa > 0 ? `Taxa câmbio: ${m.ptsToAoa.toFixed(2)} Kz/moeda` : "Aquisição orgânica"} accent="bg-emerald-50 text-emerald-600" />
+        </div>
+      </section>
+
+      {/* ══ 6. RETENÇÃO ══════════════════════════════════════════════════════ */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Retenção</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricCard icon={<Ban      className="h-5 w-5" />} label="Bloqueados"         value={s.blocked.toLocaleString("pt-PT")} accent="bg-red-50 text-red-600" />
-          <MetricCard icon={<EyeOff   className="h-5 w-5" />} label="Ocultos"           value={s.hidden.toLocaleString("pt-PT")} accent="bg-amber-50 text-amber-600" />
-          <MetricCard icon={<KeyRound className="h-5 w-5" />} label="Códigos disponíveis" value={s.codesAvail.toLocaleString("pt-PT")} accent="bg-teal-50 text-teal-600" />
-          <MetricCard icon={<Clock    className="h-5 w-5" />} label="Pagamentos pendentes" value={s.payments.toLocaleString("pt-PT")} accent="bg-amber-50 text-amber-600" />
+          <MetricCard icon={<Repeat2 className="h-5 w-5" />}        label="Retenção 30d"  value={m.retentionRate !== null ? `${m.retentionRate}%` : "—"} sub={m.prevMAU > 0 ? `${m.retainedCount} de ${m.prevMAU} voltaram` : "dados insuficientes"} accent={m.retentionRate !== null && m.retentionRate >= 40 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<ArrowDownRight className="h-5 w-5" />} label="Churn 30d"     value={m.churnRate !== null ? `${m.churnRate}%` : "—"} sub="1 − retenção" accent={m.churnRate !== null && m.churnRate <= 40 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"} />
+          <MetricCard icon={<Users className="h-5 w-5" />}          label="MAU anterior"  value={m.prevMAU.toLocaleString("pt-PT")} sub="Ativos em 30–60d atrás" accent="bg-slate-100 text-slate-600" />
+          <MetricCard icon={<UserCheck className="h-5 w-5" />}      label="Retidos"       value={m.retainedCount.toLocaleString("pt-PT")} sub="Voltaram este mês" accent="bg-sky-50 text-sky-600" />
         </div>
       </section>
 
-      {/* ── CONTEÚDO ─────────────────────────────────────────────────────────── */}
+      {/* MAU cohort */}
+      <ChartCard title="Evolução MAU" sub="Utilizadores ativos por mês — últimos 6 meses">
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={m.mauCohort} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <defs>
+              <linearGradient id="gMau" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={C.violet} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={C.violet} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
+            <Area type="monotone" dataKey="mau" name="MAU" stroke={C.violet} fill="url(#gMau)" strokeWidth={2} dot={{ r: 3 }} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      {/* ══ 7. ENGAJAMENTO & TEMPO NA PLATAFORMA ════════════════════════════ */}
       <section>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Conteúdo</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <MetricCard icon={<FileText   className="h-5 w-5" />} label="Questões no banco" value={q.total.toLocaleString("pt-PT")} sub={`${seedCount.toLocaleString("pt-PT")} originais + ${aiCount.toLocaleString("pt-PT")} IA`} accent="bg-emerald-50 text-emerald-600" />
-          <MetricCard icon={<BarChart3  className="h-5 w-5" />} label="Categorias"        value={(q.byCat.length || concursos.reduce((acc,c) => acc+c.categorias.length,0)).toLocaleString("pt-PT")} accent="bg-sky-50 text-sky-600" />
-          <MetricCard icon={<ShieldCheck className="h-5 w-5"/>} label="Concursos"         value={concursos.length.toLocaleString("pt-PT")} accent="bg-indigo-50 text-indigo-600" />
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Engajamento & Tempo na Plataforma</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <MetricCard icon={<Flame className="h-5 w-5" />}      label="Total questões"    value={m.totalAttempts.toLocaleString("pt-PT")} sub="Desde sempre" accent="bg-amber-50 text-amber-600" />
+          <MetricCard icon={<Activity className="h-5 w-5" />}   label="Questões 30d"      value={m.totalAttempts30d.toLocaleString("pt-PT")} sub={`${m.activeUsers30d} users ativos`} accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<Flame className="h-5 w-5" />}      label="Questões/user"     value={m.avgAttemptsPerUser.toLocaleString("pt-PT")} sub="Média 30d" accent="bg-orange-50 text-orange-600" />
+          <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Taxa de acerto"  value={`${m.accuracyRate}%`} sub={`30d: ${m.accuracyRate30d}%`} accent={m.accuracyRate >= 60 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<Clock className="h-5 w-5" />}      label="Horas estimadas"   value={`${m.estHoursTotal.toLocaleString("pt-PT")}h`} sub="Total na plataforma (todas as sessões)" accent="bg-indigo-50 text-indigo-600" />
+          <MetricCard icon={<Clock className="h-5 w-5" />}      label="Min./user (30d)"   value={`${m.avgMinPerUser} min`} sub="Simulado 2.5min/q · Aprender 15s/q" accent="bg-violet-50 text-violet-600" />
         </div>
       </section>
 
-      {/* ── Questões por categoria ───────────────────────────────────────────── */}
-      <ChartCard title="Questões por categoria" sub={`${seedCount.toLocaleString("pt-PT")} originais + ${aiCount.toLocaleString("pt-PT")} IA — meta: 1000/categoria`}>
+      {/* Modo de estudo (pie) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Modos de estudo" sub="Distribuição total de tentativas">
+          {pieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+                  {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: any) => [Number(v).toLocaleString("pt-PT") + " questões", ""]} />
+                <Legend iconType="circle" iconSize={9} formatter={(v) => <span style={{ fontSize: 12 }}>{v}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">Sem tentativas registadas.</p>
+          )}
+        </ChartCard>
+
+        {/* Operações */}
+        <Card className="border-border/60 p-4 shadow-card">
+          <p className="font-display font-semibold mb-3">Operações</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "Bloqueados",          value: s.blocked,   accent: "bg-red-50 text-red-600",    icon: <Ban className="h-4 w-4" /> },
+              { label: "Ocultos",             value: s.hidden,    accent: "bg-amber-50 text-amber-600", icon: <EyeOff className="h-4 w-4" /> },
+              { label: "Códigos disponíveis", value: s.codesAvail,accent: "bg-teal-50 text-teal-600",  icon: <KeyRound className="h-4 w-4" /> },
+              { label: "Pagamentos pend.",    value: s.payments,  accent: "bg-amber-50 text-amber-600", icon: <Clock className="h-4 w-4" /> },
+            ].map(it => (
+              <div key={it.label} className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
+                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", it.accent)}>{it.icon}</div>
+                <div>
+                  <p className="text-[10px] uppercase font-semibold tracking-wide text-muted-foreground">{it.label}</p>
+                  <p className="font-display font-bold text-lg leading-none">{it.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* ══ TOP 3 UTILIZADORES ════════════════════════════════════════════════ */}
+      {topUsers.length > 0 && (
+        <section>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+            <Trophy className="h-3.5 w-3.5 text-amber-500" /> Top 3 Utilizadores
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {topUsers.map((u, i) => (
+              <TopUserCard key={u.id} user={u} rank={i + 1} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ══ 8. CONTEÚDO ═══════════════════════════════════════════════════════ */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Banco de Conteúdo</p>
+        <div className="grid grid-cols-3 gap-3">
+          <MetricCard icon={<FileText className="h-5 w-5" />}    label="Questões"   value={q.total.toLocaleString("pt-PT")} sub={`${seedCount.toLocaleString("pt-PT")} originais · ${aiCount.toLocaleString("pt-PT")} IA`} accent="bg-emerald-50 text-emerald-600" />
+          <MetricCard icon={<BarChart3 className="h-5 w-5" />}   label="Categorias" value={(q.byCat.length || concursos.reduce((acc,c) => acc+c.categorias.length,0)).toLocaleString("pt-PT")} accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<ShieldCheck className="h-5 w-5" />} label="Concursos"  value={concursos.length.toLocaleString("pt-PT")} accent="bg-indigo-50 text-indigo-600" />
+        </div>
+      </section>
+
+      <ChartCard title="Questões por categoria" sub={`Meta: 1000/categoria — verde ≥80%, azul ≥40%, laranja <40%`}>
         <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
           {porCategoria.map(c => {
-            const pct2 = Math.min(100, Math.round((c.n / 1000) * 100));
-            const color = pct2 >= 80 ? C.emerald : pct2 >= 40 ? C.sky : C.amber;
+            const p2 = Math.min(100, Math.round((c.n / 1000) * 100));
             return (
               <div key={c.nome}>
                 <div className="mb-1 flex items-center justify-between text-sm">
@@ -465,7 +788,7 @@ const StatsTab = () => {
                   <span className="text-muted-foreground tabular-nums text-xs">{c.n.toLocaleString("pt-PT")} <span className="text-border">/ 1000</span></span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct2}%`, background: color }} />
+                  <div className="h-full rounded-full transition-all" style={{ width: `${p2}%`, background: p2 >= 80 ? C.emerald : p2 >= 40 ? C.sky : C.amber }} />
                 </div>
               </div>
             );
@@ -485,6 +808,7 @@ const UsersTab = () => {
   const [rows, setRows] = useState<any[]>([]);
   const [accessMap, setAccessMap] = useState<Record<string, AccessRow[]>>({});
   const [q, setQ] = useState("");
+  const [uFilter, setUFilter] = useState<"todos" | "pagos" | "bloqueados">("todos");
 
   const load = async () => {
     const [profiles, acc] = await Promise.all([adminService.listProfiles(500), adminService.listAllAccess(2000)]);
@@ -507,16 +831,33 @@ const UsersTab = () => {
   const catNome = (concId: string, catId: string) =>
     concursos.find(c => c.id === concId)?.categorias.find(x => x.id === catId)?.nome ?? catId;
 
-  const filtered = rows.filter(r =>
-    !q || r.nome?.toLowerCase().includes(q.toLowerCase()) || r.email?.toLowerCase().includes(q.toLowerCase()),
-  );
+  const filtered = rows.filter(r => {
+    const matchQ = !q || r.nome?.toLowerCase().includes(q.toLowerCase()) || r.email?.toLowerCase().includes(q.toLowerCase());
+    if (!matchQ) return false;
+    if (uFilter === "pagos") return (accessMap[r.id]?.length ?? 0) > 0;
+    if (uFilter === "bloqueados") return !!r.blocked;
+    return true;
+  });
+
+  const UFILTERS = [
+    { key: "todos" as const,      label: "Todos" },
+    { key: "pagos" as const,      label: "Com plano" },
+    { key: "bloqueados" as const, label: "Bloqueados" },
+  ];
 
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <SectionTitle icon={<Users className="h-4 w-4" />}>{filtered.length} utilizadores</SectionTitle>
       </div>
-      <Input placeholder="Procurar por nome ou email…" value={q} onChange={e => setQ(e.target.value)} className="max-w-sm" />
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input placeholder="Procurar por nome ou email…" value={q} onChange={e => setQ(e.target.value)} className="max-w-xs" />
+        {UFILTERS.map(f => (
+          <Button key={f.key} size="sm" variant={uFilter === f.key ? "default" : "outline"} className="rounded-full" onClick={() => setUFilter(f.key)}>
+            {f.label}
+          </Button>
+        ))}
+      </div>
       <div className="space-y-2">
         {filtered.map(r => {
           const access = accessMap[r.id] ?? [];
@@ -532,14 +873,14 @@ const UsersTab = () => {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate flex flex-wrap items-center gap-1.5">
                     {r.nome}
-                    {r.blocked && <Badge variant="destructive" className="text-[10px]">Bloqueado</Badge>}
+                    {r.blocked && <Badge variant="destructive" className="text-[10px]">Suspenso</Badge>}
                     {r.hidden && <Badge variant="secondary" className="text-[10px]">Oculto</Badge>}
                     {access.length > 0
                       ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">{access.length} plano(s)</Badge>
                       : <Badge variant="outline" className="text-[10px] text-muted-foreground">Sem plano</Badge>}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {r.email} · {r.pontos ?? 0} pts
+                    {r.email} · {r.pontos ?? 0} pts · {r.moedas ?? 0} moedas
                     <span className="ml-2 inline-flex items-center gap-0.5">
                       <Clock className="h-3 w-3" />
                       {r.last_seen ? formatRelative(r.last_seen) : "nunca"}
@@ -559,9 +900,13 @@ const UsersTab = () => {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   <ManageAccessDialog user={r} access={access} onChanged={load} />
-                  <Button size="sm" variant="outline" title={r.blocked ? "Desbloquear" : "Bloquear"} onClick={() => update(r.id, { blocked: !r.blocked })}>
-                    {r.blocked ? <CheckCircle2 className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-                  </Button>
+                  <WarnUserDialog user={r} onDone={load} />
+                  {r.blocked
+                    ? <Button size="sm" variant="outline" title="Desbloquear" onClick={() => update(r.id, { blocked: false })}>
+                        <CheckCircle2 className="h-4 w-4" />
+                      </Button>
+                    : <BanUserDialog user={r} onDone={load} />
+                  }
                   <Button size="sm" variant="outline" title={r.hidden ? "Mostrar" : "Ocultar"} onClick={() => update(r.id, { hidden: !r.hidden })}>
                     {r.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </Button>
@@ -1024,7 +1369,9 @@ const CarregamentosTab = () => {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
-    const data = await adminService.listTopupRequests(filter, 200);
+    const data = (await adminService.listTopupRequests("all", 200)).filter((r: any) =>
+      filter === "all" ? true : r.status === filter,
+    );
     setRows(data);
     const ids = Array.from(new Set(data.map((r: any) => r.user_id)));
     if (ids.length) {
@@ -1050,11 +1397,23 @@ const CarregamentosTab = () => {
     toast.success("Rejeitado"); load();
   };
 
+  const revogar = async (r: any) => {
+    const profile = profiles[r.user_id];
+    if (!confirm(`Revogar ${r.moedas} moedas de ${profile?.nome ?? r.email}?\n\nEsta ação vai deduzir as moedas da conta (prevenção de fraude).`)) return;
+    setBusy(r.id);
+    try {
+      await adminService.revokeTopup(r.id);
+      await notificationsService.create({ userId: r.user_id, title: "Carregamento revogado", body: `${r.moedas} moedas foram removidas da sua conta após revisão.` });
+      toast.success("Moedas revogadas"); load();
+    } catch (e: any) { toast.error(e.message ?? "Erro"); }
+    finally { setBusy(null); }
+  };
+
   const FILTERS = [
     { key: "awaiting_review", label: "Por verificar" },
     { key: "approved",        label: "Aprovados" },
     { key: "rejected",        label: "Rejeitados" },
-    { key: "all",             label: "Todos" },
+    { key: "all",             label: "Todos (incl. revogados)" },
   ] as const;
 
   return (
@@ -1079,7 +1438,7 @@ const CarregamentosTab = () => {
                   <p className="font-semibold">{p?.nome ?? "—"}</p>
                   <p className="text-xs text-muted-foreground">{r.email}</p>
                   <p className="text-sm font-semibold mt-1">{r.amount_aoa} AOA → <span className="text-primary">{r.moedas} moedas</span></p>
-                  <p className="text-[11px] text-muted-foreground">{formatRelative(r.created_at)} · {r.status}</p>
+                  <p className="text-[11px] text-muted-foreground">{formatRelative(r.created_at)} · <span className={r.status === "revoked" ? "text-destructive font-semibold" : ""}>{r.status === "revoked" ? "REVOGADO" : r.status}</span></p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {r.comprovativo_url && (
@@ -1096,6 +1455,11 @@ const CarregamentosTab = () => {
                         <Ban className="h-3.5 w-3.5 mr-1" /> Rejeitar
                       </Button>
                     </>
+                  )}
+                  {r.status === "approved" && (
+                    <Button size="sm" disabled={busy === r.id} variant="outline" className="rounded-full border-destructive/50 text-destructive hover:bg-destructive/10" onClick={() => revogar(r)}>
+                      <RotateCcw className="h-3.5 w-3.5 mr-1" /> Revogar
+                    </Button>
                   )}
                 </div>
               </div>

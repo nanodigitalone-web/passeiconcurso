@@ -5,6 +5,21 @@ import { hasCategoryAccess } from "../lib/access.js";
 import { one, query } from "../lib/db.js";
 // @ts-ignore - resolved at runtime by tsx
 import { getRecursos } from "../../data/_source/recursos.ts";
+// @ts-ignore - resolved at runtime by tsx
+import { ALL_DISCIPLINAS } from "../../../src/data/disciplinas.ts";
+
+// Expand user interest slugs to also include the readable name of each discipline.
+// Seed and old AI questions store the human-readable name in `disciplina`; newer
+// questions (generated with generate-interests.mjs) store the slug. We include
+// both so the SQL IN(...) query matches either format.
+function expandInterestSlugs(slugs: string[]): string[] {
+  const expanded = new Set<string>(slugs);
+  for (const slug of slugs) {
+    const disc = (ALL_DISCIPLINAS as any[]).find((d: any) => d.id === slug);
+    if (disc?.nome) expanded.add(disc.nome);
+  }
+  return Array.from(expanded);
+}
 
 const require = createRequire(import.meta.url);
 // Full quiz bank including correct answers + explanations (server-only).
@@ -129,7 +144,7 @@ contentRouter.post("/aprender-level", requireAuth, async (req: AuthedRequest, re
     let row: { n: number } | null;
     if (concursoId === "interesses") {
       const profile = await one<{ interesses: string[] }>("select interesses from profiles where id = $1", [req.userId]);
-      const disciplinas = profile?.interesses ?? [];
+      const disciplinas = expandInterestSlugs(profile?.interesses ?? []);
       row = disciplinas.length === 0
         ? { n: 0 }
         : await one<{ n: number }>(
@@ -201,8 +216,10 @@ contentRouter.post("/questions", requireAuth, async (req: AuthedRequest, res) =>
       "select interesses from profiles where id = $1",
       [req.userId],
     );
-    const disciplinas = profile?.interesses ?? [];
-    if (disciplinas.length === 0) return res.json({ questions: [] });
+    const disciplinasRaw = profile?.interesses ?? [];
+    if (disciplinasRaw.length === 0) return res.json({ questions: [] });
+    // Expand slugs to also match readable names stored in older questions
+    const disciplinas = expandInterestSlugs(disciplinasRaw);
 
     const placeholders = disciplinas.map((_: string, i: number) => `$${i + 2}`).join(",");
     all = (

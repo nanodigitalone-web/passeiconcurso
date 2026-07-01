@@ -27,27 +27,58 @@ export const adminService = {
 
   // ---- Startup Metrics ----
   async getMetrics(): Promise<{
-    totalUsers: number; newUsers30d: number; newUsers7d: number; dau: number; mau: number; mauPrev: number; paidUsers: number;
-    conversionRate: number; dauMauRatio: number; growthRate: number | null;
-    totalRevenue: number; mrr: number; arr: number; arpu: number; ltv: number; avgOrder: number;
-    retentionRate: number | null; churnRate: number | null; retainedCount: number; prevMAU: number;
-    totalAttempts30d: number; activeUsers30d: number; avgAttemptsPerUser: number;
-    userGrowth: { month: string; n: number }[];
-    revenue: { month: string; aoa: number }[];
-    dauTrend: { day: string; dau: number }[];
+    // Utilizadores
+    totalUsers: number; newToday: number; new7d: number; new30d: number; growthRate: number | null;
+    dau: number; mau: number; mauPrev: number; dauMauRatio: number;
+    // Planos
+    paidUsers: number; activeSubs: number; expiredSubs: number; expiringSoon: number;
+    conversionRate: number; countApprovedAccess: number;
+    // Receita
+    totalRevenue: number; revAccess: number; revTopup: number;
+    mrr: number; arr: number; ltv: number; arpu: number; avgAccessOrder: number; netRevenue: number;
+    // Saques
+    totalWithdrawn: number; pendingWithdraw: number;
+    countSaquesPaid: number; countSaquesPending: number;
+    // CAC
+    ptsToAoa: number; referredUsers: number; referrers: number;
+    cacAoa: number; ltvCacRatio: number | null;
+    // Tempo & Engajamento
+    totalAttempts: number; totalAttempts30d: number; activeUsers30d: number;
+    avgAttemptsPerUser: number; estHoursTotal: number; avgMinPerUser: number;
+    accuracyRate: number; accuracyRate30d: number;
+    // Retenção
+    retentionRate: number | null; churnRate: number | null;
+    retainedCount: number; prevMAU: number;
+    // Charts
+    userGrowth:    { month: string; n: number }[];
+    newUsersDaily: { day: string; n: number }[];
+    revenue:       { month: string; total: number; acesso: number; topup: number }[];
+    saques:        { month: string; aoa: number }[];
+    dauTrend:      { day: string; dau: number }[];
+    mauCohort:     { month: string; mau: number }[];
+    attemptsDaily: { day: string; n: number; correct: number }[];
     modeBreakdown: { mode: string; n: number }[];
-    retentionCohort: { month: string; mau: number }[];
+    plans:         { concurso_id: string; categoria_id: string; total: number; active: number }[];
   }> {
     try {
       return await api.get("/admin/metrics");
     } catch {
       return {
-        totalUsers: 0, newUsers30d: 0, newUsers7d: 0, dau: 0, mau: 0, mauPrev: 0, paidUsers: 0,
-        conversionRate: 0, dauMauRatio: 0, growthRate: null,
-        totalRevenue: 0, mrr: 0, arr: 0, arpu: 0, ltv: 0, avgOrder: 0,
+        totalUsers: 0, newToday: 0, new7d: 0, new30d: 0, growthRate: null,
+        dau: 0, mau: 0, mauPrev: 0, dauMauRatio: 0,
+        paidUsers: 0, activeSubs: 0, expiredSubs: 0, expiringSoon: 0,
+        conversionRate: 0, countApprovedAccess: 0,
+        totalRevenue: 0, revAccess: 0, revTopup: 0, mrr: 0, arr: 0,
+        ltv: 0, arpu: 0, avgAccessOrder: 0, netRevenue: 0,
+        totalWithdrawn: 0, pendingWithdraw: 0,
+        countSaquesPaid: 0, countSaquesPending: 0,
+        ptsToAoa: 0, referredUsers: 0, referrers: 0, cacAoa: 0, ltvCacRatio: null,
+        totalAttempts: 0, totalAttempts30d: 0, activeUsers30d: 0,
+        avgAttemptsPerUser: 0, estHoursTotal: 0, avgMinPerUser: 0,
+        accuracyRate: 0, accuracyRate30d: 0,
         retentionRate: null, churnRate: null, retainedCount: 0, prevMAU: 0,
-        totalAttempts30d: 0, activeUsers30d: 0, avgAttemptsPerUser: 0,
-        userGrowth: [], revenue: [], dauTrend: [], modeBreakdown: [], retentionCohort: [],
+        userGrowth: [], newUsersDaily: [], revenue: [], saques: [],
+        dauTrend: [], mauCohort: [], attemptsDaily: [], modeBreakdown: [], plans: [],
       };
     }
   },
@@ -180,8 +211,8 @@ export const adminService = {
     return `${api.baseUrl}/uploads/${path}`;
   },
 
-  async approvePayment(r: any) {
-    await api.post(`/admin/payments/${r.id}/approve`);
+  async approvePayment(r: any, amountAoa?: number) {
+    await api.post(`/admin/payments/${r.id}/approve`, { amount_aoa: amountAoa ?? 0 });
     return "";
   },
 
@@ -207,6 +238,10 @@ export const adminService = {
     return api.post(`/admin/topups/${id}/reject`);
   },
 
+  revokeTopup(id: string) {
+    return api.post(`/admin/topups/${id}/revoke`);
+  },
+
   // ---- Withdrawals ----
   async listWithdrawals(filter: "all" | "pending" | "paid" | "rejected", _limit = 200) {
     try {
@@ -223,5 +258,23 @@ export const adminService = {
 
   async rejectWithdrawal(r: any) {
     return api.post(`/admin/withdrawals/${r.id}/reject`);
+  },
+
+  // ---- Top users ----
+  async getTopUsers(): Promise<any[]> {
+    try {
+      return await api.get("/admin/top-users");
+    } catch {
+      return [];
+    }
+  },
+
+  // ---- User moderation ----
+  warnUser(id: string, message: string) {
+    return api.post(`/admin/users/${id}/warn`, { message });
+  },
+
+  banUser(id: string, reason?: string, notify = true) {
+    return api.post(`/admin/users/${id}/ban`, { reason, notify });
   },
 };
