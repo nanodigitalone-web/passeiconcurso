@@ -4,6 +4,7 @@ import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { resultsService, friendsService, battlesService, type FriendRow } from "@/services";
+import { notificationsService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { usePromo, useIsPromoActive } from "@/contexts/PromoContext";
 import { useEffect, useState } from "react";
@@ -11,7 +12,7 @@ import { toast } from "sonner";
 import {
   Play, BookMarked, Flame, Zap, BarChart2,
   Gift, Banknote, Swords, Users, MapPin,
-  ChevronRight, Loader2, Plus, Sparkles,
+  ChevronRight, Loader2, Plus, Sparkles, X, Megaphone,
 } from "lucide-react";
 
 const Index = () => {
@@ -21,10 +22,26 @@ const Index = () => {
   const isPromoActive = useIsPromoActive();
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [challenging, setChallenging] = useState<string | null>(null);
+  const [broadcastMsg, setBroadcastMsg] = useState<{ id: string; title: string; body: string } | null>(null);
 
   useEffect(() => {
     friendsService.list().then((f) => setFriends(f.filter((x) => x.status === "accepted")));
   }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+    notificationsService.listForUser(profile.id).then((list) => {
+      const dismissed: string[] = JSON.parse(localStorage.getItem("dismissed_broadcasts") || "[]");
+      const msg = list.find((n) => n.user_id === null && !dismissed.includes(n.id));
+      if (msg) setBroadcastMsg({ id: msg.id, title: msg.title, body: msg.body });
+    });
+  }, [profile?.id]);
+
+  const dismissBroadcast = (id: string) => {
+    const dismissed: string[] = JSON.parse(localStorage.getItem("dismissed_broadcasts") || "[]");
+    localStorage.setItem("dismissed_broadcasts", JSON.stringify([...dismissed, id].slice(-20)));
+    setBroadcastMsg(null);
+  };
 
   // ── Destinos ────────────────────────────────────────────────────────────────
   const interessesAtivo = !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
@@ -180,6 +197,28 @@ const Index = () => {
           </Card>
         ))}
       </div>
+
+      {/* ── MENSAGEM DA PLATAFORMA (broadcast) ───────────────────────────────── */}
+      {broadcastMsg && (
+        <div className="mt-4 relative overflow-hidden rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-indigo-50 px-4 py-3.5 animate-fade-in">
+          <button
+            onClick={() => dismissBroadcast(broadcastMsg.id)}
+            aria-label="Fechar"
+            className="absolute top-2.5 right-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-sky-500 hover:bg-sky-200 transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-100">
+              <Megaphone className="h-4 w-4 text-sky-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-sky-900 leading-tight">{broadcastMsg.title}</p>
+              <p className="mt-0.5 text-xs text-sky-800/80 leading-relaxed">{broadcastMsg.body}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── BATALHA DE AMIGOS ─────────────────────────────────────────────────── */}
       <section className="mt-5">
