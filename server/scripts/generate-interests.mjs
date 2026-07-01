@@ -201,17 +201,16 @@ async function main() {
       let drafts;
       try {
         drafts = await genBatch(target, batchN);
+        fails = 0;
       } catch (e) {
         fails++;
-        const wait = Math.min(60000, 3000 * fails);
-        console.log(`    erro (${e.message}); aguardar ${wait}ms`);
+        // Backoff exponencial: 5s, 10s, 20s, 40s... máx 5 min. NUNCA desiste.
+        const wait = Math.min(300000, 5000 * Math.pow(2, Math.min(fails - 1, 6)));
+        console.log(`    [erro ${fails}] ${e.message} — aguardar ${Math.round(wait/1000)}s`);
         await sleep(wait);
-        if (fails > 10) { console.log(`    muitos erros para "${target.nome}", a passar`); break; }
         continue;
       }
-      fails = 0;
 
-      let inserted = 0;
       try {
         for (const q of drafts) {
           if (!q || typeof q.enunciado !== "string" || !q.enunciado.trim()) continue;
@@ -227,21 +226,20 @@ async function main() {
             [
               "ai-" + randomUUID().slice(0, 12),
               target.concurso_id, target.categoria_id,
-              target.slug,  // slug estável para o sistema de interesses
+              target.slug,
               q.enunciado.trim(),
               JSON.stringify(q.opcoes.map((o) => o.trim())),
               q.correta,
               typeof q.comentario === "string" ? q.comentario.trim() : null,
             ],
           );
-          inserted++;
           added++;
           grandTotal++;
           if (added >= needed) break;
         }
       } catch (e) {
         console.log(`    (db: ${e.message}); a continuar`);
-        await sleep(2000);
+        await sleep(3000);
         continue;
       }
       await sleep(PACE_MS);
