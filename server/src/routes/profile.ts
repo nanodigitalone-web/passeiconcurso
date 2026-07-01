@@ -78,7 +78,7 @@ const SELF_EDITABLE = new Set([
 // client-side and survives across devices. Defined BEFORE "/:id" so the path
 // "/lives" isn't swallowed by the id route.
 const MAX_VIDAS = 5;
-const RECHARGE_MS = 3 * 60 * 60 * 1000;
+const RECHARGE_MS = 15 * 60 * 1000; // 15 minutos por vida
 
 function recharge(vidas: number, updatedAt: Date | string) {
   const base = new Date(updatedAt).getTime();

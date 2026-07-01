@@ -277,21 +277,45 @@ const UserStatsModal = ({ user, open, onClose, badge }: { user: any; open: boole
             </div>
           </div>
           {user.bio && <p className="text-sm italic text-muted-foreground border-l-2 border-primary/30 pl-3">{user.bio}</p>}
+          {/* Valor económico — só mostra se há dados de pagamento */}
+          {(user.paid_total != null) && (
+            <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/60 px-3 py-2.5">
+              <p className="text-[10px] uppercase font-semibold tracking-wide text-emerald-700 mb-1">Valor gerado para a plataforma</p>
+              <div className="flex gap-4">
+                <div>
+                  <p className="font-display font-bold text-lg text-emerald-800">{(user.paid_total ?? 0).toLocaleString("pt-PT")} Kz</p>
+                  <p className="text-[10px] text-emerald-600">Total pago</p>
+                </div>
+                {user.paid_subscriptions > 0 && (
+                  <div>
+                    <p className="font-bold text-sm text-emerald-700">{(user.paid_subscriptions ?? 0).toLocaleString("pt-PT")} Kz</p>
+                    <p className="text-[10px] text-emerald-600">Subscrições</p>
+                  </div>
+                )}
+                {user.paid_topups > 0 && (
+                  <div>
+                    <p className="font-bold text-sm text-emerald-700">{(user.paid_topups ?? 0).toLocaleString("pt-PT")} Kz</p>
+                    <p className="text-[10px] text-emerald-600">Moedas compradas</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: "Pontos globais",       value: (user.pontos_globais ?? 0).toLocaleString("pt-PT") },
-              { label: "Saldo disponível",     value: (user.pontos ?? 0).toLocaleString("pt-PT") },
-              { label: "Moedas",               value: (user.moedas ?? 0).toLocaleString("pt-PT") },
-              { label: "Questões respondidas", value: (user.total_attempts ?? 0).toLocaleString("pt-PT") },
-              { label: "Precisão",             value: `${accuracy}%` },
-              { label: "Simulados",            value: (user.simulado_count ?? 0).toLocaleString("pt-PT") },
-              { label: "Aprender",             value: (user.aprender_count ?? 0).toLocaleString("pt-PT") },
-              { label: "Tempo estimado",       value: timeStr },
-              { label: "Sequência (streak)",   value: `${user.streak ?? 0} dias` },
-              { label: "Planos ativos",        value: user.access_count ?? 0 },
+              { label: "Pontos globais",          value: (user.pontos_globais ?? 0).toLocaleString("pt-PT") },
+              { label: "Saldo disponível",        value: (user.pontos ?? 0).toLocaleString("pt-PT") },
+              { label: "Moedas",                  value: (user.moedas ?? 0).toLocaleString("pt-PT") },
+              { label: "Questões respondidas",    value: (user.total_attempts ?? 0).toLocaleString("pt-PT") },
+              { label: "Precisão",                value: `${accuracy}%` },
+              { label: "Simulados",               value: (user.simulado_count ?? 0).toLocaleString("pt-PT") },
+              { label: "Aprender",                value: (user.aprender_count ?? 0).toLocaleString("pt-PT") },
+              { label: "Tempo estimado",          value: timeStr },
+              { label: "Sequência (streak)",      value: `${user.streak ?? 0} dias` },
+              { label: "Planos ativos",           value: user.access_count ?? 0 },
               { label: "Utilizadores convidados", value: user.referrals_given ?? 0 },
-              { label: "Membro desde",         value: user.created_at ? new Date(user.created_at).toLocaleDateString("pt-PT") : "—" },
-              { label: "Último acesso",        value: user.last_seen ? formatRelative(user.last_seen) : "nunca" },
+              { label: "Membro desde",            value: user.created_at ? new Date(user.created_at).toLocaleDateString("pt-PT") : "—" },
+              { label: "Último acesso",           value: user.last_seen ? formatRelative(user.last_seen) : "nunca" },
             ].map(it => (
               <div key={it.label} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
                 <p className="text-[10px] uppercase font-semibold tracking-wide text-muted-foreground">{it.label}</p>
@@ -877,10 +901,19 @@ const UsersTab = () => {
   const [uFilter, setUFilter] = useState<"todos" | "pagos" | "bloqueados">("todos");
   const [detailUser, setDetailUser] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState<string | null>(null);
 
   const openDetail = async (id: string) => {
-    const stats = await adminService.getUserStats(id);
-    if (stats) { setDetailUser(stats); setDetailOpen(true); }
+    setDetailLoading(id);
+    try {
+      const stats = await adminService.getUserStats(id);
+      if (stats) { setDetailUser(stats); setDetailOpen(true); }
+      else toast.error("Não foi possível carregar os dados do utilizador.");
+    } catch {
+      toast.error("Erro ao carregar ficha do utilizador.");
+    } finally {
+      setDetailLoading(null);
+    }
   };
 
   const load = async () => {
@@ -938,12 +971,19 @@ const UsersTab = () => {
           return (
             <Card key={r.id} className="border-border/60 p-3 shadow-card">
               <div className="flex flex-wrap items-center gap-3">
-                <Avatar className="h-11 w-11 ring-2 ring-border/40 cursor-pointer" onClick={() => openDetail(r.id)}>
-                  <AvatarImage src={r.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 font-bold text-primary">
-                    {r.nome?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative cursor-pointer shrink-0" onClick={() => openDetail(r.id)}>
+                  <Avatar className="h-11 w-11 ring-2 ring-border/40">
+                    <AvatarImage src={r.avatar_url || undefined} />
+                    <AvatarFallback className="bg-primary/10 font-bold text-primary">
+                      {r.nome?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {detailLoading === r.id && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => openDetail(r.id)}>
                   <p className="font-semibold truncate flex flex-wrap items-center gap-1.5">
                     {r.nome}

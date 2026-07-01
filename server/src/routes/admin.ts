@@ -636,24 +636,28 @@ adminRouter.get("/users/:id/stats", async (req, res) => {
       `SELECT
          p.id, p.nome, p.email, p.avatar_url, p.pontos, p.pontos_globais, p.moedas,
          p.streak, p.created_at, p.last_seen, p.universidade, p.curso, p.ano, p.bio,
-         p.friend_code, p.referred_by, p.blocked, p.hidden,
-         count(qa.id)::int                                                      as total_attempts,
-         count(CASE WHEN qa.correct      THEN 1 END)::int                       as correct_attempts,
-         count(CASE WHEN qa.mode='simulado' THEN 1 END)::int                    as simulado_count,
-         count(CASE WHEN qa.mode='aprender' THEN 1 END)::int                    as aprender_count,
+         p.friend_code, p.blocked, p.hidden, p.interesses_max,
+         count(qa.id)::int                                                       as total_attempts,
+         count(CASE WHEN qa.correct      THEN 1 END)::int                        as correct_attempts,
+         count(CASE WHEN qa.mode='simulado' THEN 1 END)::int                     as simulado_count,
+         count(CASE WHEN qa.mode='aprender' THEN 1 END)::int                     as aprender_count,
          round(count(CASE WHEN qa.mode='simulado' THEN 1 END)::numeric * 2.5
              + count(CASE WHEN qa.mode='aprender' THEN 1 END)::numeric * 0.25)::int as est_minutes,
-         count(DISTINCT ca.id)::int                                             as access_count,
-         (SELECT count(*)::int FROM profiles WHERE referred_by = p.friend_code) as referrals_given
+         count(DISTINCT ca.id)::int                                              as access_count,
+         (SELECT count(*)::int FROM profiles WHERE referred_by = p.id)           as referrals_given,
+         COALESCE((SELECT sum(pr.amount_aoa) FROM payment_requests pr
+                    WHERE pr.user_id = p.id AND pr.status = 'approved'), 0)::int as paid_subscriptions,
+         COALESCE((SELECT sum(ct.amount_aoa) FROM coin_topup_requests ct
+                    WHERE ct.user_id = p.id AND ct.status = 'approved'), 0)::int as paid_topups
        FROM profiles p
        LEFT JOIN question_attempts qa ON qa.user_id = p.id
        LEFT JOIN category_access   ca ON ca.user_id = p.id
-       WHERE p.id = $1
+       WHERE p.id = $1::uuid
        GROUP BY p.id`,
       [req.params.id],
     );
     if (!r) return res.status(404).json({ error: "not_found" });
-    res.json(r);
+    res.json({ ...r, paid_total: (r.paid_subscriptions ?? 0) + (r.paid_topups ?? 0) });
   } catch (e: any) {
     res.status(500).json({ error: e?.message || "server_error" });
   }
