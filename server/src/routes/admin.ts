@@ -284,15 +284,18 @@ adminRouter.get("/metrics", async (_req, res) => {
     );
 
     // ══ 3. RECEITA ═══════════════════════════════════════════════════════════
-    // payment_requests = subscrições de acesso (amount_aoa adicionado na migração 014)
-    // coin_topup_requests = compras de moedas
+    // payment_requests = subscrições de acesso.
+    // amount_aoa foi adicionado na migração 014 com DEFAULT 0 → registos antigos têm 0.
+    // Preço real: licenciatura-medicina=2000 AOA, resto=1000 AOA (igual a coins.ts).
+    // eff_amount usa o preço fixo quando amount_aoa=0.
+    const EFF = `COALESCE(NULLIF(amount_aoa,0), CASE WHEN concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END)`;
     const [revAccess, revTopup, mrrAccess, mrrTopup, avgAccessOrder, countApprovedAccess] =
       await Promise.all([
-        sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM payment_requests WHERE status='approved'"),
+        sn(`SELECT COALESCE(sum(${EFF}),0)::int c FROM payment_requests WHERE status='approved'`),
         sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved'"),
-        sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM payment_requests WHERE status='approved' AND updated_at > now()-interval'30 days'"),
+        sn(`SELECT COALESCE(sum(${EFF}),0)::int c FROM payment_requests WHERE status='approved' AND updated_at > now()-interval'30 days'`),
         sn("SELECT COALESCE(sum(amount_aoa),0)::int c FROM coin_topup_requests WHERE status='approved' AND updated_at > now()-interval'30 days'"),
-        sn("SELECT COALESCE(avg(NULLIF(amount_aoa,0)),0)::int c FROM payment_requests WHERE status='approved' AND amount_aoa > 0"),
+        sn(`SELECT COALESCE(avg(${EFF}),0)::int c FROM payment_requests WHERE status='approved'`),
         sn("SELECT count(*)::int c FROM payment_requests WHERE status='approved'"),
       ]);
     const totalRevenue = revAccess + revTopup;
@@ -428,14 +431,15 @@ adminRouter.get("/metrics", async (_req, res) => {
       ),
       sq(
         `SELECT to_char(date_trunc('month',updated_at),'Mon/YY') as month,
-                sum(amount_aoa)::int as total,
-                sum(CASE WHEN src='access' THEN amount_aoa ELSE 0 END)::int as acesso,
-                sum(CASE WHEN src='topup'  THEN amount_aoa ELSE 0 END)::int as topup
+                sum(eff)::int as total,
+                sum(CASE WHEN src='access' THEN eff ELSE 0 END)::int as acesso,
+                sum(CASE WHEN src='topup'  THEN eff ELSE 0 END)::int as topup
          FROM (
-           SELECT amount_aoa, updated_at, 'access' as src
-             FROM payment_requests WHERE status='approved' AND amount_aoa > 0
+           SELECT COALESCE(NULLIF(amount_aoa,0), CASE WHEN concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END) as eff,
+                  updated_at, 'access' as src
+             FROM payment_requests WHERE status='approved'
            UNION ALL
-           SELECT amount_aoa, updated_at, 'topup' as src
+           SELECT amount_aoa as eff, updated_at, 'topup' as src
              FROM coin_topup_requests WHERE status='approved'
          ) c
          WHERE updated_at > now()-interval'12 months'
@@ -645,7 +649,8 @@ adminRouter.get("/users/:id/stats", async (req, res) => {
              + count(CASE WHEN qa.mode='aprender' THEN 1 END)::numeric * 0.25)::int as est_minutes,
          count(DISTINCT ca.id)::int                                              as access_count,
          (SELECT count(*)::int FROM profiles WHERE referred_by = p.id)           as referrals_given,
-         COALESCE((SELECT sum(pr.amount_aoa) FROM payment_requests pr
+         COALESCE((SELECT sum(COALESCE(NULLIF(pr.amount_aoa,0), CASE WHEN pr.concurso_id='licenciatura-medicina' THEN 2000 ELSE 1000 END))
+                    FROM payment_requests pr
                     WHERE pr.user_id = p.id AND pr.status = 'approved'), 0)::int as paid_subscriptions,
          COALESCE((SELECT sum(ct.amount_aoa) FROM coin_topup_requests ct
                     WHERE ct.user_id = p.id AND ct.status = 'approved'), 0)::int as paid_topups
