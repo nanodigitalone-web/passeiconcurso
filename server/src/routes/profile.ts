@@ -265,6 +265,38 @@ profileRouter.get("/:id", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+// List followers of a user.
+profileRouter.get("/:id/followers", requireAuth, async (req: AuthedRequest, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
+  try {
+    const rows = await query(
+      `select p.id, p.nome, p.avatar_url, p.pontos_globais
+         from follows f join profiles p on p.id = f.follower_id
+        where f.following_id = $1 order by p.pontos_globais desc limit 100`,
+      [req.params.id],
+    );
+    res.json(rows.rows);
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+// List users that a user follows.
+profileRouter.get("/:id/following", requireAuth, async (req: AuthedRequest, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
+  try {
+    const rows = await query(
+      `select p.id, p.nome, p.avatar_url, p.pontos_globais
+         from follows f join profiles p on p.id = f.following_id
+        where f.follower_id = $1 order by p.pontos_globais desc limit 100`,
+      [req.params.id],
+    );
+    res.json(rows.rows);
+  } catch {
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
 // Follow a user.
 profileRouter.post("/:id/follow", requireAuth, async (req: AuthedRequest, res) => {
   if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });

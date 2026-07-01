@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { quizService, authService, type Question } from "@/services";
+import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { Check, Flame, Heart, Trophy, X, Zap } from "lucide-react";
+import { Check, Flame, Heart, Lock, Trophy, X, Zap } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 
@@ -36,6 +37,17 @@ const AprenderSessao = () => {
   const [combo, setCombo] = useState(0);
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
+  const [dailyBlocked, setDailyBlocked] = useState(false);
+
+  const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
+
+  // Free-tier daily limit: 1 aprender session/day (skipped during promo).
+  useEffect(() => {
+    if (Date.now() < PROMO_END) return;
+    api.get<{ aprender_done: boolean; is_free: boolean }>("/content/daily-usage").then((d) => {
+      if (d.is_free && d.aprender_done) setDailyBlocked(true);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (done && user) {
@@ -91,6 +103,30 @@ const AprenderSessao = () => {
   }, [timeLeft, revealed, done, lives, qLoading, outOfLives, idx, questoes.length]);
 
 
+
+  if (dailyBlocked) {
+    return (
+      <div className="min-h-screen bg-gradient-soft flex items-center justify-center px-4">
+        <div className="max-w-sm w-full rounded-3xl border border-border/60 bg-card p-8 text-center shadow-elegant">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 mx-auto mb-4">
+            <Lock className="h-7 w-7" />
+          </div>
+          <h2 className="font-display text-xl font-bold mb-2">Limite diário atingido</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            O plano gratuito permite 1 sessão de Aprender por dia. Volta amanhã ou faz upgrade.
+          </p>
+          <div className="flex flex-col gap-2">
+            <a href="/concursos" className="inline-flex items-center justify-center rounded-full bg-gradient-primary px-4 py-2 text-sm font-semibold text-white">
+              Ver planos
+            </a>
+            <button onClick={() => navigate(-1)} className="rounded-full border border-border/60 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+              Voltar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!cat && !isInteresses) return <Navigate to="/aprender" replace />;
   if (!gate.loading && !gate.hasAccess) {

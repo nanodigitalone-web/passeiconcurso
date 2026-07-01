@@ -82,6 +82,43 @@ contentRouter.post("/attempts", requireAuth, async (req: AuthedRequest, res) => 
   res.json({ ok: true, saved: rows.length });
 });
 
+// Daily usage for free-tier limit enforcement.
+// Returns today's attempt counts (Angola tz) + whether user has any paid plan.
+contentRouter.get("/daily-usage", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const [simR, aprR, planR] = await Promise.all([
+      one<{ n: number }>(
+        `select count(*)::int as n from question_attempts
+          where user_id=$1 and mode='simulado'
+            and (answered_at at time zone 'Africa/Luanda')::date
+              = (now() at time zone 'Africa/Luanda')::date`,
+        [req.userId],
+      ),
+      one<{ n: number }>(
+        `select count(*)::int as n from question_attempts
+          where user_id=$1 and mode='aprender'
+            and (answered_at at time zone 'Africa/Luanda')::date
+              = (now() at time zone 'Africa/Luanda')::date`,
+        [req.userId],
+      ),
+      one<{ has_plan: boolean }>(
+        `select exists(
+           select 1 from access_plans
+            where user_id=$1 and (expires_at is null or expires_at > now())
+         ) as has_plan`,
+        [req.userId],
+      ),
+    ]);
+    res.json({
+      simulado_done: (simR?.n ?? 0) > 0,
+      aprender_done: (aprR?.n ?? 0) > 0,
+      is_free: !(planR?.has_plan ?? false),
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
 // Infinite "Aprender" trail level: each level = 300 answered questions.
 contentRouter.post("/aprender-level", requireAuth, async (req: AuthedRequest, res) => {
   const { concursoId, categoriaId } = req.body || {};

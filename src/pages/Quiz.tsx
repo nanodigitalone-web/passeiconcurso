@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { quizService, notificationsService, authService } from "@/services";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Check, Clock, X } from "lucide-react";
+import { Check, Clock, Lock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +30,17 @@ const Quiz = () => {
   const [motivation, setMotivation] = useState<MotivationVariant | null>(null);
   const motivationShownRef = useRef<Set<MotivationVariant>>(new Set());
   const startedAtRef = useRef(Date.now());
+  const [dailyBlocked, setDailyBlocked] = useState(false);
+
+  const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
+
+  // Free-tier daily limit: 1 simulado/day (skipped during promo).
+  useEffect(() => {
+    if (Date.now() < PROMO_END) return;
+    api.get<{ simulado_done: boolean; is_free: boolean }>("/content/daily-usage").then((d) => {
+      if (d.is_free && d.simulado_done) setDailyBlocked(true);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -79,6 +91,31 @@ const Quiz = () => {
         <AccessGate concursoId={concursoId!} categoriaId={categoriaId!} categoriaNome={catNome}>
           <></>
         </AccessGate>
+      </div>
+    );
+  }
+
+  // Free-tier daily limit reached.
+  if (dailyBlocked) {
+    return (
+      <div className="min-h-screen bg-gradient-soft flex items-center justify-center px-4">
+        <Card className="max-w-sm w-full p-8 text-center shadow-elegant">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 mx-auto mb-4">
+            <Lock className="h-7 w-7" />
+          </div>
+          <h2 className="font-display text-xl font-bold mb-2">Limite diário atingido</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            O plano gratuito permite 1 simulado por dia. Volta amanhã ou faz upgrade para estudar sem limites.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button asChild className="rounded-full bg-gradient-primary">
+              <a href="/concursos">Ver planos</a>
+            </Button>
+            <Button variant="outline" className="rounded-full" onClick={() => navigate(-1)}>
+              Voltar
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }

@@ -23,11 +23,12 @@ import {
   Pencil, X, Users, Camera, Loader2, Search, Star, Zap,
   UserCheck, MapPin, GraduationCap, Flame,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-const FREE_MAX   = 5;
+const FREE_MAX   = 2;
 const BASIC_MAX  = 10;
 const PRO_MAX    = 30;
 const BASIC_COST = 1000;
@@ -55,6 +56,12 @@ const Perfil = () => {
   const [savingInt, setSavingInt]           = useState(false);
   const [buyingTier, setBuyingTier]         = useState<10 | 30 | null>(null);
   const [editingInteresses, setEditingInteresses] = useState(false);
+
+  // ── Followers / Following list dialog ──────────────────────────────────────
+  type SocialUser = { id: string; nome: string; avatar_url: string | null; pontos_globais: number };
+  const [socialList, setSocialList]     = useState<SocialUser[]>([]);
+  const [socialType, setSocialType]     = useState<"followers" | "following" | null>(null);
+  const [socialLoading, setSocialLoading] = useState(false);
 
   // ── Other state ────────────────────────────────────────────────────────────
   const [hidden, setHidden]             = useState(false);
@@ -149,22 +156,35 @@ const Perfil = () => {
   const buyTier = async (tier: 10 | 30) => {
     setBuyingTier(tier);
     try {
-      const r = await api.post<{ ok: boolean; error?: string }>("/profile/interests-tier", { tier });
-      if (!r.ok) {
-        if ((r as any).error === "insufficient_coins") {
-          toast.error("Moedas insuficientes. Carrega a tua carteira.");
-        } else {
-          toast.error("Erro ao comprar plano.");
-        }
+      await api.post("/profile/interests-tier", { tier });
+      await refreshProfile();
+      toast.success(tier === 10 ? "Plano Básico activado!" : "Plano Pro activado!");
+      setEditingInteresses(true);
+    } catch (e: any) {
+      if (e?.code === "insufficient_coins") {
+        toast.error("Moedas insuficientes — carrega a carteira primeiro.", {
+          action: { label: "Carteira", onClick: () => navigate("/carteira") },
+        });
       } else {
-        await refreshProfile();
-        toast.success(tier === 10 ? "Plano Básico activado!" : "Plano Pro activado!");
-        setEditingInteresses(true); // abre o picker para seleccionar interesses
+        toast.error("Erro ao activar plano. Tenta novamente.");
       }
-    } catch {
-      toast.error("Erro ao comprar plano.");
     } finally {
       setBuyingTier(null);
+    }
+  };
+
+  const openSocialList = async (type: "followers" | "following") => {
+    if (!user) return;
+    setSocialType(type);
+    setSocialLoading(true);
+    setSocialList([]);
+    try {
+      const data = await api.get<SocialUser[]>(`/profile/${user.id}/${type}`);
+      setSocialList(data);
+    } catch {
+      toast.error("Erro ao carregar lista.");
+    } finally {
+      setSocialLoading(false);
     }
   };
 
@@ -279,24 +299,20 @@ const Perfil = () => {
           {/* Stats grid */}
           <div className="mt-5 grid grid-cols-4 gap-2">
             {[
-              { label: "Pontos", value: totais.toLocaleString("pt-PT"), icon: Zap },
-              { label: "Seguidores", value: String(followStats?.followers ?? "–"), icon: Users, to: `/perfil/${user?.id}` },
-              { label: "A seguir",   value: String(followStats?.following ?? "–"), icon: UserCheck, to: `/perfil/${user?.id}` },
-              { label: "Sequência",  value: `${profile?.streak ?? 0}d`, icon: Flame },
-            ].map((s) => {
-              const content = (
-                <div className="flex flex-col items-center gap-1 rounded-2xl bg-white/10 p-3 text-center backdrop-blur-sm">
-                  <s.icon className="h-4 w-4 opacity-60" />
-                  <p className="font-display text-lg font-bold leading-none">{s.value}</p>
-                  <p className="text-[10px] opacity-60 leading-tight">{s.label}</p>
-                </div>
-              );
-              return s.to ? (
-                <Link key={s.label} to={s.to}>{content}</Link>
-              ) : (
-                <div key={s.label}>{content}</div>
-              );
-            })}
+              { label: "Pontos",     value: totais.toLocaleString("pt-PT"), icon: Zap, onClick: undefined },
+              { label: "Seguidores", value: String(followStats?.followers ?? "–"), icon: Users,      onClick: () => openSocialList("followers") },
+              { label: "A seguir",   value: String(followStats?.following ?? "–"), icon: UserCheck,  onClick: () => openSocialList("following") },
+              { label: "Sequência",  value: `${profile?.streak ?? 0}d`, icon: Flame, onClick: undefined },
+            ].map((s) => (
+              <div key={s.label}
+                onClick={s.onClick}
+                className={cn("flex flex-col items-center gap-1 rounded-2xl bg-white/10 p-3 text-center backdrop-blur-sm", s.onClick && "cursor-pointer hover:bg-white/20 transition-colors")}
+              >
+                <s.icon className="h-4 w-4 opacity-60" />
+                <p className="font-display text-lg font-bold leading-none">{s.value}</p>
+                <p className="text-[10px] opacity-60 leading-tight">{s.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -691,6 +707,38 @@ const Perfil = () => {
       >
         <LogOut className="mr-2 h-4 w-4" /> Terminar sessão
       </Button>
+
+      {/* ── DIALOG: seguidores / a seguir ─────────────────────────────────── */}
+      <Dialog open={!!socialType} onOpenChange={(o) => { if (!o) setSocialType(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{socialType === "followers" ? "Seguidores" : "A seguir"}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-96 overflow-y-auto space-y-2 py-2">
+            {socialLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+            ) : socialList.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">
+                {socialType === "followers" ? "Ainda não tens seguidores." : "Ainda não segues ninguém."}
+              </p>
+            ) : socialList.map((u) => (
+              <Link key={u.id} to={`/perfil/${u.id}`} onClick={() => setSocialType(null)}
+                className="flex items-center gap-3 rounded-xl border border-border/60 p-3 transition-colors hover:bg-muted/40">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-600 text-white font-display font-bold">
+                  {u.avatar_url
+                    ? <img src={u.avatar_url} alt={u.nome} className="h-full w-full rounded-full object-cover" />
+                    : u.nome.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{u.nome}</p>
+                  <p className="text-xs text-muted-foreground">{u.pontos_globais.toLocaleString("pt-PT")} pontos</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+              </Link>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 };
