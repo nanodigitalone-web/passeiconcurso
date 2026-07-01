@@ -633,6 +633,116 @@ adminRouter.post("/users/:id/ban", async (req: any, res) => {
   }
 });
 
+// ---- Subscription management ----
+
+// GET /admin/subscriptions?status=pending — list subscriptions for admin
+adminRouter.get("/subscriptions", async (req, res) => {
+  try {
+    const status = (req.query.status as string) || 'pending';
+    const subs = await query(`
+      SELECT us.*, p.name as plan_name, p.price_aoa, p.max_disciplines,
+             pr.nome, pr.email, pr.avatar_url
+      FROM user_subscriptions us
+      JOIN plans p ON p.id = us.plan_id
+      JOIN profiles pr ON pr.id = us.user_id
+      WHERE ($1 = 'all' OR us.status = $1)
+      ORDER BY us.created_at DESC LIMIT 100
+    `, [status]);
+    res.json({ subscriptions: subs.rows });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// POST /admin/subscriptions/grant — admin grants subscription directly (no payment needed)
+// NOTE: must be before /:id routes to avoid conflict
+adminRouter.post("/subscriptions/grant", async (req: any, res) => {
+  try {
+    const { user_id, plan_id, months } = req.body || {};
+    if (!user_id || !plan_id) return res.status(400).json({ error: "user_id and plan_id required" });
+
+    const plan = await one<any>("SELECT * FROM plans WHERE id = $1", [plan_id]);
+    if (!plan) return res.status(404).json({ error: "plan_not_found" });
+
+    // Cancel any existing pending/active subscription
+    await query("UPDATE user_subscriptions SET status = 'expired' WHERE user_id = $1 AND status IN ('active','pending')", [user_id]);
+
+    const durationDays = (Number(months) || 1) * 30;
+    const expires_at = new Date(Date.now() + durationDays * 86400000);
+
+    const sub = await one<any>(`
+      INSERT INTO user_subscriptions (user_id, plan_id, status, expires_at, activated_at, activated_by)
+      VALUES ($1, $2, 'active', $3, now(), $4)
+      RETURNING *
+    `, [user_id, plan_id, expires_at, req.userId]);
+
+    try {
+      await query(
+        "INSERT INTO notifications (user_id, title, body) VALUES ($1, $2, $3)",
+        [user_id, "Plano activado pelo administrador", `O teu plano ${plan.name} foi activado. Escolhe as tuas disciplinas e começa a estudar!`]
+      );
+    } catch { /* non-critical */ }
+
+    res.json({ ok: true, subscription: sub });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// POST /admin/subscriptions/:id/activate — approve and activate subscription
+adminRouter.post("/subscriptions/:id/activate", async (req: any, res) => {
+  try {
+    const sub = await one<any>(
+      "SELECT us.*, p.duration_days FROM user_subscriptions us JOIN plans p ON p.id = us.plan_id WHERE us.id = $1",
+      [req.params.id]
+    );
+    if (!sub) return res.status(404).json({ error: "not_found" });
+    if (sub.status === 'active') return res.json({ ok: true, already_active: true });
+
+    const expires_at = new Date(Date.now() + sub.duration_days * 86400000);
+    await query(`
+      UPDATE user_subscriptions
+      SET status = 'active', expires_at = $1, activated_at = now(), activated_by = $2
+      WHERE id = $3
+    `, [expires_at, req.userId, sub.id]);
+
+    // Notify user
+    try {
+      await query(
+        "INSERT INTO notifications (user_id, title, body) VALUES ($1, $2, $3)",
+        [sub.user_id, "Plano activado!", "O teu plano foi activado com sucesso. Acede à app e escolhe as tuas disciplinas!"]
+      );
+    } catch { /* non-critical */ }
+
+    res.json({ ok: true, expires_at });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// POST /admin/subscriptions/:id/reject — reject subscription
+adminRouter.post("/subscriptions/:id/reject", async (req, res) => {
+  try {
+    const { reason } = (req as any).body || {};
+    await query(
+      "UPDATE user_subscriptions SET status = 'rejected', notes = $1 WHERE id = $2",
+      [reason || null, req.params.id]
+    );
+    const sub = await one<any>("SELECT user_id FROM user_subscriptions WHERE id = $1", [req.params.id]);
+    if (sub) {
+      try {
+        await query(
+          "INSERT INTO notifications (user_id, title, body) VALUES ($1, $2, $3)",
+          [sub.user_id, "Subscrição rejeitada", reason || "O teu comprovativo não foi validado. Tenta novamente ou contacta o suporte."]
+        );
+      } catch { /* non-critical */ }
+    }
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
 // ---- Full stats for a single user (used in admin user detail modal) ----
 adminRouter.get("/users/:id/stats", async (req, res) => {
   try {

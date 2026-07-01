@@ -28,7 +28,7 @@ import {
   Clock, GraduationCap, Plus, Phone, Image as ImageIcon, Coins, Banknote,
   Tag, ToggleLeft, ToggleRight, Calendar, TrendingUp, Zap, ArrowUpRight,
   ArrowDownRight, Activity, Target, DollarSign, Percent, Repeat2,
-  UserCheck, Flame, Trophy, AlertTriangle, RotateCcw,
+  UserCheck, Flame, Trophy, AlertTriangle, RotateCcw, CreditCard, Star, Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { disciplinaById } from "@/data/disciplinas";
@@ -72,6 +72,7 @@ const SectionTitle = ({ icon, children }: { icon: React.ReactNode; children: Rea
 // ── Nav tabs ─────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { key: "stats",         label: "Estatísticas",   Icon: BarChart3  },
+  { key: "subscricoes",   label: "Subscrições",    Icon: CreditCard },
   { key: "users",         label: "Usuários",        Icon: Users      },
   { key: "codes",         label: "Códigos",         Icon: KeyRound   },
   { key: "notifs",        label: "Notificações",    Icon: Bell       },
@@ -167,6 +168,7 @@ const Admin = () => {
       {/* ── Content ───────────────────────────────────────────────────────── */}
       <main className="mx-auto max-w-6xl px-4 py-6">
         {tab === "stats"         && <StatsTab />}
+        {tab === "subscricoes"   && <SubscricoesTab />}
         {tab === "users"         && <UsersTab />}
         {tab === "codes"         && <CodesTab />}
         {tab === "notifs"        && <NotifsTab />}
@@ -893,6 +895,196 @@ const StatsTab = () => {
 
 /* ═══════════════════════ USERS ═══════════════════════ */
 type AccessRow = { id: string; concurso_id: string; categoria_id: string; code: string | null; activated_at: string };
+
+// ── Subscrições Tab ──────────────────────────────────────────────────────────
+const PLAN_ICON_ADMIN: Record<string, React.ReactNode> = {
+  free: <Star className="h-4 w-4 text-muted-foreground" />,
+  basico: <Zap className="h-4 w-4 text-blue-500" />,
+  pro: <Star className="h-4 w-4 text-purple-500" />,
+  pro_max: <Crown className="h-4 w-4 text-amber-500" />,
+  familia: <Users className="h-4 w-4 text-emerald-500" />,
+};
+
+const SubscricoesTab = () => {
+  const [filter, setFilter] = useState<"pending" | "active" | "all">("pending");
+  const [subs, setSubs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionId, setActionId] = useState<string | null>(null);
+  // Grant modal
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [grantUserId, setGrantUserId] = useState("");
+  const [grantPlanId, setGrantPlanId] = useState("pro");
+  const [grantMonths, setGrantMonths] = useState(1);
+  const [granting, setGranting] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await api.get<{ subscriptions: any[] }>(`/admin/subscriptions?status=${filter}`);
+      setSubs(r.subscriptions);
+    } catch { toast.error("Erro ao carregar subscrições"); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, [filter]);
+
+  const activate = async (id: string) => {
+    setActionId(id);
+    try {
+      await api.post(`/admin/subscriptions/${id}/activate`);
+      toast.success("Plano activado!");
+      load();
+    } catch { toast.error("Erro ao activar"); }
+    finally { setActionId(null); }
+  };
+
+  const reject = async (id: string) => {
+    const reason = prompt("Motivo da rejeição (opcional):");
+    if (reason === null) return;
+    setActionId(id);
+    try {
+      await api.post(`/admin/subscriptions/${id}/reject`, { reason });
+      toast.success("Subscrição rejeitada.");
+      load();
+    } catch { toast.error("Erro ao rejeitar"); }
+    finally { setActionId(null); }
+  };
+
+  const grant = async () => {
+    if (!grantUserId.trim()) return toast.error("Introduz o ID do utilizador");
+    setGranting(true);
+    try {
+      await api.post("/admin/subscriptions/grant", { user_id: grantUserId.trim(), plan_id: grantPlanId, months: grantMonths });
+      toast.success("Plano atribuído com sucesso!");
+      setGrantOpen(false);
+      setGrantUserId("");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao atribuir plano");
+    } finally { setGranting(false); }
+  };
+
+  const statusLabel: Record<string, string> = {
+    pending: "Pendente", active: "Activo", expired: "Expirado", rejected: "Rejeitado",
+  };
+  const statusColor: Record<string, string> = {
+    pending: "bg-amber-100 text-amber-700",
+    active: "bg-emerald-100 text-emerald-700",
+    expired: "bg-muted text-muted-foreground",
+    rejected: "bg-red-100 text-red-700",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex gap-1">
+          {(["pending","active","all"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={cn("rounded-full px-3 py-1 text-sm font-medium transition-colors",
+                filter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}>
+              {f === "pending" ? "Pendentes" : f === "active" ? "Activos" : "Todos"}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="rounded-full" onClick={load}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Actualizar
+          </Button>
+          <Button size="sm" className="rounded-full" onClick={() => setGrantOpen(true)}>
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Atribuir plano
+          </Button>
+        </div>
+      </div>
+
+      {/* Grant modal */}
+      {grantOpen && (
+        <Card className="border-primary/30 bg-primary/5 p-4 space-y-3">
+          <p className="font-semibold text-sm">Atribuir plano directamente</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div>
+              <label className="text-xs text-muted-foreground">ID do utilizador</label>
+              <input value={grantUserId} onChange={e => setGrantUserId(e.target.value)}
+                placeholder="uuid do utilizador" className="mt-1 w-full rounded-lg border p-2 text-sm font-mono" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Plano</label>
+              <select value={grantPlanId} onChange={e => setGrantPlanId(e.target.value)}
+                className="mt-1 w-full rounded-lg border p-2 text-sm">
+                {["free","basico","pro","pro_max","familia"].map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Duração (meses)</label>
+              <input type="number" min={1} max={12} value={grantMonths} onChange={e => setGrantMonths(Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border p-2 text-sm" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={grant} disabled={granting} className="rounded-full" size="sm">
+              {granting ? <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> A atribuir...</> : "Confirmar atribuição"}
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-full" onClick={() => setGrantOpen(false)}>Cancelar</Button>
+          </div>
+        </Card>
+      )}
+
+      {loading ? (
+        <div className="py-8 text-center text-sm text-muted-foreground">A carregar...</div>
+      ) : subs.length === 0 ? (
+        <Card className="border-dashed p-6 text-center text-sm text-muted-foreground">
+          Nenhuma subscrição {filter === "pending" ? "pendente" : filter === "active" ? "activa" : ""}.
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {subs.map(s => (
+            <Card key={s.id} className="flex items-center gap-3 p-4">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                {PLAN_ICON_ADMIN[s.plan_id] ?? <CreditCard className="h-4 w-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-sm truncate">{s.nome}</p>
+                  <Badge className={cn("text-[10px] rounded-full", statusColor[s.status] ?? "")}>
+                    {statusLabel[s.status] ?? s.status}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px] rounded-full">{s.plan_name}</Badge>
+                  <span className="text-xs text-muted-foreground">{s.price_aoa?.toLocaleString("pt-PT")} Kz</span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{s.email}</p>
+                <p className="text-xs text-muted-foreground">
+                  Submetido: {new Date(s.created_at).toLocaleDateString("pt-PT")}
+                  {s.expires_at && ` · Expira: ${new Date(s.expires_at).toLocaleDateString("pt-PT")}`}
+                </p>
+                {s.comprovativo_url && (
+                  <a href={s.comprovativo_url} target="_blank" rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-xs text-primary underline">
+                    <ExternalLink className="h-3 w-3" /> Ver comprovativo
+                  </a>
+                )}
+              </div>
+              {s.status === "pending" && (
+                <div className="flex gap-2 shrink-0">
+                  <Button size="sm" className="rounded-full bg-emerald-600 hover:bg-emerald-700"
+                    disabled={actionId === s.id}
+                    onClick={() => activate(s.id)}>
+                    {actionId === s.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
+                    Activar
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
+                    disabled={actionId === s.id}
+                    onClick={() => reject(s.id)}>
+                    Rejeitar
+                  </Button>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const UsersTab = () => {
   const [rows, setRows] = useState<any[]>([]);

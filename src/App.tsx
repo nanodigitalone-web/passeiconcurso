@@ -22,6 +22,10 @@ import Perfil from "./pages/Perfil";
 import Aprender from "./pages/Aprender";
 import AprenderSessao from "./pages/AprenderSessao";
 import Acesso from "./pages/Acesso";
+import Planos from "./pages/Planos";
+import PlanoPagamento from "./pages/PlanoPagamento";
+import EscolherDisciplinas from "./pages/EscolherDisciplinas";
+import MeuPlano from "./pages/MeuPlano";
 import Admin from "./pages/Admin";
 import Notificacoes from "./pages/Notificacoes";
 import Recursos from "./pages/Recursos";
@@ -77,6 +81,10 @@ const App = () => (
             <Route path="/aprender" element={<P><Aprender /></P>} />
             <Route path="/aprender/sessao/:concursoId/:categoriaId" element={<P><AprenderSessao /></P>} />
             <Route path="/acesso/:concursoId/:categoriaId" element={<P><Acesso /></P>} />
+            <Route path="/planos" element={<P><Planos /></P>} />
+            <Route path="/planos/:planId/pagar" element={<P><PlanoPagamento /></P>} />
+            <Route path="/escolher-disciplinas" element={<P><EscolherDisciplinas /></P>} />
+            <Route path="/meu-plano" element={<P><MeuPlano /></P>} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/notificacoes" element={<P><Notificacoes /></P>} />
             <Route path="*" element={<NotFound />} />

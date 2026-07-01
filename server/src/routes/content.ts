@@ -168,7 +168,25 @@ contentRouter.post("/aprender-level", requireAuth, async (req: AuthedRequest, re
   const PER_LEVEL = 300;
   try {
     let row: { n: number } | null;
-    if (concursoId === "interesses") {
+    if (concursoId === "plano") {
+      const subDisc = await one<{ disciplines: string[] }>(`
+        SELECT disciplines FROM user_subscriptions
+        WHERE user_id = $1 AND status = 'active' AND expires_at > now() AND disciplines_locked = true
+        UNION ALL
+        SELECT sm.disciplines FROM subscription_members sm
+        JOIN user_subscriptions us ON us.id = sm.subscription_id
+        WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now() AND sm.disciplines_locked = true
+        LIMIT 1
+      `, [req.userId]);
+      const disciplinas = expandInterestSlugs((subDisc?.disciplines as string[]) ?? []);
+      row = disciplinas.length === 0
+        ? { n: 0 }
+        : await one<{ n: number }>(
+            `select count(*)::int as n from question_attempts
+              where user_id = $1 and disciplina = any($2::text[]) and mode = 'aprender'`,
+            [req.userId, disciplinas],
+          );
+    } else if (concursoId === "interesses") {
       const profile = await one<{ interesses: string[] }>("select interesses from profiles where id = $1", [req.userId]);
       const disciplinas = expandInterestSlugs(profile?.interesses ?? []);
       row = disciplinas.length === 0
@@ -228,6 +246,72 @@ contentRouter.post("/questions", requireAuth, async (req: AuthedRequest, res) =>
 
   const cap = Math.min(Math.max(1, Number(limit) || 20), 100);
   let all: any[];
+
+  // Virtual "plano" category: serve questions filtered by the user's subscription disciplines.
+  if (concursoId === "plano") {
+    const subDisc = await one<{ disciplines: string[] }>(`
+      SELECT disciplines FROM user_subscriptions
+      WHERE user_id = $1 AND status = 'active' AND expires_at > now() AND disciplines_locked = true
+      UNION ALL
+      SELECT sm.disciplines FROM subscription_members sm
+      JOIN user_subscriptions us ON us.id = sm.subscription_id
+      WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now() AND sm.disciplines_locked = true
+      LIMIT 1
+    `, [req.userId]);
+
+    if (!subDisc || !(subDisc.disciplines as any[]).length) return res.json({ questions: [] });
+    const disciplinas = expandInterestSlugs(subDisc.disciplines as string[]);
+
+    const placeholders = disciplinas.map((_: string, i: number) => `$${i + 2}`).join(",");
+    all = (
+      await query(
+        `select id, disciplina, enunciado, opcoes, correta, comentario, source
+           from questions
+          where disciplina in (${placeholders}) and active`,
+        [req.userId, ...disciplinas],
+      )
+    ).rows;
+    if (all.length === 0) return res.json({ questions: [] });
+
+    const statsRows = (
+      await query(
+        `select question_id,
+                sum(case when not correct then 1 else 0 end)::int as wrong_count,
+                max(answered_at) as last_at,
+                (array_agg(correct order by answered_at desc))[1] as last_correct
+           from question_attempts
+          where user_id = $1 and disciplina = any($2::text[])
+          group by question_id`,
+        [req.userId, disciplinas],
+      )
+    ).rows;
+    const stats = new Map<string, any>();
+    for (const s of statsRows) stats.set(s.question_id, s);
+    const COOLDOWN_MS = 5 * 60 * 60 * 1000;
+    const MAX_WRONG_REPEATS = 3;
+    const now = Date.now();
+    const eligible: { q: any; s: number }[] = [];
+    const fallback: { q: any; s: number }[] = [];
+    for (const q of all) {
+      const st = stats.get(q.id);
+      let s = Math.random();
+      if (q.source === "seed") s += 1;
+      if (!st) { eligible.push({ q, s: s + 2 }); continue; }
+      const lastAt = new Date(st.last_at).getTime();
+      const cooling = now - lastAt < COOLDOWN_MS;
+      const mastered = st.last_correct === true;
+      const exhausted = st.wrong_count >= MAX_WRONG_REPEATS;
+      if (!cooling && !mastered && !exhausted) eligible.push({ q, s: s + 1.5 });
+      else fallback.push({ q, s: -(now - lastAt) });
+    }
+    eligible.sort((a, b) => b.s - a.s);
+    let chosen = eligible.slice(0, cap);
+    if (chosen.length < cap) {
+      fallback.sort((a, b) => b.s - a.s);
+      chosen = chosen.concat(fallback.slice(0, cap - chosen.length));
+    }
+    return res.json({ questions: chosen.map(({ q }) => shuffleOptions(q)) });
+  }
 
   // Virtual "interesses" category: serve questions filtered by the user's
   // selected discipline interests, across all real categories. Requires any paid plan.
