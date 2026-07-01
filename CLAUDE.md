@@ -130,6 +130,25 @@ indisponível) — aplicar quando o ambiente local estiver disponível.
 
 ## 9. Registo de sessões (mais recente no topo)
 
+### 2026-07-01 (admin metrics resilience + UX melhorias)
+- **Admin – UserStatsModal reutilizável**: componente partilhado entre Top 3 e UsersTab.
+  Clicar em qualquer utilizador em UsersTab faz fetch `GET /admin/users/:id/stats` e abre
+  o modal completo (13 métricas, incl. `referrals_given`).
+- **Admin – Activação & Retenção Detalhada**: nova secção com 6 KPIs: utilizadores activados,
+  taxa de activação, retenção D1/D7/D30, receita/MAU e payback em meses.
+- **Admin – Questões por Disciplina**: gráfico de barras após «Questões por Categoria» mostrando
+  questões disponíveis por disciplina dos interesses/temas (usa `m.disciplines` já no endpoint).
+- **Fix avatar**: `AvatarImage` em `avatar.tsx` agora tem `object-cover` — fotos não-quadradas
+  deixam de distorcer em todo o lado da app.
+- **Fix streak**: calculado e gravado em `profiles.streak` no endpoint `POST /content/attempts`,
+  logo após inserir as tentativas. Antes estava sempre a 0.
+- **Fix pontos simulado**: `Quiz.tsx` mostra `toast.error` se `addPoints` falhar (antes silencioso).
+- **Aprender**: tempo por questão 10 → **15 segundos** (`AprenderSessao.tsx`).
+- **Renomear «interesses» → «disciplinas»**: todos os textos visíveis ao utilizador actualizados
+  em `Perfil.tsx`, `Interesses.tsx`, `InteressesModal.tsx`, `Index.tsx`. Variáveis e campos BD mantêm
+  o nome original.
+- Commit: `0628f7f`. Deploy via Vercel automático.
+
 ### 2026-07-01 (admin moderation + fix interesses)
 - **Fix questões por interesses**: `content.ts` importa `ALL_DISCIPLINAS` de `disciplinas.ts`
   via tsx. Nova `expandInterestSlugs()` expande cada slug para incluir o nome legível
