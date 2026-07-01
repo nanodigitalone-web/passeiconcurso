@@ -214,24 +214,34 @@ const AprenderSessao = () => {
 
   if (done) {
     const perfect = hits === total;
+    const taxa = total > 0 ? Math.round((hits / total) * 100) : 0;
     const pontos = Math.min(20, hits * POINTS_PER_HIT);
+    const motivMsg =
+      perfect
+        ? "Sessão perfeita! Conquistaste todos os pontos. Segue para o próximo nível!"
+        : taxa >= 60
+        ? "Bom trabalho! Continua a trilhar — cada sessão aumenta o teu domínio."
+        : "Não desanimes! As questões difíceis são as que mais ensinam. Tenta de novo!";
     return (
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-6">
-        <Card className="w-full max-w-md p-8 text-center border-0 bg-gradient-to-br from-warning to-accent text-white shadow-elegant animate-scale-in">
-          <Trophy className="mx-auto h-16 w-16 animate-float" />
-          <h2 className="mt-3 font-display text-3xl font-bold">{perfect ? "Perfeito!" : "Bom trabalho!"}</h2>
-          <p className="mt-1 opacity-90">{hits} de {total} acertos</p>
-          <p className="mt-6 font-display text-5xl font-bold">+{pontos}</p>
-          <p className="text-sm opacity-90">pontos conquistados</p>
-          <div className="mt-8 grid grid-cols-2 gap-3">
-            <Button asChild variant="secondary" className="rounded-full font-semibold">
-              <Link to="/aprender">Voltar</Link>
-            </Button>
-            <Button onClick={() => window.location.reload()} variant="secondary" className="rounded-full font-semibold">
-              Jogar novo
-            </Button>
-          </div>
-        </Card>
+        <div className="w-full max-w-md space-y-3 animate-scale-in">
+          <Card className="p-8 text-center border-0 bg-gradient-to-br from-warning to-accent text-white shadow-elegant">
+            <Trophy className="mx-auto h-16 w-16 animate-float" />
+            <h2 className="mt-3 font-display text-3xl font-bold">{perfect ? "Perfeito!" : "Bom trabalho!"}</h2>
+            <p className="mt-1 opacity-90">{hits} de {total} acertos</p>
+            <p className="mt-6 font-display text-5xl font-bold">+{pontos}</p>
+            <p className="text-sm opacity-90">pontos conquistados</p>
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              <Button asChild variant="secondary" className="rounded-full font-semibold">
+                <Link to="/aprender">Voltar</Link>
+              </Button>
+              <Button onClick={() => window.location.reload()} variant="secondary" className="rounded-full font-semibold">
+                Jogar novo
+              </Button>
+            </div>
+          </Card>
+          <p className="text-center text-sm text-muted-foreground px-2 leading-relaxed">{motivMsg}</p>
+        </div>
       </div>
     );
   }
