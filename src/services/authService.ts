@@ -25,6 +25,8 @@ export type Profile = {
   ano?: string | null;
   interesses?: string[];
   interesses_ativo?: boolean;
+  plan_id?: string | null;
+  disciplines_locked?: boolean | null;
 };
 
 export type AuthUser = { id: string; email: string | null; created_at: string };

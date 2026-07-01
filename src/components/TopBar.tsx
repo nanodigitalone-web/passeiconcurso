@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { NotificationBell } from "./NotificationBell";
+import { PlanBadge } from "./PlanBadge";
 
 const ROOT_ROUTES = ["/", "/concursos", "/percurso", "/ranking", "/aprender"];
 
@@ -40,12 +41,14 @@ export const TopBar = () => {
           )}
           <NotificationBell />
           <Link to="/perfil" aria-label="Perfil">
-            <Avatar className="h-9 w-9 ring-2 ring-primary/20 hover:ring-primary/50 transition-smooth">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-bold">
-                {profile?.nome?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <PlanBadge planId={profile?.plan_id}>
+              <Avatar className="h-9 w-9 ring-2 ring-primary/20 hover:ring-primary/50 transition-smooth">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-bold">
+                  {profile?.nome?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </PlanBadge>
           </Link>
         </div>
       </div>

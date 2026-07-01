@@ -31,7 +31,16 @@ async function ensureProfile(userId: string, email: string, nome?: string) {
 async function profilePayload(userId: string) {
   const profile = await one("select * from profiles where id = $1", [userId]);
   const admin = await isAdmin(userId);
-  return { profile, isAdmin: admin };
+  const planRow = await one<{ plan_id: string; disciplines_locked: boolean }>(
+    `SELECT plan_id, disciplines_locked FROM user_subscriptions
+     WHERE user_id = $1 AND status = 'active' AND expires_at > now()
+     ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  return {
+    profile: { ...(profile as object), plan_id: planRow?.plan_id ?? null, disciplines_locked: planRow?.disciplines_locked ?? null },
+    isAdmin: admin,
+  };
 }
 
 // Reward the inviter with 50 points when a NEW user signs up with their code.

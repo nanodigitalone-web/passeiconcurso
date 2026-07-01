@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   Play, BookMarked, Flame, Zap, BarChart2,
   Gift, Banknote, Swords, Users, MapPin,
-  ChevronRight, Loader2, Plus, Sparkles, X, Megaphone, CreditCard,
+  ChevronRight, Loader2, Plus, Sparkles, X, Megaphone, CreditCard, Crown,
 } from "lucide-react";
 
 const Index = () => {
@@ -165,6 +165,23 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* ── BANNER: plano activo sem disciplinas escolhidas ─────────────────── */}
+      {profile?.plan_id && profile.disciplines_locked === false && (
+        <Link to="/planos"
+          className="mt-4 flex items-center gap-3 overflow-hidden rounded-2xl border border-amber-300/50 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3.5 transition-all hover:shadow-md animate-fade-in">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+            <Crown className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-amber-900 leading-tight">Plano activo — escolhe as tuas disciplinas</p>
+            <p className="text-xs text-amber-700/80 mt-0.5 leading-tight">
+              Tens o plano activado mas ainda não escolheste as disciplinas de estudo.
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-amber-600" />
+        </Link>
+      )}
 
       {/* ── STATS ────────────────────────────────────────────────────────────── */}
       <div className="mt-4 grid grid-cols-3 gap-2.5">
