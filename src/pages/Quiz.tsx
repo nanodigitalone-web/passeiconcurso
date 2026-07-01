@@ -112,12 +112,13 @@ const Quiz = () => {
   const gate = useAccessGate(concursoId, categoriaId);
 
   const isInteresses = concursoId === "interesses";
-  const catNome = cat?.nome ?? (isInteresses ? "Estudo por Interesses" : "");
+  const isPlano = concursoId === "plano";
+  const catNome = cat?.nome ?? (isInteresses ? "Estudo por Interesses" : isPlano ? "Estudo por Disciplinas" : "");
 
   // Load the question set (mixed old+new, personalized, options shuffled
   // server-side) once access is confirmed and a length is chosen.
   useEffect(() => {
-    if (!gate.hasAccess || (!cat && !isInteresses) || count === null) return;
+    if (!gate.hasAccess || (!cat && !isInteresses && !isPlano) || count === null) return;
     setLoading(true);
     quizService
       .loadQuestionSet(concursoId!, categoriaId!, count)
@@ -126,7 +127,7 @@ const Quiz = () => {
   }, [gate.hasAccess, concursoId, categoriaId, count]);
 
 
-  if (!cat && !isInteresses) return <Navigate to="/concursos" replace />;
+  if (!cat && !isInteresses && !isPlano) return <Navigate to="/concursos" replace />;
   if (!gate.loading && !gate.hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-soft px-4 pt-10">

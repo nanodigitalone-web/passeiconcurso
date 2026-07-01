@@ -405,6 +405,23 @@ const Planos = () => {
               )}
             </Card>
 
+            {/* ── CTAs de estudo ── */}
+            {discArr.length > 0 && (
+              <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-blue-500/5 p-4">
+                <p className="mb-3 text-sm font-semibold text-primary">Estudar com as tuas disciplinas</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button className="w-full rounded-full font-semibold"
+                    onClick={() => navigate("/aprender/sessao/plano/meu-plano")}>
+                    Modo Aprender
+                  </Button>
+                  <Button variant="outline" className="w-full rounded-full font-semibold"
+                    onClick={() => navigate("/quiz/plano/meu-plano")}>
+                    Simulado
+                  </Button>
+                </div>
+              </Card>
+            )}
+
             {/* ── Disciplinas ── */}
             <div>
               <div className="mb-3 flex items-center justify-between">
@@ -517,18 +534,6 @@ const Planos = () => {
                 </>
               )}
             </div>
-
-            {/* ── Estudar CTAs (once at least one discipline is saved) ── */}
-            {discArr.length > 0 && (
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Button className="w-full rounded-full" onClick={() => navigate("/aprender/sessao/plano/meu-plano")}>
-                  Modo Aprender
-                </Button>
-                <Button variant="outline" className="w-full rounded-full" onClick={() => navigate("/quiz/plano/meu-plano")}>
-                  Simulado
-                </Button>
-              </div>
-            )}
 
             {/* ── Membros da Família (only for familia plan owner) ── */}
             {isFamilia && isOwner && (

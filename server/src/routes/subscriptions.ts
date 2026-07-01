@@ -148,11 +148,18 @@ subscriptionsRouter.post("/:id/disciplines", requireAuth, async (req: AuthedRequ
         [req.params.id, req.userId]
       );
       if (!memberRow) return res.status(403).json({ error: "forbidden" });
-      // Only block if already at max (fully locked)
-      if (memberRow.disciplines_locked) return res.status(409).json({ error: "already_locked" });
+      // Only block when at full capacity (all slots filled)
+      const existingMem: string[] = Array.isArray(memberRow.disciplines) ? memberRow.disciplines : JSON.parse(memberRow.disciplines || '[]');
+      if (memberRow.disciplines_locked && existingMem.length >= sub.max_disciplines) {
+        return res.status(409).json({ error: "already_locked" });
+      }
     } else {
-      if (sub.disciplines_locked) return res.status(409).json({ error: "already_locked" });
       if (sub.status !== 'active') return res.status(400).json({ error: "subscription_not_active" });
+      // Only block when at full capacity
+      const existingOwner: string[] = Array.isArray(sub.disciplines) ? sub.disciplines : JSON.parse(sub.disciplines || '[]');
+      if (sub.disciplines_locked && existingOwner.length >= sub.max_disciplines) {
+        return res.status(409).json({ error: "already_locked" });
+      }
     }
 
     const { disciplines: incoming } = req.body || {};

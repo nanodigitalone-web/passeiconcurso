@@ -148,8 +148,36 @@ const Index = () => {
               </Link>
             </Button>
 
-            {/* Minhas Disciplinas — só aparece se o utilizador tem interesses */}
-            {temInteresses && (
+            {/* Plano activo com disciplinas escolhidas — botões de estudo por plano */}
+            {profile?.plan_id && profile?.disciplines_locked === true && (
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="lg"
+                  className="rounded-2xl border border-white/25 text-white hover:bg-white/10 font-semibold"
+                >
+                  <Link to="/aprender/sessao/plano/meu-plano" className="flex items-center justify-center gap-2">
+                    <BookMarked className="h-4 w-4" />
+                    Aprender
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="lg"
+                  className="rounded-2xl border border-white/25 text-white hover:bg-white/10 font-semibold"
+                >
+                  <Link to="/quiz/plano/meu-plano" className="flex items-center justify-center gap-2">
+                    <Play className="h-4 w-4" />
+                    Simulado
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            {/* Minhas Disciplinas (interesses) */}
+            {temInteresses && !profile?.plan_id && (
               <Button
                 asChild
                 variant="ghost"

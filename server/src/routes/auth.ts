@@ -31,14 +31,18 @@ async function ensureProfile(userId: string, email: string, nome?: string) {
 async function profilePayload(userId: string) {
   const profile = await one("select * from profiles where id = $1", [userId]);
   const admin = await isAdmin(userId);
-  const planRow = await one<{ plan_id: string; disciplines_locked: boolean }>(
-    `SELECT plan_id, disciplines_locked FROM user_subscriptions
-     WHERE user_id = $1 AND status = 'active' AND expires_at > now()
-     ORDER BY created_at DESC LIMIT 1`,
-    [userId]
-  );
+  let planFields: Record<string, any> = { plan_id: null, disciplines_locked: null };
+  try {
+    const planRow = await one<{ plan_id: string; disciplines_locked: boolean }>(
+      `SELECT plan_id, disciplines_locked FROM user_subscriptions
+       WHERE user_id = $1 AND status = 'active' AND expires_at > now()
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId]
+    );
+    if (planRow) planFields = { plan_id: planRow.plan_id, disciplines_locked: planRow.disciplines_locked };
+  } catch { /* non-critical — plan info is optional */ }
   return {
-    profile: { ...(profile as object), plan_id: planRow?.plan_id ?? null, disciplines_locked: planRow?.disciplines_locked ?? null },
+    profile: { ...(profile as object), ...planFields },
     isAdmin: admin,
   };
 }
