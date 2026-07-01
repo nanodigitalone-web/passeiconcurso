@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -913,9 +913,15 @@ const SubscricoesTab = () => {
   // Grant modal
   const [grantOpen, setGrantOpen] = useState(false);
   const [grantUserId, setGrantUserId] = useState("");
+  const [grantUserName, setGrantUserName] = useState("");
   const [grantPlanId, setGrantPlanId] = useState("pro");
   const [grantMonths, setGrantMonths] = useState(1);
   const [granting, setGranting] = useState(false);
+  // User search for grant
+  const [grantSearch, setGrantSearch] = useState("");
+  const [grantResults, setGrantResults] = useState<any[]>([]);
+  const [grantSearching, setGrantSearching] = useState(false);
+  const grantTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -926,6 +932,20 @@ const SubscricoesTab = () => {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [filter]);
+
+  // Pesquisa de utilizadores para atribuição de plano
+  useEffect(() => {
+    if (grantSearch.length < 2) { setGrantResults([]); return; }
+    if (grantTimer.current) clearTimeout(grantTimer.current);
+    grantTimer.current = setTimeout(async () => {
+      setGrantSearching(true);
+      try {
+        const r = await api.get<{ users: any[] }>(`/subscriptions/search-users?q=${encodeURIComponent(grantSearch)}`);
+        setGrantResults(r.users);
+      } catch { setGrantResults([]); }
+      finally { setGrantSearching(false); }
+    }, 400);
+  }, [grantSearch]);
 
   const activate = async (id: string) => {
     setActionId(id);
@@ -950,13 +970,13 @@ const SubscricoesTab = () => {
   };
 
   const grant = async () => {
-    if (!grantUserId.trim()) return toast.error("Introduz o ID do utilizador");
+    if (!grantUserId) return toast.error("Selecciona um utilizador");
     setGranting(true);
     try {
-      await api.post("/admin/subscriptions/grant", { user_id: grantUserId.trim(), plan_id: grantPlanId, months: grantMonths });
-      toast.success("Plano atribuído com sucesso!");
+      await api.post("/admin/subscriptions/grant", { user_id: grantUserId, plan_id: grantPlanId, months: grantMonths });
+      toast.success(`Plano ${grantPlanId} atribuído a ${grantUserName}!`);
       setGrantOpen(false);
-      setGrantUserId("");
+      setGrantUserId(""); setGrantUserName(""); setGrantSearch(""); setGrantResults([]);
       load();
     } catch (e: any) {
       toast.error(e?.message || "Erro ao atribuir plano");
@@ -999,12 +1019,44 @@ const SubscricoesTab = () => {
       {grantOpen && (
         <Card className="border-primary/30 bg-primary/5 p-4 space-y-3">
           <p className="font-semibold text-sm">Atribuir plano directamente</p>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <div>
-              <label className="text-xs text-muted-foreground">ID do utilizador</label>
-              <input value={grantUserId} onChange={e => setGrantUserId(e.target.value)}
-                placeholder="uuid do utilizador" className="mt-1 w-full rounded-lg border p-2 text-sm font-mono" />
-            </div>
+          {/* User search */}
+          <div>
+            <label className="text-xs text-muted-foreground">Pesquisar utilizador (nome ou email)</label>
+            {grantUserId ? (
+              <div className="mt-1 flex items-center justify-between rounded-lg border bg-white p-2">
+                <p className="text-sm font-semibold">{grantUserName}</p>
+                <button onClick={() => { setGrantUserId(""); setGrantUserName(""); setGrantSearch(""); setGrantResults([]); }}
+                  className="text-xs text-muted-foreground underline">Alterar</button>
+              </div>
+            ) : (
+              <div className="relative mt-1">
+                <input value={grantSearch} onChange={e => setGrantSearch(e.target.value)}
+                  placeholder="Nome ou email do utilizador..."
+                  className="w-full rounded-lg border p-2 text-sm" />
+                {grantSearching && <p className="mt-1 text-xs text-muted-foreground">A pesquisar...</p>}
+                {grantResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border bg-white shadow-lg">
+                    {grantResults.map(u => (
+                      <button key={u.id} onClick={() => { setGrantUserId(u.id); setGrantUserName(u.nome || u.email); setGrantSearch(""); setGrantResults([]); }}
+                        className="flex w-full items-center gap-2 p-2.5 text-left hover:bg-muted/50 first:rounded-t-lg last:rounded-b-lg">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {(u.nome || u.email)?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{u.nome}</p>
+                          <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!grantSearching && grantSearch.length >= 2 && grantResults.length === 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">Nenhum utilizador encontrado.</p>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <label className="text-xs text-muted-foreground">Plano</label>
               <select value={grantPlanId} onChange={e => setGrantPlanId(e.target.value)}

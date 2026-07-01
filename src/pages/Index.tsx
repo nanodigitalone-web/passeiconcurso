@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   Play, BookMarked, Flame, Zap, BarChart2,
   Gift, Banknote, Swords, Users, MapPin,
-  ChevronRight, Loader2, Plus, Sparkles, X, Megaphone,
+  ChevronRight, Loader2, Plus, Sparkles, X, Megaphone, CreditCard,
 } from "lucide-react";
 
 const Index = () => {
@@ -309,6 +309,13 @@ const Index = () => {
       <section className="mt-5">
         <div className="grid grid-cols-2 gap-2.5">
           {[
+            {
+              to: "/planos",
+              icon: CreditCard,
+              label: "Planos",
+              desc: "Ver e aderir a planos",
+              accent: "bg-violet-100 text-violet-700",
+            },
             {
               to: "/interesses",
               icon: BookMarked,
