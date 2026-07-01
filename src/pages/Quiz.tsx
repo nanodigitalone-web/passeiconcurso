@@ -7,14 +7,55 @@ import { Progress } from "@/components/ui/progress";
 import { quizService, notificationsService, authService } from "@/services";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Check, Clock, Lock, X } from "lucide-react";
+import { BookOpen, Check, Clock, Flame, Lock, X, Zap } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsPromoActive } from "@/contexts/PromoContext";
 import { MotivationModal, type MotivationVariant } from "@/components/MotivationModal";
 
-const COUNT_OPTIONS = [20, 50, 100];
+// Animated loading screen shown while questions are fetched from the server.
+const QuizLoader = ({ catNome }: { catNome: string }) => {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const TARGET = 88;
+    const DURATION = 2800;
+    const start = performance.now();
+    let raf: number;
+    const tick = (now: number) => {
+      const pct = Math.min(TARGET, ((now - start) / DURATION) * TARGET);
+      setProgress(pct);
+      if (pct < TARGET) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-soft flex flex-col items-center justify-center gap-6 px-4">
+      <div className="w-full max-w-xs text-center">
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto">
+          <BookOpen className="h-8 w-8" />
+        </div>
+        <h2 className="font-display text-xl font-bold mb-1">A preparar o simulado</h2>
+        <p className="text-sm text-muted-foreground mb-6">{catNome} · seleção inteligente de questões</p>
+        <div className="h-2 w-full rounded-full bg-border/40 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-none"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">{Math.round(progress)}%</p>
+      </div>
+    </div>
+  );
+};
+
+const COUNT_CONFIG = [
+  { n: 20,  label: "Rápido",  desc: "Revisão expressa, sem pressão",   time: "~10 min", Icon: Zap,      iconBg: "bg-emerald-100 text-emerald-700", border: "hover:border-emerald-400/50", badge: "bg-emerald-100 text-emerald-700" },
+  { n: 50,  label: "Normal",  desc: "Formato padrão de simulado real", time: "~25 min", Icon: BookOpen, iconBg: "bg-sky-100 text-sky-700",     border: "hover:border-sky-400/50",     badge: "bg-sky-100 text-sky-700"     },
+  { n: 100, label: "Intenso", desc: "Preparação aprofundada e séria",  time: "~50 min", Icon: Flame,    iconBg: "bg-violet-100 text-violet-700", border: "hover:border-violet-400/50",  badge: "bg-violet-100 text-violet-700" },
+];
 
 const Quiz = () => {
   const { concursoId, categoriaId } = useParams();
@@ -125,42 +166,58 @@ const Quiz = () => {
     const start = (n: number) => {
       startedAtRef.current = Date.now();
       setSeconds(0);
-      setLoading(true); // show the loader immediately, before questions arrive
+      setLoading(true);
       setCount(n);
     };
     return (
       <div className="min-h-screen bg-gradient-soft">
         <div className="mx-auto max-w-2xl px-4 pb-10 pt-6">
-          <header className="mb-4 flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>Sair</Button>
+          <header className="mb-6 flex items-center">
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>← Sair</Button>
           </header>
-          <h1 className="font-display text-2xl font-bold">{catNome}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Quantas questões quer no simulado? Priorizamos questões novas e as que você errou.
-          </p>
-          <div className="mt-6 space-y-3">
-            {COUNT_OPTIONS.map((n) => (
+
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">{catNome}</p>
+            <h1 className="font-display text-3xl font-bold">Escolhe o formato</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">Seleção inteligente — priorizamos questões novas e as que erraste.</p>
+          </div>
+
+          <div className="space-y-3">
+            {COUNT_CONFIG.map(({ n, label, desc, time, Icon, iconBg, border, badge }) => (
               <button
                 key={n}
                 onClick={() => start(n)}
-                className="flex w-full items-center justify-between rounded-2xl border-2 border-border/60 bg-card p-5 text-left shadow-card transition-smooth hover:border-primary/50"
+                className={`group flex w-full items-center gap-4 rounded-2xl border-2 border-border/60 bg-card p-5 text-left shadow-card transition-all duration-200 ${border} hover:-translate-y-0.5 hover:shadow-elegant active:scale-[0.98]`}
               >
-                <span className="font-display text-xl font-bold">{n} questões</span>
-                <span className="text-xs text-muted-foreground">selecção inteligente</span>
+                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} transition-transform group-hover:scale-110`}>
+                  <Icon className="h-6 w-6" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-display text-xl font-bold">{n} questões</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge}`}>{label}</span>
+                  </div>
+                  <p className="mt-0.5 text-sm text-muted-foreground leading-tight">{desc}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />{time}
+                  </div>
+                </div>
               </button>
             ))}
           </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Máx. <strong>50 pontos</strong> por simulado · sem limite de tentativas diárias
+          </p>
         </div>
       </div>
     );
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
-        <p className="text-sm text-muted-foreground animate-pulse">A preparar o seu simulado…</p>
-      </div>
-    );
+    return <QuizLoader catNome={catNome} />;
   }
   if (!questao) return <Navigate to="/concursos" replace />;
 

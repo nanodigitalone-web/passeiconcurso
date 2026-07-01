@@ -162,7 +162,10 @@ const Perfil = () => {
       setEditingInteresses(true);
     } catch (e: any) {
       if (e?.code === "insufficient_coins") {
-        navigate("/carteira");
+        const dest = (profile?.concurso_id && profile?.categoria_id)
+          ? `/acesso/${profile.concurso_id}/${profile.categoria_id}`
+          : "/concursos";
+        navigate(dest);
       } else {
         toast.error("Erro ao activar plano. Tenta novamente.");
       }
