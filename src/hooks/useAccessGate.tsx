@@ -3,6 +3,8 @@ import { useAuth } from "./useAuth";
 import { accessService, clearAccessCache } from "@/services";
 
 const TRIAL_HOURS = 2;
+// Promoção: todas as categorias gratuitas até 5 de julho de 2026 (inclusive).
+const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
 
 export { clearAccessCache };
 
@@ -27,9 +29,17 @@ export const useAccessGate = (concursoId?: string, categoriaId?: string): GateSt
         setState({ loading: false, hasAccess: false, isTrial: false, trialHoursLeft: 0, trialExpired: false });
         return;
       }
+      const now = Date.now();
+
+      // Promoção ativa → acesso livre a todos.
+      if (now < PROMO_END) {
+        if (!active) return;
+        setState({ loading: false, hasAccess: true, isTrial: false, trialHoursLeft: 0, trialExpired: false });
+        return;
+      }
+
       const created = new Date(user.created_at).getTime();
       const trialEnd = created + TRIAL_HOURS * 3600000;
-      const now = Date.now();
       const trialHoursLeft = Math.max(0, Math.ceil((trialEnd - now) / 3600000));
       const isTrial = now < trialEnd;
 

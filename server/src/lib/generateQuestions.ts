@@ -2,54 +2,46 @@
 // concurso/categoria/disciplina, validates them, dedups against the bank, and
 // inserts them into `questions` (source='ai', auto-published).
 //
-// Provider: uses Google Gemini when GEMINI_API_KEY is set (free tier, the
-// default going forward), otherwise falls back to Anthropic Claude Haiku if
-// ANTHROPIC_API_KEY is set. Reads keys from the environment — never hardcode.
+// Provider priority: Anthropic Claude Haiku (ANTHROPIC_API_KEY) → Gemini (GEMINI_API_KEY).
 import { randomUUID } from "node:crypto";
 import { query } from "./db.js";
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
-export const aiEnabled = () => !!(GEMINI_KEY || ANTHROPIC_KEY);
+export const aiEnabled = () => !!(ANTHROPIC_KEY || GEMINI_KEY);
 
-// Call the configured model and return its raw text response.
 async function callModel(system: string, prompt: string): Promise<string> {
-  if (GEMINI_KEY) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: system }] },
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: 4000,
-          temperature: 0.9,
-          responseMimeType: "application/json",
-        },
-      }),
+  // Anthropic first (Claude Haiku — fastest and cheapest).
+  if (ANTHROPIC_KEY) {
+    const Anthropic = (await import("@anthropic-ai/sdk")).default;
+    const client = new Anthropic({ apiKey: ANTHROPIC_KEY });
+    const r = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 4000,
+      system,
+      messages: [{ role: "user", content: prompt }],
     });
-    if (!resp.ok) throw new Error(`gemini_${resp.status}: ${(await resp.text()).slice(0, 200)}`);
-    const data: any = await resp.json();
-    return (
-      data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("") ?? ""
-    );
+    return r.content
+      .filter((b: any) => b.type === "text")
+      .map((b: any) => b.text)
+      .join("");
   }
-  // Anthropic fallback (dynamic import so the SDK is optional).
-  const Anthropic = (await import("@anthropic-ai/sdk")).default;
-  const client = new Anthropic();
-  const r = await client.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: 4000,
-    system,
-    messages: [{ role: "user", content: prompt }],
+  // Gemini fallback.
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: system }] },
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 4000, temperature: 0.9, responseMimeType: "application/json" },
+    }),
   });
-  return r.content
-    .filter((b: any) => b.type === "text")
-    .map((b: any) => b.text)
-    .join("");
+  if (!resp.ok) throw new Error(`gemini_${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+  const data: any = await resp.json();
+  return data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("") ?? "";
 }
 
 function extractJsonArray(text: string): any {
@@ -66,20 +58,21 @@ type Draft = { enunciado: string; opcoes: string[]; correta: number; comentario?
 export async function generateQuestions(opts: {
   concursoId: string;
   categoriaId: string;
-  disciplina: string;
+  disciplina: string;       // stored in DB (may be a slug for interest-based questions)
+  disciplinaNome?: string;  // human-readable name used in the AI prompt (defaults to disciplina)
   count: number;
 }): Promise<{ requested: number; valid: number; inserted: number }> {
   if (!aiEnabled()) throw new Error("ai_not_configured");
   const count = Math.min(Math.max(1, Math.trunc(opts.count) || 1), 20);
+  const nomeParaPrompt = opts.disciplinaNome ?? opts.disciplina;
 
   const system =
-    "És um especialista em concursos públicos da saúde em Angola. " +
+    "És um especialista em concursos e exames académicos em Angola. " +
     "Geras questões de escolha múltipla rigorosas, corretas e sem ambiguidade, " +
     "em português de Angola. Responde APENAS com JSON válido, sem texto à volta.";
 
   const prompt =
-    `Gera ${count} questões de escolha múltipla sobre a disciplina "${opts.disciplina}" ` +
-    `(concurso "${opts.concursoId}", categoria "${opts.categoriaId}").\n` +
+    `Gera ${count} questões de escolha múltipla sobre "${nomeParaPrompt}".\n` +
     `Regras: cada questão tem exatamente 4 opções, apenas 1 correta, e um comentário curto que explica a resposta. Varia a posição da resposta correta.\n` +
     `Formato (array JSON, nada mais):\n` +
     `[{"enunciado":"...","opcoes":["...","...","...","..."],"correta":0,"comentario":"..."}]`;
@@ -97,8 +90,8 @@ export async function generateQuestions(opts: {
   const existing = new Set(
     (
       await query(
-        "select lower(trim(enunciado)) e from questions where concurso_id=$1 and categoria_id=$2",
-        [opts.concursoId, opts.categoriaId],
+        "select lower(trim(enunciado)) e from questions where disciplina=$1",
+        [opts.disciplina],
       )
     ).rows.map((r: any) => r.e),
   );
