@@ -130,6 +130,21 @@ indisponível) — aplicar quando o ambiente local estiver disponível.
 
 ## 9. Registo de sessões (mais recente no topo)
 
+### 2026-07-01 (admin moderation + fix interesses)
+- **Fix questões por interesses**: `content.ts` importa `ALL_DISCIPLINAS` de `disciplinas.ts`
+  via tsx. Nova `expandInterestSlugs()` expande cada slug para incluir o nome legível
+  (ex. "anatomia-humana-sistemica" → também "Anatomia Humana Sistémica"). Questões seed/antigas
+  têm nome legível; novas têm slug — agora ambas batem. Aplica-se em `/aprender-level` e `/questions`.
+- **Admin – Top 3 utilizadores**: endpoint `GET /admin/top-users` (JOIN com `question_attempts`
+  e `category_access`). StatsTab mostra pódio clicável com medalhas; modal detalha todos os dados.
+- **Admin – Moderação**: UsersTab ganha filtros (Todos/Com plano/Bloqueados), `WarnUserDialog`
+  (POST `/admin/users/:id/warn` → notificação com mensagem personalizada) e `BanUserDialog`
+  (POST `/admin/users/:id/ban` → bloqueia + notificação com motivo).
+- **Admin – Prevenção de fraude**: botão "Revogar" em carregamentos aprovados. POST
+  `/admin/topups/:id/revoke` deduz moedas (≥0), regista em `coin_transactions` com tipo
+  `topup_revoke`, muda status para `revoked` e notifica utilizador.
+- Migração 014 incluída no commit (já aplicada na Neon).
+
 ### 2026-06-30 (correção de arquitetura interesses + extras)
 - **Correção de arquitetura**: a página separada `EstudarInteresses.tsx`
   (Simulado/Aprender isolados dentro de Interesses) criada na sessão anterior
