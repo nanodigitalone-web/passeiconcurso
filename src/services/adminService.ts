@@ -25,6 +25,33 @@ export const adminService = {
     }
   },
 
+  // ---- Startup Metrics ----
+  async getMetrics(): Promise<{
+    totalUsers: number; newUsers30d: number; newUsers7d: number; dau: number; mau: number; mauPrev: number; paidUsers: number;
+    conversionRate: number; dauMauRatio: number; growthRate: number | null;
+    totalRevenue: number; mrr: number; arr: number; arpu: number; ltv: number; avgOrder: number;
+    retentionRate: number | null; churnRate: number | null; retainedCount: number; prevMAU: number;
+    totalAttempts30d: number; activeUsers30d: number; avgAttemptsPerUser: number;
+    userGrowth: { month: string; n: number }[];
+    revenue: { month: string; aoa: number }[];
+    dauTrend: { day: string; dau: number }[];
+    modeBreakdown: { mode: string; n: number }[];
+    retentionCohort: { month: string; mau: number }[];
+  }> {
+    try {
+      return await api.get("/admin/metrics");
+    } catch {
+      return {
+        totalUsers: 0, newUsers30d: 0, newUsers7d: 0, dau: 0, mau: 0, mauPrev: 0, paidUsers: 0,
+        conversionRate: 0, dauMauRatio: 0, growthRate: null,
+        totalRevenue: 0, mrr: 0, arr: 0, arpu: 0, ltv: 0, avgOrder: 0,
+        retentionRate: null, churnRate: null, retainedCount: 0, prevMAU: 0,
+        totalAttempts30d: 0, activeUsers30d: 0, avgAttemptsPerUser: 0,
+        userGrowth: [], revenue: [], dauTrend: [], modeBreakdown: [], retentionCohort: [],
+      };
+    }
+  },
+
   // ---- Users ----
   async listProfiles(limit = 500) {
     try {

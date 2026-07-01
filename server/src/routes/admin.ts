@@ -234,3 +234,135 @@ adminRouter.post("/payments/:id/reject", async (req, res) => {
   ]);
   res.json({ ok: true });
 });
+
+// ---- Startup Metrics Dashboard ----
+adminRouter.get("/metrics", async (_req, res) => {
+  try {
+    const n = async (sql: string, p?: any[]) =>
+      Number((await one<{ c: string | number }>(sql, p))?.c ?? 0);
+
+    // ── User counts ──────────────────────────────────────────────────────────
+    const [totalUsers, newUsers30d, newUsers7d, newUsersPrev30d, dau, mau, mauPrev, paidUsers] =
+      await Promise.all([
+        n("SELECT count(*)::int c FROM profiles"),
+        n("SELECT count(*)::int c FROM profiles WHERE created_at > now() - interval '30 days'"),
+        n("SELECT count(*)::int c FROM profiles WHERE created_at > now() - interval '7 days'"),
+        n("SELECT count(*)::int c FROM profiles WHERE created_at BETWEEN now() - interval '60 days' AND now() - interval '30 days'"),
+        n("SELECT count(*)::int c FROM profiles WHERE last_seen > now() - interval '1 day'"),
+        n("SELECT count(*)::int c FROM profiles WHERE last_seen > now() - interval '30 days'"),
+        n("SELECT count(*)::int c FROM profiles WHERE last_seen BETWEEN now() - interval '60 days' AND now() - interval '30 days'"),
+        n("SELECT count(DISTINCT user_id)::int c FROM category_access"),
+      ]);
+
+    // ── Revenue ───────────────────────────────────────────────────────────────
+    const [revAccess, revTopup, mrrAccess, mrrTopup, avgOrderRaw] = await Promise.all([
+      n("SELECT COALESCE(sum(amount_aoa), 0)::int c FROM payment_requests WHERE status='approved'"),
+      n("SELECT COALESCE(sum(amount_aoa), 0)::int c FROM coin_topup_requests WHERE status='approved'"),
+      n("SELECT COALESCE(sum(amount_aoa), 0)::int c FROM payment_requests WHERE status='approved' AND updated_at > now() - interval '30 days'"),
+      n("SELECT COALESCE(sum(amount_aoa), 0)::int c FROM coin_topup_requests WHERE status='approved' AND updated_at > now() - interval '30 days'"),
+      n("SELECT COALESCE(avg(amount_aoa), 0)::int c FROM payment_requests WHERE status='approved'"),
+    ]);
+    const totalRevenue = revAccess + revTopup;
+    const mrr = mrrAccess + mrrTopup;
+    const arr = mrr * 12;
+    const ltv = paidUsers > 0 ? Math.round(totalRevenue / paidUsers) : 0;
+    const arpu = totalUsers > 0 ? Math.round(totalRevenue / totalUsers) : 0;
+    const conversionRate = totalUsers > 0 ? Math.round((paidUsers / totalUsers) * 1000) / 10 : 0;
+
+    // ── Engagement (from question_attempts) ───────────────────────────────────
+    const engRow = await one<{ total: string; users: string; simulado: string; aprender: string }>(
+      `SELECT
+         count(*)::int as total,
+         count(DISTINCT user_id)::int as users,
+         count(CASE WHEN mode='simulado' THEN 1 END)::int as simulado,
+         count(CASE WHEN mode='aprender' THEN 1 END)::int as aprender
+       FROM question_attempts WHERE created_at > now() - interval '30 days'`,
+    );
+    const totalAttempts30d = Number(engRow?.total ?? 0);
+    const activeUsers30d = Number(engRow?.users ?? 0);
+    const avgAttemptsPerUser = activeUsers30d > 0 ? Math.round(totalAttempts30d / activeUsers30d) : 0;
+    const dauMauRatio = mau > 0 ? Math.round((dau / mau) * 100) : 0;
+
+    // ── Retention 30d ─────────────────────────────────────────────────────────
+    const retRow = await one<{ prev_mau: string; retained: string }>(
+      `WITH
+         curr AS (SELECT DISTINCT user_id FROM profiles WHERE last_seen > now() - interval '30 days'),
+         prev AS (SELECT DISTINCT user_id FROM profiles WHERE last_seen BETWEEN now() - interval '60 days' AND now() - interval '30 days'),
+         ret  AS (SELECT user_id FROM curr INTERSECT SELECT user_id FROM prev)
+       SELECT
+         (SELECT count(*)::int FROM prev) as prev_mau,
+         (SELECT count(*)::int FROM ret)  as retained`,
+    );
+    const prevMAU = Number(retRow?.prev_mau ?? 0);
+    const retainedCount = Number(retRow?.retained ?? 0);
+    const retentionRate = prevMAU > 0 ? Math.round((retainedCount / prevMAU) * 100) : null;
+    const churnRate = retentionRate !== null ? 100 - retentionRate : null;
+
+    // ── Growth rate MoM ───────────────────────────────────────────────────────
+    const growthRate =
+      newUsersPrev30d > 0
+        ? Math.round(((newUsers30d - newUsersPrev30d) / newUsersPrev30d) * 100)
+        : null;
+
+    // ── Charts ────────────────────────────────────────────────────────────────
+    const [userGrowthRaw, revenueRaw, dauTrendRaw, modeRaw, retentionCohortRaw] = await Promise.all([
+      // Monthly user registrations (last 12 months)
+      query(
+        `SELECT to_char(date_trunc('month', created_at), 'Mon/YY') as month,
+                count(*)::int as n
+         FROM profiles WHERE created_at > now() - interval '12 months'
+         GROUP BY date_trunc('month', created_at)
+         ORDER BY date_trunc('month', created_at)`,
+      ),
+      // Monthly revenue (last 12 months) — access subscriptions
+      query(
+        `SELECT to_char(date_trunc('month', updated_at), 'Mon/YY') as month,
+                COALESCE(sum(amount_aoa), 0)::int as aoa
+         FROM payment_requests WHERE status='approved' AND updated_at > now() - interval '12 months'
+         GROUP BY date_trunc('month', updated_at)
+         ORDER BY date_trunc('month', updated_at)`,
+      ),
+      // DAU trend (last 30 days via last_seen)
+      query(
+        `SELECT to_char(date_trunc('day', last_seen), 'DD/MM') as day,
+                count(*)::int as dau
+         FROM profiles WHERE last_seen > now() - interval '30 days'
+         GROUP BY date_trunc('day', last_seen)
+         ORDER BY date_trunc('day', last_seen)`,
+      ),
+      // Mode breakdown (all time)
+      query(`SELECT mode, count(*)::int as n FROM question_attempts GROUP BY mode`),
+      // Monthly retention cohort (last 6 months)
+      query(
+        `WITH monthly AS (
+           SELECT date_trunc('month', last_seen) as month,
+                  count(DISTINCT id)::int as mau
+           FROM profiles WHERE last_seen > now() - interval '6 months'
+           GROUP BY 1
+         )
+         SELECT to_char(month, 'Mon/YY') as month, mau FROM monthly ORDER BY month`,
+      ),
+    ]);
+
+    res.json({
+      // User metrics
+      totalUsers, newUsers30d, newUsers7d, dau, mau, mauPrev, paidUsers,
+      conversionRate, dauMauRatio, growthRate,
+      // Revenue / monetisation
+      totalRevenue, mrr, arr, arpu, ltv, avgOrder: avgOrderRaw,
+      // Retention
+      retentionRate, churnRate, retainedCount, prevMAU,
+      // Engagement
+      totalAttempts30d, activeUsers30d, avgAttemptsPerUser,
+      // Charts
+      userGrowth: userGrowthRaw.rows,
+      revenue: revenueRaw.rows,
+      dauTrend: dauTrendRaw.rows,
+      modeBreakdown: modeRaw.rows,
+      retentionCohort: retentionCohortRaw.rows,
+    });
+  } catch (e: any) {
+    console.error("/admin/metrics error:", e);
+    res.status(500).json({ error: e?.message || "server_error" });
+  }
+});

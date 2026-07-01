@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import {
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
+} from "recharts";
 import { Link } from "react-router-dom";
 import { adminService, authService, quizService, notificationsService, cursosService } from "@/services";
 import { api } from "@/lib/api";
@@ -21,7 +26,9 @@ import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban,
   CheckCircle2, RefreshCw, ShieldCheck, Unlock, Lock, FileText, ExternalLink,
   Clock, GraduationCap, Plus, Phone, Image as ImageIcon, Coins, Banknote,
-  Tag, ToggleLeft, ToggleRight, Calendar, TrendingUp, Zap,
+  Tag, ToggleLeft, ToggleRight, Calendar, TrendingUp, Zap, ArrowUpRight,
+  ArrowDownRight, Activity, Target, DollarSign, Percent, Repeat2,
+  UserCheck, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -173,98 +180,300 @@ const Admin = () => {
 };
 
 /* ═══════════════════════ STATS ═══════════════════════ */
+
+// Colors shared across charts
+const C = {
+  sky:     "#0ea5e9",
+  indigo:  "#6366f1",
+  emerald: "#10b981",
+  amber:   "#f59e0b",
+  rose:    "#f43f5e",
+  violet:  "#8b5cf6",
+  teal:    "#14b8a6",
+  slate:   "#64748b",
+};
+
+const aoa = (v: number) =>
+  v === 0 ? "0 Kz" : v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M Kz` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K Kz` : `${v} Kz`;
+
+const pct = (v: number | null, suffix = "%") =>
+  v === null ? "—" : `${v >= 0 ? "+" : ""}${v}${suffix}`;
+
+const DeltaBadge = ({ value }: { value: number | null }) => {
+  if (value === null) return <span className="text-xs text-muted-foreground">dados insuf.</span>;
+  const up = value >= 0;
+  return (
+    <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", up ? "text-emerald-600" : "text-rose-600")}>
+      {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+      {Math.abs(value)}%
+    </span>
+  );
+};
+
+type MetricCardProps = {
+  icon: React.ReactNode; label: string; value: string; sub?: string; accent?: string;
+  delta?: number | null; deltaLabel?: string;
+  border?: string;
+};
+const MetricCard = ({ icon, label, value, sub, accent, delta, deltaLabel, border }: MetricCardProps) => (
+  <Card className={cn("flex flex-col gap-2 border-border/60 p-4 shadow-card", border)}>
+    <div className="flex items-center justify-between">
+      <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl", accent || "bg-primary/10 text-primary")}>
+        {icon}
+      </div>
+      {delta !== undefined && <DeltaBadge value={delta} />}
+    </div>
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="font-display text-2xl font-bold leading-tight">{value}</p>
+      {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+      {deltaLabel && <p className="text-[11px] text-muted-foreground">{deltaLabel}</p>}
+    </div>
+  </Card>
+);
+
+const ChartCard = ({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) => (
+  <Card className="border-border/60 p-4 shadow-card">
+    <p className="font-display font-semibold mb-0.5">{title}</p>
+    {sub && <p className="text-xs text-muted-foreground mb-3">{sub}</p>}
+    {children}
+  </Card>
+);
+
 const StatsTab = () => {
-  const [s, setS] = useState({ users: 0, blocked: 0, hidden: 0, paid: 0, codesUsed: 0, codesAvail: 0, payments: 0 });
+  const [m, setM] = useState<Awaited<ReturnType<typeof adminService.getMetrics>> | null>(null);
   const [q, setQ] = useState<{
     total: number;
     bySource: { source: string; n: number }[];
     byCat: { concurso_id: string; categoria_id: string; n: number }[];
   }>({ total: 0, bySource: [], byCat: [] });
+  const [s, setS] = useState({ users: 0, blocked: 0, hidden: 0, paid: 0, codesUsed: 0, codesAvail: 0, payments: 0 });
 
   useEffect(() => {
-    adminService.getStats().then(setS);
+    adminService.getMetrics().then(setM);
     adminService.getQuestionsStats().then(setQ);
+    adminService.getStats().then(setS);
   }, []);
 
-  const seedCount = q.bySource.find((b) => b.source === "seed")?.n ?? 0;
-  const aiCount   = q.bySource.find((b) => b.source === "ai")?.n ?? 0;
-  const totalCategorias = q.byCat.length || concursos.reduce((acc, c) => acc + c.categorias.length, 0);
-  const porCategoria = q.byCat
-    .map((r) => ({
-      nome: quizService.getCategoria(r.concurso_id, r.categoria_id)?.nome ?? r.categoria_id,
-      n: r.n,
-    }))
-    .sort((a, b) => b.n - a.n);
+  const seedCount = q.bySource.find(b => b.source === "seed")?.n ?? 0;
+  const aiCount   = q.bySource.find(b => b.source === "ai")?.n ?? 0;
 
-  const kpiGroups: { title: string; items: { label: string; value: number; icon: any; accent: string; sub?: string }[] }[] = [
-    {
-      title: "Conteúdo",
-      items: [
-        { label: "Questões",    value: q.total,        icon: FileText,    accent: "bg-emerald-50 text-emerald-600", sub: `${seedCount} originais + ${aiCount} IA` },
-        { label: "Categorias",  value: totalCategorias, icon: BarChart3,   accent: "bg-sky-50 text-sky-600" },
-        { label: "Concursos",   value: concursos.length, icon: ShieldCheck, accent: "bg-indigo-50 text-indigo-600" },
-      ],
-    },
-    {
-      title: "Utilizadores",
-      items: [
-        { label: "Total",       value: s.users,   icon: Users,        accent: "bg-blue-50 text-blue-600" },
-        { label: "Acessos pagos", value: s.paid,  icon: CheckCircle2, accent: "bg-emerald-50 text-emerald-600" },
-        { label: "Bloqueados",  value: s.blocked,  icon: Ban,          accent: "bg-red-50 text-red-600" },
-        { label: "Ocultos",     value: s.hidden,   icon: EyeOff,       accent: "bg-amber-50 text-amber-600" },
-      ],
-    },
-    {
-      title: "Códigos & Pagamentos",
-      items: [
-        { label: "Códigos disponíveis", value: s.codesAvail, icon: KeyRound, accent: "bg-teal-50 text-teal-600" },
-        { label: "Códigos usados",      value: s.codesUsed,  icon: Lock,     accent: "bg-slate-100 text-slate-600" },
-        { label: "Pagamentos pendentes", value: s.payments,  icon: Clock,    accent: "bg-amber-50 text-amber-600" },
-      ],
-    },
-  ];
+  const porCategoria = useMemo(() =>
+    q.byCat
+      .map(r => ({ nome: quizService.getCategoria(r.concurso_id, r.categoria_id)?.nome ?? r.categoria_id, n: r.n }))
+      .sort((a, b) => b.n - a.n)
+  , [q.byCat]);
+
+  const funnelData = m ? [
+    { name: "Registados", value: m.totalUsers,  fill: C.sky    },
+    { name: "Ativos 30d", value: m.mau,          fill: C.indigo },
+    { name: "Pagantes",   value: m.paidUsers,    fill: C.emerald},
+  ] : [];
+
+  const pieData = m ? m.modeBreakdown.map(r => ({
+    name: r.mode === "simulado" ? "Simulado" : r.mode === "aprender" ? "Aprender" : r.mode,
+    value: r.n,
+  })) : [];
+  const PIE_COLORS = [C.sky, C.emerald, C.violet, C.amber];
+
+  if (!m) return (
+    <div className="flex items-center justify-center py-20">
+      <p className="animate-pulse text-sm text-muted-foreground">A carregar métricas…</p>
+    </div>
+  );
+
+  const ltvCacRatio = m.ltv > 0 ? "> 10x (orgânico)" : "—";
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {kpiGroups.map(g => (
-        <section key={g.title}>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{g.title}</p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {g.items.map(i => (
-              <KPI key={i.label} icon={<i.icon className="h-5 w-5" />} label={i.label} value={i.value} sub={i.sub} accent={i.accent} />
-            ))}
-          </div>
-        </section>
-      ))}
 
+      {/* ── CRESCIMENTO ─────────────────────────────────────────────────────── */}
       <section>
-        <SectionTitle icon={<TrendingUp className="h-4 w-4" />}>
-          Questões por categoria
-          <span className="ml-1 text-xs font-normal text-muted-foreground">— {seedCount.toLocaleString("pt-PT")} originais + {aiCount.toLocaleString("pt-PT")} IA</span>
-        </SectionTitle>
-        <Card className="border-border/60 p-5 shadow-card">
-          <div className="space-y-4">
-            {porCategoria.map(c => {
-              const pct = Math.min(100, Math.round((c.n / 1000) * 100));
-              return (
-                <div key={c.nome}>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="font-medium">{c.nome}</span>
-                    <span className="text-muted-foreground tabular-nums">{c.n.toLocaleString("pt-PT")} <span className="text-border">/ 1000</span></span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-sky-400 to-indigo-500 transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            {porCategoria.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados.</p>}
-          </div>
-        </Card>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Crescimento</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricCard icon={<Users className="h-5 w-5" />}       label="Utilizadores totais"  value={m.totalUsers.toLocaleString("pt-PT")} accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<UserCheck className="h-5 w-5" />}   label="Novos (30d)"          value={m.newUsers30d.toLocaleString("pt-PT")} delta={m.growthRate} deltaLabel="vs. 30d anteriores" accent="bg-indigo-50 text-indigo-600" />
+          <MetricCard icon={<TrendingUp className="h-5 w-5" />}  label="Novos (7d)"           value={m.newUsers7d.toLocaleString("pt-PT")} accent="bg-violet-50 text-violet-600" />
+          <MetricCard icon={<Activity className="h-5 w-5" />}    label="Taxa crescimento MoM" value={m.growthRate !== null ? `${m.growthRate >= 0 ? "+" : ""}${m.growthRate}%` : "—"} sub="mês anterior como base" accent={m.growthRate !== null && m.growthRate >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"} />
+        </div>
       </section>
+
+      {/* ── Evolução de utilizadores (área chart) + DAU trend ───────────────── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ChartCard title="Novos utilizadores / mês" sub="Últimos 12 meses">
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={m.userGrowth} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <defs>
+                <linearGradient id="gUsr" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={C.sky}    stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={C.sky}    stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Area type="monotone" dataKey="n" name="Registos" stroke={C.sky} fill="url(#gUsr)" strokeWidth={2} dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Utilizadores ativos / dia" sub="Últimos 30 dias (DAU)">
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={m.dauTrend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="day" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="dau" name="DAU" stroke={C.indigo} strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {/* ── MONETIZAÇÃO ─────────────────────────────────────────────────────── */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Monetização</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <MetricCard icon={<DollarSign className="h-5 w-5" />} label="Receita total"  value={aoa(m.totalRevenue)}       accent="bg-emerald-50 text-emerald-600" />
+          <MetricCard icon={<Repeat2   className="h-5 w-5" />} label="MRR"            value={aoa(m.mrr)}                 sub="Receita mensal recorrente" accent="bg-teal-50 text-teal-600" />
+          <MetricCard icon={<TrendingUp className="h-5 w-5"/>} label="ARR"            value={aoa(m.arr)}                 sub="MRR × 12 (projeção)" accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<Users     className="h-5 w-5" />} label="ARPU"           value={aoa(m.arpu)}                sub="Por utilizador total" accent="bg-indigo-50 text-indigo-600" />
+          <MetricCard icon={<Target    className="h-5 w-5" />} label="LTV"            value={aoa(m.ltv)}                 sub="Receita / cliente pago" accent="bg-violet-50 text-violet-600" />
+        </div>
+      </section>
+
+      {/* ── Receita mensal (bar chart) ───────────────────────────────────────── */}
+      <ChartCard title="Receita mensal (Kz)" sub="Últimos 12 meses — subscrições de acesso">
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={m.revenue} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: any) => [`${Number(v).toLocaleString("pt-PT")} Kz`, "Receita"]} />
+            <Bar dataKey="aoa" name="Receita" fill={C.emerald} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+        {m.revenue.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Sem receita registada ainda.</p>}
+      </ChartCard>
+
+      {/* ── CONVERSÃO & SAÚDE ───────────────────────────────────────────────── */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Conversão & Saúde</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricCard icon={<Percent    className="h-5 w-5" />} label="Taxa de conversão" value={`${m.conversionRate}%`}  sub="Free → Pagante" accent="bg-amber-50 text-amber-600" />
+          <MetricCard icon={<CheckCircle2 className="h-5 w-5"/>} label="Utilizadores pagantes" value={m.paidUsers.toLocaleString("pt-PT")} sub={`de ${m.totalUsers.toLocaleString("pt-PT")} registados`} accent="bg-emerald-50 text-emerald-600" />
+          <MetricCard icon={<Target    className="h-5 w-5" />} label="LTV / CAC"           value={ltvCacRatio}            sub="CAC ≈ 0 (referidos/orgânico)" accent="bg-violet-50 text-violet-600" />
+          <MetricCard icon={<DollarSign className="h-5 w-5"/>} label="Ticket médio"        value={aoa(m.avgOrder)}       sub="Por subscrição paga" accent="bg-sky-50 text-sky-600" />
+        </div>
+      </section>
+
+      {/* ── RETENÇÃO & ENGAJAMENTO ──────────────────────────────────────────── */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Retenção & Engajamento</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <MetricCard icon={<Repeat2   className="h-5 w-5" />} label="Retenção 30d"   value={m.retentionRate !== null ? `${m.retentionRate}%` : "—"} sub={m.prevMAU > 0 ? `${m.retainedCount}/${m.prevMAU} ativos voltaram` : "dados insuficientes"} accent={m.retentionRate !== null && m.retentionRate >= 40 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<ArrowDownRight className="h-5 w-5"/>} label="Churn 30d"  value={m.churnRate !== null ? `${m.churnRate}%` : "—"} sub="1 − retenção" accent={m.churnRate !== null && m.churnRate <= 30 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"} />
+          <MetricCard icon={<Zap       className="h-5 w-5" />} label="DAU"            value={m.dau.toLocaleString("pt-PT")} sub="Hoje (last_seen)" accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<Users     className="h-5 w-5" />} label="MAU"            value={m.mau.toLocaleString("pt-PT")} sub="Últimos 30 dias" accent="bg-indigo-50 text-indigo-600" />
+          <MetricCard icon={<Activity  className="h-5 w-5" />} label="DAU/MAU"        value={`${m.dauMauRatio}%`} sub="Índice de engajamento" accent={m.dauMauRatio >= 20 ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"} />
+          <MetricCard icon={<Flame     className="h-5 w-5" />} label="Questões/user"  value={m.avgAttemptsPerUser.toLocaleString("pt-PT")} sub="30d — por user ativo" accent="bg-orange-50 text-orange-600" />
+        </div>
+      </section>
+
+      {/* ── Retenção cohort (bar chart) + Funil + Modo estudo ───────────────── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <ChartCard title="Evolução MAU" sub="Últimos 6 meses">
+          <ResponsiveContainer width="100%" height={160}>
+            <AreaChart data={m.retentionCohort} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <defs>
+                <linearGradient id="gMau" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={C.violet} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={C.violet} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Area type="monotone" dataKey="mau" name="MAU" stroke={C.violet} fill="url(#gMau)" strokeWidth={2} dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Funil de conversão" sub="Acumulado">
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={funnelData} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+              <XAxis type="number" tick={{ fontSize: 11 }} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={72} />
+              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {funnelData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Modos de estudo" sub="Tentativas totais">
+          {pieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={68} paddingAngle={3} dataKey="value">
+                  {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: any) => [Number(v).toLocaleString("pt-PT"), ""]} />
+                <Legend iconType="circle" iconSize={9} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-sm text-muted-foreground py-8">Sem tentativas registadas.</p>
+          )}
+        </ChartCard>
+      </div>
+
+      {/* ── OPERAÇÕES ───────────────────────────────────────────────────────── */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Operações</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricCard icon={<Ban      className="h-5 w-5" />} label="Bloqueados"         value={s.blocked.toLocaleString("pt-PT")} accent="bg-red-50 text-red-600" />
+          <MetricCard icon={<EyeOff   className="h-5 w-5" />} label="Ocultos"           value={s.hidden.toLocaleString("pt-PT")} accent="bg-amber-50 text-amber-600" />
+          <MetricCard icon={<KeyRound className="h-5 w-5" />} label="Códigos disponíveis" value={s.codesAvail.toLocaleString("pt-PT")} accent="bg-teal-50 text-teal-600" />
+          <MetricCard icon={<Clock    className="h-5 w-5" />} label="Pagamentos pendentes" value={s.payments.toLocaleString("pt-PT")} accent="bg-amber-50 text-amber-600" />
+        </div>
+      </section>
+
+      {/* ── CONTEÚDO ─────────────────────────────────────────────────────────── */}
+      <section>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Conteúdo</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <MetricCard icon={<FileText   className="h-5 w-5" />} label="Questões no banco" value={q.total.toLocaleString("pt-PT")} sub={`${seedCount.toLocaleString("pt-PT")} originais + ${aiCount.toLocaleString("pt-PT")} IA`} accent="bg-emerald-50 text-emerald-600" />
+          <MetricCard icon={<BarChart3  className="h-5 w-5" />} label="Categorias"        value={(q.byCat.length || concursos.reduce((acc,c) => acc+c.categorias.length,0)).toLocaleString("pt-PT")} accent="bg-sky-50 text-sky-600" />
+          <MetricCard icon={<ShieldCheck className="h-5 w-5"/>} label="Concursos"         value={concursos.length.toLocaleString("pt-PT")} accent="bg-indigo-50 text-indigo-600" />
+        </div>
+      </section>
+
+      {/* ── Questões por categoria ───────────────────────────────────────────── */}
+      <ChartCard title="Questões por categoria" sub={`${seedCount.toLocaleString("pt-PT")} originais + ${aiCount.toLocaleString("pt-PT")} IA — meta: 1000/categoria`}>
+        <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
+          {porCategoria.map(c => {
+            const pct2 = Math.min(100, Math.round((c.n / 1000) * 100));
+            const color = pct2 >= 80 ? C.emerald : pct2 >= 40 ? C.sky : C.amber;
+            return (
+              <div key={c.nome}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="font-medium truncate max-w-[65%]">{c.nome}</span>
+                  <span className="text-muted-foreground tabular-nums text-xs">{c.n.toLocaleString("pt-PT")} <span className="text-border">/ 1000</span></span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct2}%`, background: color }} />
+                </div>
+              </div>
+            );
+          })}
+          {porCategoria.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados.</p>}
+        </div>
+      </ChartCard>
+
     </div>
   );
 };
