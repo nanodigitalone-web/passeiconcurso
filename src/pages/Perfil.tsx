@@ -52,8 +52,9 @@ const Perfil = () => {
   // ── Interests ──────────────────────────────────────────────────────────────
   const [interesses, setInteresses]     = useState<string[]>([]);
   const [interSearch, setInterSearch]   = useState("");
-  const [savingInt, setSavingInt]       = useState(false);
-  const [buyingTier, setBuyingTier]     = useState<10 | 30 | null>(null);
+  const [savingInt, setSavingInt]           = useState(false);
+  const [buyingTier, setBuyingTier]         = useState<10 | 30 | null>(null);
+  const [editingInteresses, setEditingInteresses] = useState(false);
 
   // ── Other state ────────────────────────────────────────────────────────────
   const [hidden, setHidden]             = useState(false);
@@ -158,6 +159,7 @@ const Perfil = () => {
       } else {
         await refreshProfile();
         toast.success(tier === 10 ? "Plano Básico activado!" : "Plano Pro activado!");
+        setEditingInteresses(true); // abre o picker para seleccionar interesses
       }
     } catch {
       toast.error("Erro ao comprar plano.");
@@ -226,9 +228,7 @@ const Perfil = () => {
   const fmtDate = (ms: number | null) =>
     ms === null ? "Vitalício" : new Date(ms).toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" });
 
-  const disponiveis = profile?.pontos ?? 0;
-  const totais      = profile?.pontos_globais ?? disponiveis;
-  const trocados    = Math.max(0, totais - disponiveis);
+  const totais = profile?.pontos_globais ?? profile?.pontos ?? 0;
 
   return (
     <AppShell>
@@ -324,8 +324,8 @@ const Perfil = () => {
 
       {/* ── INTERESSES ───────────────────────────────────────────────────────── */}
       <Card className="mb-5 overflow-hidden border-border/60 shadow-card">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border/40">
+        {/* Header sempre visível */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <BookOpen className="h-4 w-4" />
@@ -337,176 +337,172 @@ const Perfil = () => {
               </p>
             </div>
           </div>
-          {/* Tier badge */}
-          <span className={cn(
-            "rounded-full px-2.5 py-1 text-xs font-bold",
-            interMax === PRO_MAX   ? "bg-violet-100 text-violet-700"
-            : interMax === BASIC_MAX ? "bg-sky-100 text-sky-700"
-            : "bg-muted text-muted-foreground",
-          )}>
-            {interMax === PRO_MAX ? "Pro" : interMax === BASIC_MAX ? "Básico" : "Grátis"}
-          </span>
-        </div>
-
-        <div className="px-4 py-4 space-y-4">
-          {/* Planos de upgrade */}
-          {interMax < PRO_MAX && (
-            <div className="space-y-2">
-              {interMax < BASIC_MAX && (
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-sky-200/60 bg-sky-50/80 px-3.5 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <Star className="h-5 w-5 text-sky-600 shrink-0" />
-                    <div>
-                      <p className="text-sm font-bold text-sky-900 leading-tight">Plano Básico</p>
-                      <p className="text-xs text-sky-700/80 leading-tight">Até {BASIC_MAX} interesses · {BASIC_COST.toLocaleString("pt-PT")} AOA</p>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="rounded-full bg-sky-600 hover:bg-sky-700 text-white shrink-0"
-                    disabled={!!buyingTier}
-                    onClick={() => buyTier(10)}
-                  >
-                    {buyingTier === 10 ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Activar"}
-                  </Button>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-violet-200/60 bg-violet-50/80 px-3.5 py-3">
-                <div className="flex items-center gap-2.5">
-                  <Zap className="h-5 w-5 text-violet-600 shrink-0" />
-                  <div>
-                    <p className="text-sm font-bold text-violet-900 leading-tight">Plano Pro</p>
-                    <p className="text-xs text-violet-700/80 leading-tight">Até {PRO_MAX} interesses · {PRO_COST.toLocaleString("pt-PT")} AOA</p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  className="rounded-full bg-violet-600 hover:bg-violet-700 text-white shrink-0"
-                  disabled={!!buyingTier}
-                  onClick={() => buyTier(30)}
-                >
-                  {buyingTier === 30 ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Activar"}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Chips seleccionados */}
-          {interesses.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {interesses.map((id) => {
-                const d = ALL_DISCIPLINAS.find((x) => x.id === id);
-                if (!d) return null;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => toggleInteresse(id)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-all hover:bg-primary/20"
-                  >
-                    {d.nome}
-                    <X className="h-3 w-3 opacity-60" />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Pesquisa */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
-            <Input
-              placeholder="Pesquisar disciplina ou área..."
-              value={interSearch}
-              onChange={(e) => setInterSearch(e.target.value)}
-              className="pl-9 rounded-xl border-border/60"
-            />
-            {interSearch && (
-              <button onClick={() => setInterSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-bold",
+              interMax === PRO_MAX   ? "bg-violet-100 text-violet-700"
+              : interMax === BASIC_MAX ? "bg-sky-100 text-sky-700"
+              : "bg-muted text-muted-foreground",
+            )}>
+              {interMax === PRO_MAX ? "Pro" : interMax === BASIC_MAX ? "Básico" : "Grátis"}
+            </span>
+            {!editingInteresses && (
+              <button
+                onClick={() => setEditingInteresses(true)}
+                className="rounded-full border border-border/60 px-3 py-0.5 text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+              >
+                Editar
               </button>
             )}
           </div>
+        </div>
 
-          {/* Grid de disciplinas por área */}
-          <div className="max-h-64 overflow-y-auto pr-1 space-y-3 scrollbar-thin scrollbar-thumb-border">
-            {interSearch
-              ? (
+        {/* VIEW MODE — chips dos interesses actuais + planos de upgrade */}
+        {!editingInteresses && (
+          <div className="px-4 pb-4 space-y-3">
+            {/* Chips actuais (só leitura) */}
+            {interesses.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {interesses.map((id) => {
+                  const d = ALL_DISCIPLINAS.find((x) => x.id === id);
+                  if (!d) return null;
+                  return (
+                    <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-2.5 py-1 text-xs font-medium text-primary">
+                      <Check className="h-3 w-3 shrink-0" />{d.nome}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhum interesse seleccionado. Clica em <strong>Editar</strong> para escolher.
+              </p>
+            )}
+
+            {/* Planos de upgrade */}
+            {interMax < PRO_MAX && (
+              <div className="space-y-2 pt-1">
+                {interMax < BASIC_MAX && (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-sky-200/60 bg-sky-50/80 px-3.5 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <Star className="h-5 w-5 text-sky-600 shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-sky-900 leading-tight">Plano Básico</p>
+                        <p className="text-xs text-sky-700/80 leading-tight">Até {BASIC_MAX} interesses · {BASIC_COST.toLocaleString("pt-PT")} AOA</p>
+                      </div>
+                    </div>
+                    <Button size="sm" className="rounded-full bg-sky-600 hover:bg-sky-700 text-white shrink-0" disabled={!!buyingTier} onClick={() => buyTier(10)}>
+                      {buyingTier === 10 ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Activar"}
+                    </Button>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-violet-200/60 bg-violet-50/80 px-3.5 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <Zap className="h-5 w-5 text-violet-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-bold text-violet-900 leading-tight">Plano Pro</p>
+                      <p className="text-xs text-violet-700/80 leading-tight">Até {PRO_MAX} interesses · {PRO_COST.toLocaleString("pt-PT")} AOA</p>
+                    </div>
+                  </div>
+                  <Button size="sm" className="rounded-full bg-violet-600 hover:bg-violet-700 text-white shrink-0" disabled={!!buyingTier} onClick={() => buyTier(30)}>
+                    {buyingTier === 30 ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Activar"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* EDIT MODE — pesquisa + picker completo */}
+        {editingInteresses && (
+          <div className="border-t border-border/40 px-4 py-4 space-y-4">
+            {/* Chips seleccionados com X */}
+            {interesses.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {interesses.map((id) => {
+                  const d = ALL_DISCIPLINAS.find((x) => x.id === id);
+                  if (!d) return null;
+                  return (
+                    <button key={id} onClick={() => toggleInteresse(id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-all hover:bg-primary/20">
+                      {d.nome}<X className="h-3 w-3 opacity-60" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pesquisa */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+              <Input placeholder="Pesquisar disciplina ou área..." value={interSearch}
+                onChange={(e) => setInterSearch(e.target.value)} className="pl-9 rounded-xl border-border/60" />
+              {interSearch && (
+                <button onClick={() => setInterSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Grid de disciplinas */}
+            <div className="max-h-64 overflow-y-auto pr-1 space-y-3">
+              {interSearch ? (
                 <div className="flex flex-wrap gap-1.5">
                   {filteredDisciplinas.map((d) => {
                     const sel = selectedSet.has(d.id);
                     return (
-                      <button
-                        key={d.id}
-                        onClick={() => toggleInteresse(d.id)}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all",
-                          sel
-                            ? "border-primary/30 bg-primary/10 text-primary"
-                            : "border-border/60 bg-background text-foreground hover:border-primary/30 hover:text-primary",
-                        )}
-                      >
+                      <button key={d.id} onClick={() => toggleInteresse(d.id)}
+                        className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all",
+                          sel ? "border-primary/30 bg-primary/10 text-primary"
+                              : "border-border/60 bg-background text-foreground hover:border-primary/30 hover:text-primary")}>
                         {sel && <Check className="h-3 w-3 shrink-0" />}
-                        {d.nome}
-                        <span className="opacity-40">· {d.area}</span>
+                        {d.nome}<span className="opacity-40">· {d.area}</span>
                       </button>
                     );
                   })}
-                  {filteredDisciplinas.length === 0 && (
-                    <p className="text-sm text-muted-foreground">Nenhuma disciplina encontrada.</p>
-                  )}
+                  {filteredDisciplinas.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma disciplina encontrada.</p>}
                 </div>
-              )
-              : AREAS.map((area) => {
-                  const disciplinas = area.disciplinas.map((nome) => ({ id: slugify(nome), nome }));
-                  return (
-                    <div key={area.area}>
-                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {area.area}
-                        {!area.saude && (
-                          <span className="ml-1.5 rounded bg-amber-100 px-1 py-0.5 text-amber-700 normal-case tracking-normal font-medium">
-                            em breve
-                          </span>
-                        )}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {disciplinas.map((d) => {
-                          const sel = selectedSet.has(d.id);
-                          return (
-                            <button
-                              key={d.id}
-                              onClick={() => area.saude ? toggleInteresse(d.id) : null}
-                              disabled={!area.saude}
-                              className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all",
-                                !area.saude
-                                  ? "border-border/30 bg-muted/40 text-muted-foreground/50 cursor-not-allowed"
-                                  : sel
-                                    ? "border-primary/30 bg-primary/10 text-primary"
-                                    : "border-border/60 bg-background text-foreground hover:border-primary/30 hover:text-primary",
-                              )}
-                            >
-                              {sel && <Check className="h-3 w-3 shrink-0" />}
-                              {d.nome}
-                            </button>
-                          );
-                        })}
-                      </div>
+              ) : AREAS.map((area) => {
+                const disciplinas = area.disciplinas.map((nome) => ({ id: slugify(nome), nome }));
+                return (
+                  <div key={area.area}>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      {area.area}
+                      {!area.saude && <span className="ml-1.5 rounded bg-amber-100 px-1 py-0.5 text-amber-700 normal-case tracking-normal font-medium">em breve</span>}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {disciplinas.map((d) => {
+                        const sel = selectedSet.has(d.id);
+                        return (
+                          <button key={d.id} onClick={() => area.saude ? toggleInteresse(d.id) : null} disabled={!area.saude}
+                            className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all",
+                              !area.saude ? "border-border/30 bg-muted/40 text-muted-foreground/50 cursor-not-allowed"
+                              : sel ? "border-primary/30 bg-primary/10 text-primary"
+                                    : "border-border/60 bg-background text-foreground hover:border-primary/30 hover:text-primary")}>
+                            {sel && <Check className="h-3 w-3 shrink-0" />}{d.nome}
+                          </button>
+                        );
+                      })}
                     </div>
-                  );
-                })
-            }
-          </div>
+                  </div>
+                );
+              })}
+            </div>
 
-          {/* Save button */}
-          <Button
-            onClick={saveInteresses}
-            disabled={savingInt}
-            className="w-full rounded-full bg-gradient-primary"
-          >
-            {savingInt ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Guardar interesses
-          </Button>
-        </div>
+            {/* Guardar / Cancelar */}
+            <div className="flex gap-2">
+              <Button onClick={async () => { await saveInteresses(); setEditingInteresses(false); setInterSearch(""); }}
+                disabled={savingInt} className="flex-1 rounded-full bg-gradient-primary">
+                {savingInt ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Guardar
+              </Button>
+              <Button onClick={() => { setEditingInteresses(false); setInterSearch(""); setInteresses(profile?.interesses ?? []); }}
+                variant="outline" className="rounded-full px-4">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* ── INFORMAÇÕES PESSOAIS ─────────────────────────────────────────────── */}
@@ -591,30 +587,6 @@ const Perfil = () => {
             </div>
           </div>
         )}
-      </Card>
-
-      {/* ── PONTOS DETALHE ───────────────────────────────────────────────────── */}
-      <Card className="mb-4 border-border/60 shadow-card">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-              <Zap className="h-4 w-4" />
-            </span>
-            <p className="font-semibold">Os meus pontos</p>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Total (ranking)", value: totais.toLocaleString("pt-PT"), accent: "text-primary" },
-              { label: "Disponíveis",     value: disponiveis.toLocaleString("pt-PT"), accent: "text-emerald-600" },
-              { label: "Trocados",        value: trocados.toLocaleString("pt-PT"), accent: "text-amber-600" },
-            ].map((s) => (
-              <div key={s.label} className="rounded-xl bg-muted/40 p-3 text-center">
-                <p className={`font-display text-lg font-bold ${s.accent}`}>{s.value}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </Card>
 
       {/* ── OS MEUS PLANOS ───────────────────────────────────────────────────── */}
