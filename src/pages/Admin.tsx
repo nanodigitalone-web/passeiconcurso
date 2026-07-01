@@ -31,6 +31,7 @@ import {
   UserCheck, Flame, Trophy, AlertTriangle, RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { disciplinaById } from "@/data/disciplinas";
 
 const concursos = quizService.getConcursos();
 
@@ -824,26 +825,43 @@ const StatsTab = () => {
       </ChartCard>
 
       {/* Disciplinas dos interesses/temas */}
-      {(m.disciplines?.length ?? 0) > 0 && (
-        <ChartCard title="Questões por Disciplina (Temas)" sub="Disciplinas dos perfis de interesse — questões disponíveis">
-          <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
-            {[...(m.disciplines ?? [])].sort((a, b) => b.n - a.n).map(d => {
-              const pct = Math.min(100, Math.round((d.n / 1000) * 100));
-              return (
-                <div key={d.disciplina}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="font-medium truncate max-w-[65%]">{d.disciplina}</span>
-                    <span className="text-muted-foreground tabular-nums text-xs">{d.n.toLocaleString("pt-PT")}</span>
+      {(m.disciplines?.length ?? 0) > 0 && (() => {
+        const TARGET_PER_DISC = 500;
+        const enriched = (m.disciplines ?? []).map(d => {
+          const meta = disciplinaById(d.disciplina);
+          return { slug: d.disciplina, nome: meta?.nome ?? d.disciplina, area: meta?.area ?? "Outro", n: d.n };
+        });
+        const totalQ = enriched.reduce((s, d) => s + d.n, 0);
+        const withTarget = enriched.filter(d => d.n >= TARGET_PER_DISC).length;
+        return (
+          <ChartCard
+            title="Questões por Disciplina (Temas)"
+            sub={`${enriched.length} disciplinas · ${totalQ.toLocaleString("pt-PT")} questões · ${withTarget}/${enriched.length} com ≥${TARGET_PER_DISC}`}
+          >
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              {enriched.sort((a, b) => b.n - a.n).map(d => {
+                const pct = Math.min(100, Math.round((d.n / TARGET_PER_DISC) * 100));
+                return (
+                  <div key={d.slug}>
+                    <div className="mb-0.5 flex items-center justify-between gap-2 text-sm">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] font-semibold text-muted-foreground shrink-0 w-20 truncate">{d.area}</span>
+                        <span className="font-medium truncate">{d.nome}</span>
+                      </div>
+                      <span className="text-muted-foreground tabular-nums text-xs shrink-0">
+                        {d.n.toLocaleString("pt-PT")} <span className="text-border">/ {TARGET_PER_DISC}</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 100 ? C.emerald : pct >= 50 ? C.sky : C.amber }} />
+                    </div>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 80 ? C.emerald : pct >= 40 ? C.sky : C.amber }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </ChartCard>
-      )}
+                );
+              })}
+            </div>
+          </ChartCard>
+        );
+      })()}
 
     </div>
   );

@@ -467,8 +467,8 @@ adminRouter.get("/metrics", async (_req, res) => {
          GROUP BY date_trunc('day',answered_at) ORDER BY date_trunc('day',answered_at)`,
       ),
       sq(`SELECT mode, count(*)::int as n FROM question_attempts WHERE mode IS NOT NULL GROUP BY mode`),
-      // Questões por disciplina (top 20 — usadas nos interesses)
-      sq(`SELECT disciplina, count(*)::int as n FROM questions WHERE active AND disciplina IS NOT NULL GROUP BY disciplina ORDER BY count(*) DESC LIMIT 20`),
+      // Questões por disciplina — apenas slugs do sistema de interesses (formato: a-z e hífens)
+      sq(`SELECT disciplina, count(*)::int as n FROM questions WHERE active AND disciplina ~ '^[a-z][a-z0-9-]+$' GROUP BY disciplina ORDER BY count(*) DESC`),
       // Taxa de activação: quantos utilizadores registados responderam ≥1 questão
       sq(
         `SELECT

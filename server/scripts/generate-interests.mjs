@@ -140,7 +140,7 @@ async function callModel(system, prompt) {
   }
   if (!anthropic) anthropic = new (await import("@anthropic-ai/sdk")).default();
   const r = await anthropic.messages.create({
-    model: "claude-haiku-4-5", max_tokens: 4000, system,
+    model: "claude-haiku-4-5-20251001", max_tokens: 4000, system,
     messages: [{ role: "user", content: prompt }],
   });
   return r.content.filter((b) => b.type === "text").map((b) => b.text).join("");
