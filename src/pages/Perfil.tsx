@@ -162,9 +162,7 @@ const Perfil = () => {
       setEditingInteresses(true);
     } catch (e: any) {
       if (e?.code === "insufficient_coins") {
-        toast.error("Moedas insuficientes — carrega a carteira primeiro.", {
-          action: { label: "Carteira", onClick: () => navigate("/carteira") },
-        });
+        navigate("/carteira");
       } else {
         toast.error("Erro ao activar plano. Tenta novamente.");
       }
@@ -318,24 +316,38 @@ const Perfil = () => {
       </div>
 
       {/* ── ACÇÕES RÁPIDAS ────────────────────────────────────────────────────── */}
-      <div className="mb-5 grid grid-cols-2 gap-2.5">
-        {[
-          { to: "/carteira", icon: Coins,   label: "Carteira",  desc: `${(profile?.moedas ?? 0).toLocaleString("pt-PT")} moedas disponíveis`, accent: "bg-amber-100 text-amber-700" },
-          { to: "/partilhar", icon: Gift,   label: "Partilhar", desc: "Convida + banner + certificado", accent: "bg-emerald-100 text-emerald-700" },
-        ].map((a) => (
-          <Link key={a.to} to={a.to}>
-            <Card className="group flex items-center gap-3 border-border/60 p-3.5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elegant active:scale-[0.98]">
-              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${a.accent} transition-transform group-hover:scale-110`}>
-                <a.icon className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{a.label}</p>
-                <p className="text-[11px] text-muted-foreground leading-tight">{a.desc}</p>
-              </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-transform group-hover:translate-x-0.5" />
-            </Card>
-          </Link>
-        ))}
+      <div className="mb-5 space-y-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
+          {[
+            { to: "/carteira", icon: Coins,  label: "Carteira",  desc: `${(profile?.moedas ?? 0).toLocaleString("pt-PT")} moedas disponíveis`, accent: "bg-amber-100 text-amber-700" },
+            { to: "/partilhar", icon: Gift,  label: "Partilhar", desc: "Convida + banner + certificado", accent: "bg-emerald-100 text-emerald-700" },
+          ].map((a) => (
+            <Link key={a.to} to={a.to}>
+              <Card className="group flex items-center gap-3 border-border/60 p-3.5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elegant active:scale-[0.98]">
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${a.accent} transition-transform group-hover:scale-110`}>
+                  <a.icon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{a.label}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight">{a.desc}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-transform group-hover:translate-x-0.5" />
+              </Card>
+            </Link>
+          ))}
+        </div>
+        <Link to="/concursos">
+          <Card className="group flex items-center gap-3 border-primary/20 bg-primary/5 p-3.5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elegant active:scale-[0.98]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary transition-transform group-hover:scale-110">
+              <BookOpen className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Obter acesso completo</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">Simulados ilimitados · 4 meses por categoria</p>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-primary/40 group-hover:text-primary transition-transform group-hover:translate-x-0.5" />
+          </Card>
+        </Link>
       </div>
 
       {/* ── INTERESSES ───────────────────────────────────────────────────────── */}
@@ -710,32 +722,70 @@ const Perfil = () => {
 
       {/* ── DIALOG: seguidores / a seguir ─────────────────────────────────── */}
       <Dialog open={!!socialType} onOpenChange={(o) => { if (!o) setSocialType(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{socialType === "followers" ? "Seguidores" : "A seguir"}</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-96 overflow-y-auto space-y-2 py-2">
-            {socialLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-            ) : socialList.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-8">
-                {socialType === "followers" ? "Ainda não tens seguidores." : "Ainda não segues ninguém."}
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm gap-0 overflow-hidden p-0">
+          {/* Header gradient */}
+          <div className="bg-gradient-to-br from-primary via-blue-700 to-indigo-900 px-5 py-4 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-white">
+                {socialType === "followers" ? "Seguidores" : "A seguir"}
+              </DialogTitle>
+            </DialogHeader>
+            {!socialLoading && (
+              <p className="mt-0.5 text-xs text-white/60">
+                {socialList.length === 0
+                  ? socialType === "followers" ? "Sem seguidores ainda" : "Não segues ninguém ainda"
+                  : `${socialList.length} ${socialType === "followers" ? "seguidor" + (socialList.length !== 1 ? "es" : "") : "utilizador" + (socialList.length !== 1 ? "es" : "")}`}
               </p>
-            ) : socialList.map((u) => (
-              <Link key={u.id} to={`/perfil/${u.id}`} onClick={() => setSocialType(null)}
-                className="flex items-center gap-3 rounded-xl border border-border/60 p-3 transition-colors hover:bg-muted/40">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-600 text-white font-display font-bold">
-                  {u.avatar_url
-                    ? <img src={u.avatar_url} alt={u.nome} className="h-full w-full rounded-full object-cover" />
-                    : u.nome.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{u.nome}</p>
-                  <p className="text-xs text-muted-foreground">{u.pontos_globais.toLocaleString("pt-PT")} pontos</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-              </Link>
-            ))}
+            )}
+          </div>
+
+          {/* List */}
+          <div className="max-h-80 overflow-y-auto">
+            {socialLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : socialList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center px-6">
+                <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground">
+                  {socialType === "followers" ? "Ainda não tens seguidores." : "Ainda não segues ninguém."}
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border/40">
+                {socialList.map((u, i) => (
+                  <li key={u.id}>
+                    <Link
+                      to={`/perfil/${u.id}`}
+                      onClick={() => setSocialType(null)}
+                      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 active:bg-muted/60"
+                    >
+                      <div className="relative shrink-0">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-600 text-white font-display font-bold text-sm overflow-hidden">
+                          {u.avatar_url
+                            ? <img src={u.avatar_url} alt={u.nome} className="h-full w-full object-cover" />
+                            : u.nome.charAt(0).toUpperCase()}
+                        </div>
+                        {i < 3 && (
+                          <span className={cn(
+                            "absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white",
+                            i === 0 ? "bg-yellow-500" : i === 1 ? "bg-slate-400" : "bg-amber-600",
+                          )}>
+                            {i + 1}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{u.nome}</p>
+                        <p className="text-xs text-muted-foreground">{u.pontos_globais.toLocaleString("pt-PT")} pontos</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </DialogContent>
       </Dialog>

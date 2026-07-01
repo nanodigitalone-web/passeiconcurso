@@ -63,7 +63,7 @@ create table if not exists profiles (
   universidade   text,                                 -- perfil académico
   curso          text,
   ano            text,
-  interesses     jsonb not null default '[]'::jsonb,   -- ids de disciplinas de interesse
+  interesses     jsonb default null,                   -- ids de disciplinas de interesse (null = nunca configurou)
   interesses_ativo boolean not null default false,     -- personaliza Aprender/Simulado pelos interesses
   interesses_max int not null default 0,               -- 0=free/5, 10=básico (1000 AOA), 30=pro (2000 AOA)
   created_at     timestamptz not null default now(),

@@ -77,11 +77,10 @@ Online: **www.passeii.com**. Criada originalmente no Lovable.
 ## 5. Migrações (estado)
 001 attempts+trial · 002 questions · 003 pontos_globais · 004 vidas ·
 005 referrals · 006 fix points drift · 007 attempt.mode · 008 perfil
-académico+interesses · 009 follows · 010 interesses_ativo.
-Todas aplicadas em **Neon**. 010 ainda **não confirmada em local** (Docker
-indisponível nesta sessão) — aplicar com
-`cd server && node scripts/apply-migration.mjs ../database/migrations/010_interesses_ativo.sql`
-quando voltares a correr o ambiente local.
+académico+interesses · 009 follows · 010 interesses_ativo · 011 interesses_max ·
+012 reset_interesses (interesses nullable + reset ALL to NULL).
+Todas aplicadas em **Neon**. 010–012 ainda **não confirmadas em local** (Docker
+indisponível) — aplicar quando o ambiente local estiver disponível.
 
 ## 6. Ações pendentes do DONO (externas)
 - **Rotar a ANTHROPIC_API_KEY** antes do lançamento (foi colada no chat → exposta).

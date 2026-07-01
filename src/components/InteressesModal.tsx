@@ -10,9 +10,13 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { authService } from "@/services";
 import { AREAS, slugify } from "@/data/disciplinas";
-import { Check } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const FREE_MAX  = 2;
+const BASIC_MAX = 10;
+const PRO_MAX   = 30;
 
 export const InteressesModal = () => {
   const { user, profile, refreshProfile } = useAuth();
@@ -20,16 +24,28 @@ export const InteressesModal = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving]   = useState(false);
 
-  // Mostrar apenas quando o utilizador está autenticado e NUNCA configurou os
-  // interesses (undefined = coluna null na BD; [] = configurado mas vazio).
+  const interMax = profile?.interesses_max === 30 ? PRO_MAX
+    : profile?.interesses_max === 10 ? BASIC_MAX
+    : FREE_MAX;
+
+  // Mostrar quando o utilizador nunca configurou interesses (null na BD = undefined no profile).
   useEffect(() => {
-    if (profile && profile.interesses === undefined) setOpen(true);
+    if (profile && profile.interesses == null) setOpen(true);
   }, [profile]);
 
   const toggle = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size >= interMax) {
+        if (interMax === FREE_MAX) {
+          toast.error(`Plano gratuito: máx. ${FREE_MAX} interesses. Activa o Plano Pro no teu perfil para até ${PRO_MAX}.`);
+        }
+        return prev;
+      } else {
+        next.add(id);
+      }
       return next;
     });
 
@@ -67,9 +83,20 @@ export const InteressesModal = () => {
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">Personaliza o teu estudo</DialogTitle>
             <DialogDescription className="mt-1 text-sm">
-              Escolhe as disciplinas que te interessam. O conteúdo adapta-se às tuas preferências.
+              Escolhe até <strong>{interMax}</strong> disciplina{interMax !== 1 ? "s" : ""} que te interessam.{" "}
+              {interMax === FREE_MAX && (
+                <span className="text-amber-600 font-medium">Plano gratuito: máx. {FREE_MAX}.</span>
+              )}
             </DialogDescription>
           </DialogHeader>
+          {interMax === FREE_MAX && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200/60 px-3 py-2">
+              <Lock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+              <p className="text-xs text-amber-700">
+                Activa o <strong>Plano Pro</strong> no teu perfil para até {PRO_MAX} interesses.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Área de scroll */}
@@ -128,7 +155,7 @@ export const InteressesModal = () => {
             {saving
               ? "A guardar…"
               : selected.size > 0
-              ? `Guardar (${selected.size})`
+              ? `Guardar (${selected.size}/${interMax})`
               : "Guardar"}
           </Button>
         </div>
