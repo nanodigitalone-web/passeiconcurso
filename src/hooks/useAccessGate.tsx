@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
+import { useIsPromoActive } from "@/contexts/PromoContext";
 import { accessService, clearAccessCache } from "@/services";
 
 const TRIAL_HOURS = 2;
-// Promoção: todas as categorias gratuitas até 5 de julho de 2026 (inclusive).
-const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
 
 export { clearAccessCache };
 
@@ -18,6 +17,7 @@ export type GateState = {
 
 export const useAccessGate = (concursoId?: string, categoriaId?: string): GateState => {
   const { user } = useAuth();
+  const isPromoActive = useIsPromoActive();
   const [state, setState] = useState<GateState>({
     loading: true, hasAccess: false, isTrial: false, trialHoursLeft: 0, trialExpired: false,
   });
@@ -29,15 +29,15 @@ export const useAccessGate = (concursoId?: string, categoriaId?: string): GateSt
         setState({ loading: false, hasAccess: false, isTrial: false, trialHoursLeft: 0, trialExpired: false });
         return;
       }
-      const now = Date.now();
 
-      // Promoção ativa → acesso livre a todos.
-      if (now < PROMO_END) {
+      // Active promotion → free access for everyone.
+      if (isPromoActive) {
         if (!active) return;
         setState({ loading: false, hasAccess: true, isTrial: false, trialHoursLeft: 0, trialExpired: false });
         return;
       }
 
+      const now = Date.now();
       const created = new Date(user.created_at).getTime();
       const trialEnd = created + TRIAL_HOURS * 3600000;
       const trialHoursLeft = Math.max(0, Math.ceil((trialEnd - now) / 3600000));
@@ -55,7 +55,7 @@ export const useAccessGate = (concursoId?: string, categoriaId?: string): GateSt
       });
     })();
     return () => { active = false; };
-  }, [user, concursoId, categoriaId]);
+  }, [user, concursoId, categoriaId, isPromoActive]);
 
   return state;
 };

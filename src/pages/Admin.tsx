@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { adminService, authService, quizService, notificationsService, cursosService } from "@/services";
+import { api } from "@/lib/api";
 import type { CursoPreparatorio } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,7 +21,7 @@ import { toast } from "sonner";
 import {
   Users, KeyRound, Bell, BarChart3, ShieldAlert, Eye, EyeOff, Trash2, Ban, CheckCircle2, RefreshCw,
   ShieldCheck, Unlock, Lock, FileText, ExternalLink, Clock, GraduationCap, Plus, Phone, Image as ImageIcon,
-  Coins, Banknote,
+  Coins, Banknote, Tag, ToggleLeft, ToggleRight, Calendar,
 } from "lucide-react";
 
 const concursos = quizService.getConcursos();
@@ -94,6 +95,7 @@ const Admin = () => {
             <TabsTrigger value="preparatorios" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><GraduationCap className="h-4 w-4 mr-1" />Preparatórios</TabsTrigger>
             <TabsTrigger value="carregamentos" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><Coins className="h-4 w-4 mr-1" />Moedas</TabsTrigger>
             <TabsTrigger value="saques" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg"><Banknote className="h-4 w-4 mr-1" />Saques</TabsTrigger>
+            <TabsTrigger value="promocoes" className="rounded-full text-white/70 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg"><Tag className="h-4 w-4 mr-1" />Promoções</TabsTrigger>
           </TabsList>
 
 
@@ -105,6 +107,7 @@ const Admin = () => {
           <TabsContent value="preparatorios"><PreparatoriosTab /></TabsContent>
           <TabsContent value="carregamentos"><CarregamentosTab /></TabsContent>
           <TabsContent value="saques"><SaquesTab /></TabsContent>
+          <TabsContent value="promocoes"><PromocoesTab /></TabsContent>
         </Tabs>
 
       </main>
@@ -1048,6 +1051,150 @@ const SaquesTab = () => {
           </Card>
         );
       })}
+    </div>
+  );
+};
+
+/* ---------------- Promoções ---------------- */
+type PromoRow = {
+  id: string; label: string; discount_pct: number;
+  starts_at: string; ends_at: string; is_active: boolean; created_at: string;
+};
+
+const toLocalInput = (iso: string) => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const PromocoesTab = () => {
+  const [promos, setPromos] = useState<PromoRow[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [form, setForm] = useState({ label: "", discount_pct: 100, starts_at: "", ends_at: "" });
+  const [creating, setCreating] = useState(false);
+
+  const inputCls = "bg-[hsl(220_55%_14%)] border-[hsl(220_45%_22%)] text-white placeholder:text-white/40";
+
+  const load = async () => {
+    try {
+      const d = await api.get<{ promos: PromoRow[] }>("/promo/admin");
+      setPromos(d.promos);
+    } catch { toast.error("Erro ao carregar promoções"); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const isRunning = (p: PromoRow) => {
+    const now = Date.now();
+    return p.is_active && now >= new Date(p.starts_at).getTime() && now < new Date(p.ends_at).getTime();
+  };
+
+  const toggle = async (p: PromoRow) => {
+    setBusy(p.id);
+    try {
+      await api.patch(`/promo/admin/${p.id}`, { is_active: !p.is_active });
+      toast.success(p.is_active ? "Promoção desactivada" : "Promoção activada");
+      load();
+    } catch { toast.error("Erro ao alterar promoção"); }
+    finally { setBusy(null); }
+  };
+
+  const del = async (p: PromoRow) => {
+    if (!confirm(`Eliminar promoção "${p.label}"?`)) return;
+    setBusy(p.id);
+    try {
+      await api.delete(`/promo/admin/${p.id}`);
+      toast.success("Promoção eliminada");
+      load();
+    } catch { toast.error("Erro ao eliminar"); }
+    finally { setBusy(null); }
+  };
+
+  const create = async () => {
+    if (!form.starts_at || !form.ends_at) return toast.error("Preencha as datas");
+    setCreating(true);
+    try {
+      await api.post("/promo/admin", {
+        label: form.label || "Promoção",
+        discount_pct: Number(form.discount_pct),
+        starts_at: new Date(form.starts_at).toISOString(),
+        ends_at: new Date(form.ends_at).toISOString(),
+      });
+      toast.success("Promoção criada");
+      setForm({ label: "", discount_pct: 100, starts_at: "", ends_at: "" });
+      load();
+    } catch { toast.error("Erro ao criar promoção"); }
+    finally { setCreating(false); }
+  };
+
+  const fmtDate = (iso: string) => new Date(iso).toLocaleString("pt-PT", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="mt-4 space-y-5">
+      {/* Form: nova promoção */}
+      <Card className={`${PANEL} p-5 space-y-4`}>
+        <p className="font-semibold flex items-center gap-2"><Tag className="h-4 w-4 text-amber-400" /> Nova promoção</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-white/60">Nome / label</label>
+            <Input className={inputCls} placeholder="Ex: Lançamento" value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-xs text-white/60">Desconto (%)</label>
+            <Input type="number" min={0} max={100} className={inputCls} value={form.discount_pct} onChange={e => setForm(f => ({ ...f, discount_pct: Number(e.target.value) }))} />
+            <p className="mt-1 text-[11px] text-white/40">100% = acesso totalmente gratuito durante a promoção</p>
+          </div>
+          <div>
+            <label className="text-xs text-white/60 flex items-center gap-1"><Calendar className="h-3 w-3" /> Início</label>
+            <Input type="datetime-local" className={inputCls} value={form.starts_at} onChange={e => setForm(f => ({ ...f, starts_at: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-xs text-white/60 flex items-center gap-1"><Calendar className="h-3 w-3" /> Fim</label>
+            <Input type="datetime-local" className={inputCls} value={form.ends_at} onChange={e => setForm(f => ({ ...f, ends_at: e.target.value }))} />
+          </div>
+        </div>
+        <Button onClick={create} disabled={creating} className="w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold">
+          {creating ? <><RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />A criar…</> : <><Plus className="h-4 w-4 mr-1.5" />Criar promoção</>}
+        </Button>
+      </Card>
+
+      {/* Lista de promoções */}
+      <div className="space-y-2">
+        {promos.length === 0 && <p className="text-sm text-white/50">Nenhuma promoção criada.</p>}
+        {promos.map(p => {
+          const running = isRunning(p);
+          return (
+            <Card key={p.id} className={`${PANEL} p-4`}>
+              <div className="flex flex-wrap items-start gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${running ? "bg-amber-500" : "bg-white/10"}`}>
+                  <Tag className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold flex items-center gap-2 flex-wrap">
+                    {p.label}
+                    <span className="text-sm font-bold text-amber-400">{p.discount_pct}% off</span>
+                    {running && <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs">A decorrer</Badge>}
+                    {!p.is_active && <Badge variant="secondary" className="text-xs">Inactiva</Badge>}
+                    {p.is_active && !running && new Date(p.ends_at) < new Date() && <Badge variant="outline" className="text-xs border-white/20 text-white/40">Expirada</Badge>}
+                    {p.is_active && !running && new Date(p.starts_at) > new Date() && <Badge variant="outline" className="text-xs border-sky-400/40 text-sky-300">Agendada</Badge>}
+                  </p>
+                  <p className="text-xs text-white/55 mt-1">
+                    <span className="mr-3">Início: {fmtDate(p.starts_at)}</span>
+                    <span>Fim: {fmtDate(p.ends_at)}</span>
+                  </p>
+                </div>
+                <div className="flex gap-1.5">
+                  <Button size="sm" variant="secondary" disabled={busy === p.id} onClick={() => toggle(p)} title={p.is_active ? "Desactivar" : "Activar"}>
+                    {p.is_active ? <ToggleRight className="h-4 w-4 text-emerald-400" /> : <ToggleLeft className="h-4 w-4 text-white/40" />}
+                  </Button>
+                  <Button size="sm" variant="destructive" disabled={busy === p.id} onClick={() => del(p)} title="Eliminar">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };

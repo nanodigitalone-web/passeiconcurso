@@ -78,8 +78,9 @@ Online: **www.passeii.com**. Criada originalmente no Lovable.
 001 attempts+trial · 002 questions · 003 pontos_globais · 004 vidas ·
 005 referrals · 006 fix points drift · 007 attempt.mode · 008 perfil
 académico+interesses · 009 follows · 010 interesses_ativo · 011 interesses_max ·
-012 reset_interesses (interesses nullable + reset ALL to NULL).
-Todas aplicadas em **Neon**. 010–012 ainda **não confirmadas em local** (Docker
+012 reset_interesses (interesses nullable + reset ALL to NULL) ·
+013 promotions (tabela promoções, gerida pelo admin).
+Todas aplicadas em **Neon**. 010–013 ainda **não confirmadas em local** (Docker
 indisponível) — aplicar quando o ambiente local estiver disponível.
 
 ## 6. Ações pendentes do DONO (externas)

@@ -18,6 +18,7 @@ import { cursosRouter } from "./routes/cursos.js";
 import { paymentsRouter } from "./routes/payments.js";
 import { pushRouter } from "./routes/push.js";
 import { adminRouter } from "./routes/admin.js";
+import { promoRouter } from "./routes/promo.js";
 import { pool, query } from "./lib/db.js";
 
 // Safety net: a single unhandled async error must never take the whole server
@@ -84,6 +85,7 @@ app.use("/cursos", cursosRouter);
 app.use("/payments", paymentsRouter);
 app.use("/push", pushRouter);
 app.use("/admin", adminRouter);
+app.use("/promo", promoRouter);
 
 // ---- Push cron (call every 8h via Render Cron Job with the x-cron-secret header) ----
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {

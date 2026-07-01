@@ -290,6 +290,17 @@ create table if not exists follows (
 create index if not exists idx_follows_follower  on follows(follower_id);
 create index if not exists idx_follows_following on follows(following_id);
 
+-- ---------- promotions ------------------------------------------------
+create table if not exists promotions (
+  id          uuid primary key default gen_random_uuid(),
+  label       text not null default 'Promoção',
+  discount_pct int not null default 100 check (discount_pct between 0 and 100),
+  starts_at   timestamptz not null,
+  ends_at     timestamptz not null,
+  is_active   boolean not null default true,
+  created_at  timestamptz not null default now()
+);
+
 -- ---------- indexes ---------------------------------------------------
 create index if not exists idx_attempts_user_time on question_attempts(user_id, answered_at desc);
 create index if not exists idx_attempts_user_q on question_attempts(user_id, question_id);

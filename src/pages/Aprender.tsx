@@ -7,8 +7,7 @@ import { quizService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { Flame, Lock, Check, Play, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
+import { usePromo, useIsPromoActive } from "@/contexts/PromoContext";
 
 // ── Corpos celestes ────────────────────────────────────────────────────────────
 type CelestialBody = { nome: string; icone: string; cor: string; brilho: string; sistema: string };
@@ -56,6 +55,8 @@ const PAGE_BG = "#080814";
 // ── Componente ─────────────────────────────────────────────────────────────────
 const Aprender = () => {
   const { profile } = useAuth();
+  const promo = usePromo();
+  const isPromoActive = useIsPromoActive();
 
   // Tornar a página toda escura — sobrepõe a variável CSS E o body para garantir
   useEffect(() => {
@@ -104,13 +105,14 @@ const Aprender = () => {
       />
 
       {/* ── PROMO BANNER ─────────────────────────────────────────────────────── */}
-      {Date.now() < PROMO_END && (() => {
-        const diasRestantes = Math.max(1, Math.ceil((PROMO_END - Date.now()) / 86_400_000));
+      {isPromoActive && promo.promo && (() => {
+        const promoEnd = new Date(promo.promo!.ends_at).getTime();
+        const diasRestantes = Math.max(1, Math.ceil((promoEnd - Date.now()) / 86_400_000));
         return (
           <div className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 animate-fade-in">
             <Sparkles className="h-4 w-4 shrink-0 text-amber-400" />
             <p className="flex-1 text-sm font-semibold text-amber-300">
-              Acesso completo gratuito até <strong className="text-amber-200">4 de Julho</strong>
+              {promo.promo!.discount_pct === 100 ? "Acesso completo gratuito" : `${promo.promo!.discount_pct}% desconto`} até <strong className="text-amber-200">{new Date(promo.promo!.ends_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long" })}</strong>
             </p>
             <span className="rounded-lg bg-amber-500 px-2 py-0.5 font-display text-sm font-black text-white">
               {diasRestantes}d

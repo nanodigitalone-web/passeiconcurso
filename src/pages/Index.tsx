@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { resultsService, friendsService, battlesService, type FriendRow } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
+import { usePromo, useIsPromoActive } from "@/contexts/PromoContext";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -13,11 +14,11 @@ import {
   ChevronRight, Loader2, Plus, Sparkles,
 } from "lucide-react";
 
-const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
-
 const Index = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const promo = usePromo();
+  const isPromoActive = useIsPromoActive();
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [challenging, setChallenging] = useState<string | null>(null);
 
@@ -71,17 +72,22 @@ const Index = () => {
       />
 
       {/* ── PROMO BANNER ─────────────────────────────────────────────────────── */}
-      {Date.now() < PROMO_END && (() => {
-        const diasRestantes = Math.max(1, Math.ceil((PROMO_END - Date.now()) / 86_400_000));
+      {isPromoActive && promo.promo && (() => {
+        const promoEnd = new Date(promo.promo!.ends_at).getTime();
+        const diasRestantes = Math.max(1, Math.ceil((promoEnd - Date.now()) / 86_400_000));
+        const label = promo.promo!.label || "Acesso completo";
+        const discount = promo.promo!.discount_pct;
         return (
           <div className="mb-4 flex items-center gap-3 overflow-hidden rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 px-4 py-3.5 animate-fade-in">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-amber-900 leading-tight">Acesso completo GRATUITO</p>
+              <p className="text-sm font-bold text-amber-900 leading-tight">
+                {discount === 100 ? `${label} GRATUITO` : `${discount}% desconto — ${label}`}
+              </p>
               <p className="text-xs text-amber-700/80 leading-tight mt-0.5">
-                Todas as funcionalidades desbloqueadas até <strong>4 de Julho</strong>
+                Todas as funcionalidades desbloqueadas até {new Date(promo.promo!.ends_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long" })}
               </p>
             </div>
             <div className="shrink-0 text-right">

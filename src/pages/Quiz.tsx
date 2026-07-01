@@ -11,6 +11,7 @@ import { Check, Clock, Lock, X } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
 import { AccessGate } from "@/components/AccessGate";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsPromoActive } from "@/contexts/PromoContext";
 import { MotivationModal, type MotivationVariant } from "@/components/MotivationModal";
 
 const COUNT_OPTIONS = [20, 50, 100];
@@ -31,12 +32,11 @@ const Quiz = () => {
   const motivationShownRef = useRef<Set<MotivationVariant>>(new Set());
   const startedAtRef = useRef(Date.now());
   const [dailyBlocked, setDailyBlocked] = useState(false);
-
-  const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
+  const isPromoActive = useIsPromoActive();
 
   // Free-tier daily limit: 1 simulado/day (skipped during promo).
   useEffect(() => {
-    if (Date.now() < PROMO_END) return;
+    if (isPromoActive) return;
     api.get<{ simulado_done: boolean; is_free: boolean }>("/content/daily-usage").then((d) => {
       if (d.is_free && d.simulado_done) setDailyBlocked(true);
     }).catch(() => {});

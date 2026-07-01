@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { quizService, authService, type Question } from "@/services";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsPromoActive } from "@/contexts/PromoContext";
 import { cn } from "@/lib/utils";
 import { Check, Flame, Heart, Lock, Trophy, X, Zap } from "lucide-react";
 import { useAccessGate } from "@/hooks/useAccessGate";
@@ -38,12 +39,11 @@ const AprenderSessao = () => {
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
   const [dailyBlocked, setDailyBlocked] = useState(false);
-
-  const PROMO_END = new Date("2026-07-06T00:00:00Z").getTime();
+  const isPromoActive = useIsPromoActive();
 
   // Free-tier daily limit: 1 aprender session/day (skipped during promo).
   useEffect(() => {
-    if (Date.now() < PROMO_END) return;
+    if (isPromoActive) return;
     api.get<{ aprender_done: boolean; is_free: boolean }>("/content/daily-usage").then((d) => {
       if (d.is_free && d.aprender_done) setDailyBlocked(true);
     }).catch(() => {});

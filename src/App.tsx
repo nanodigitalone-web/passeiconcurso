@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { PromoProvider } from "@/contexts/PromoContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
@@ -52,6 +53,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <PromoProvider>
           <ErrorBoundary>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -80,6 +82,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           </ErrorBoundary>
+          </PromoProvider>
           <InstallPrompt />
         </AuthProvider>
       </BrowserRouter>
