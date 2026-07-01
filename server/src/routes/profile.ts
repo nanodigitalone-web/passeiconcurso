@@ -294,6 +294,35 @@ profileRouter.delete("/:id/follow", requireAuth, async (req: AuthedRequest, res)
   }
 });
 
+// Purchase an interests tier (deducts moedas).
+// tier: 10 = Básico (1000 moedas), 30 = Pro (2000 moedas).
+profileRouter.post("/interests-tier", requireAuth, async (req: AuthedRequest, res) => {
+  const tier = Number(req.body?.tier);
+  if (tier !== 10 && tier !== 30) return res.status(400).json({ error: "invalid_tier" });
+  const cost = tier === 10 ? 1000 : 2000;
+  try {
+    const p = await one<{ moedas: number; interesses_max: number }>(
+      "select moedas, interesses_max from profiles where id = $1 for update",
+      [req.userId],
+    );
+    if (!p) return res.status(404).json({ error: "not_found" });
+    if (p.interesses_max >= tier) return res.json({ ok: true, interesses_max: p.interesses_max });
+    if (p.moedas < cost) return res.status(400).json({ error: "insufficient_coins" });
+    await query(
+      "update profiles set moedas = moedas - $2, interesses_max = $3, updated_at = now() where id = $1",
+      [req.userId, cost, tier],
+    );
+    await query(
+      "insert into coin_transactions (user_id, tipo, amount, descricao) values ($1,'interests_tier',$2,$3)",
+      [req.userId, -cost, tier === 10 ? "Plano Interesses Básico (10)" : "Plano Interesses Pro (30)"],
+    );
+    const updated = await one("select * from profiles where id = $1", [req.userId]);
+    res.json({ ok: true, interesses_max: tier, profile: updated });
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
 // Update own profile.
 profileRouter.patch("/", requireAuth, async (req: AuthedRequest, res) => {
   const patch = req.body || {};
