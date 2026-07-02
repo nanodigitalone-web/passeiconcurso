@@ -321,13 +321,14 @@ contentRouter.post("/questions", requireAuth, async (req: AuthedRequest, res) =>
       }
 
       // Step 3: fetch questions for those disciplines.
-      const placeholders = disciplinas.map((_: string, i: number) => `$${i + 2}`).join(",");
+      // Note: $1, $2, ... for disciplinas only (userId not needed in this SELECT).
+      const placeholders = disciplinas.map((_: string, i: number) => `$${i + 1}`).join(",");
       all = (
         await query(
           `select id, disciplina, enunciado, opcoes, correta, comentario, source
              from questions
             where disciplina in (${placeholders}) and active`,
-          [req.userId, ...disciplinas],
+          disciplinas,
         )
       ).rows;
 
@@ -397,13 +398,13 @@ contentRouter.post("/questions", requireAuth, async (req: AuthedRequest, res) =>
     // Expand slugs to also match readable names stored in older questions
     const disciplinas = expandInterestSlugs(disciplinasRaw);
 
-    const placeholders = disciplinas.map((_: string, i: number) => `$${i + 2}`).join(",");
+    const placeholders = disciplinas.map((_: string, i: number) => `$${i + 1}`).join(",");
     all = (
       await query(
         `select id, disciplina, enunciado, opcoes, correta, comentario, source
            from questions
           where disciplina in (${placeholders}) and active`,
-        [req.userId, ...disciplinas],
+        disciplinas,
       )
     ).rows;
     if (all.length === 0) return res.json({ questions: [] });
