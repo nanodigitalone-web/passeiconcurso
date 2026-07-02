@@ -174,14 +174,20 @@ const Quiz = () => {
     return (
       <div className="min-h-screen bg-gradient-soft">
         <div className="mx-auto max-w-2xl px-4 pb-10 pt-6">
-          <header className="mb-6 flex items-center">
+          <header className="mb-4 flex items-center">
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>← Sair</Button>
           </header>
 
-          <div className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">{catNome}</p>
-            <h1 className="font-display text-3xl font-bold">Escolhe o formato</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">Seleção inteligente — priorizamos questões novas e as que erraste.</p>
+          <div className="relative mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-blue-700 to-indigo-800 p-6 text-white shadow-elegant animate-fade-in">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-white/5 blur-2xl" />
+            <div className="relative">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-70">{catNome}</p>
+              <h1 className="mt-1 font-display text-3xl font-bold">Escolhe o formato</h1>
+              <p className="mt-2 text-sm opacity-80 leading-relaxed">
+                Seleção inteligente: priorizamos questões novas e as que erraste.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -304,29 +310,46 @@ const Quiz = () => {
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
 
+  // Acertos até agora (inclui a questão actual já revelada).
+  const acertosLive =
+    respostas.filter((r, i) => r === questoes[i]?.correta).length +
+    (revealed && escolhida === questao.correta ? 1 : 0);
+  const acertou = revealed && escolhida === questao.correta;
+
   return (
     <div className="min-h-screen bg-gradient-soft">
       <div className="mx-auto max-w-2xl px-4 pb-10 pt-6">
-        <header className="mb-4 flex items-center justify-between">
+        <header className="mb-4 flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>Sair</Button>
+          <div className="flex-1" />
+          {(respostas.length > 0 || revealed) && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-1.5 text-xs font-bold text-success">
+              <Check className="h-3.5 w-3.5" /> {acertosLive}
+            </span>
+          )}
           <div className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-medium shadow-card">
             <Clock className="h-4 w-4 text-primary" /> {mm}:{ss}
           </div>
         </header>
 
         <div className="mb-5">
-          <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
+          <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
             <span>Questão {idx + 1} de {total}</span>
-            <span>{questao.disciplina}</span>
+            <span>{Math.round((idx / total) * 100)}%</span>
           </div>
-          <Progress value={((idx) / total) * 100} className="h-2" />
+          <Progress value={((idx) / total) * 100} className="h-3" />
         </div>
 
         <Card className="mb-5 border-border/60 p-5 shadow-card animate-fade-in">
+          {questao.disciplina && (
+            <p className="mb-2 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-primary">
+              <Zap className="h-3 w-3" /> {questao.disciplina}
+            </p>
+          )}
           <p className="font-display text-lg font-semibold leading-snug">{questao.enunciado}</p>
         </Card>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {questao.opcoes.map((op, i) => {
             const isCorrect = i === questao.correta;
             const isChosen = escolhida === i;
@@ -337,11 +360,11 @@ const Quiz = () => {
                 onClick={() => setEscolhida(i)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-2xl border-2 bg-card p-4 text-left transition-smooth shadow-card",
-                  !revealed && isChosen && "border-primary bg-primary/5",
+                  !revealed && isChosen && "border-primary bg-primary/5 scale-[0.99]",
                   !revealed && !isChosen && "border-border/60 hover:border-primary/40",
                   revealed && isCorrect && "border-success bg-success/10",
                   revealed && isChosen && !isCorrect && "border-destructive bg-destructive/10",
-                  revealed && !isChosen && !isCorrect && "border-border/60 opacity-60",
+                  revealed && !isChosen && !isCorrect && "border-border/60 opacity-50",
                 )}
               >
                 <span className={cn(
@@ -363,15 +386,23 @@ const Quiz = () => {
         </div>
 
         {revealed && (
-          <Card className="mt-5 border-l-4 border-primary bg-primary/5 p-4 animate-fade-in">
-            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-primary">Comentário</p>
+          <Card className={cn(
+            "mt-5 border-l-4 p-4 animate-fade-in",
+            acertou ? "border-success bg-success/5" : "border-destructive bg-destructive/5",
+          )}>
+            <p className={cn(
+              "mb-1 text-xs font-bold uppercase tracking-wider",
+              acertou ? "text-success" : "text-destructive",
+            )}>
+              {acertou ? "Correto!" : `Resposta correta: ${questao.opcoes[questao.correta]}`}
+            </p>
             <p className="text-sm leading-relaxed">{questao.comentario}</p>
           </Card>
         )}
 
         <div className="mt-6">
           {!revealed ? (
-            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold">
+            <Button onClick={confirmar} disabled={escolhida === null} size="lg" className="w-full rounded-full font-semibold bg-gradient-primary">
               Confirmar resposta
             </Button>
           ) : (
