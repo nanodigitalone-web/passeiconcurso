@@ -170,6 +170,26 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
 - **Marca multi-área**: expressão "saúde" removida dos textos visíveis (Login,
   Seo de Concursos, partilhas, banner/certificado canvas). Mantêm-se nomes reais
   de cursos ("Técnico — Saúde") e o disclaimer legal do MINSA.
+- **Fix batalhas** (`battles.ts`, `battlesService.ts`, `Batalha.tsx`): criação
+  usa o motor do servidor (funcionava só com o banco local, vazio para plano/
+  interesses). Novo `GET /battles/:id/questions` — ambos jogam o MESMO conjunto.
+- **Ranking limitado a 20** (geral/semanal/liga) a pedido do dono.
+- **Badge de plano nos avatares em todo o lado**: `plan_id` (subselect a
+  user_subscriptions activas) devolvido em ranking/liga/semana/exames/perfil
+  público/seguidores; frontend envolve avatares com `PlanBadge` e mostra
+  `PlanPill` junto ao nome no perfil próprio e público.
+- **"Sobre a aplicação"**: `AboutModal.tsx` (versão, features, créditos
+  Yetuedu), acessível nas Definições do Perfil.
+- **Menu inferior colorido**: cada item com cor própria (ícone colorido em
+  repouso, chip gradiente quando activo).
+- **Aprender melhorado**: CTA "Continuar · Nível N" branco, chip de vidas
+  (fetch a /profile/lives), % na barra, estado vazio sem emoji, chip do
+  sistema actual destacado com a cor do corpo celeste.
+- **Modal de seguidores redesenhado** + **Partilhar redesenhada** (hero com
+  código de convite, cartões compactos, barra de progresso do certificado).
+- **Páginas de pagamento redesenhadas**: `Acesso.tsx`, `PlanoPagamento.tsx`,
+  `AccessGate.tsx` — heros com preço em chip, promo em amarelo, conclusão
+  verde-esmeralda, benefícios com checks.
 - **Redesign das provas do simulado** (`Quiz.tsx`, `Resultado.tsx`): escolha de
   formato com hero; prova com contador de acertos ao vivo, disciplina no cartão
   da questão e comentário colorido por certo/errado; resultado com anel de
