@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, GraduationCap, Sparkles, Target, Trophy, Zap } from "lucide-react";
+import { BookOpen, GraduationCap, Target, Trophy, Zap } from "lucide-react";
 import { LegalModal } from "@/components/LegalModal";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { Seo } from "@/components/Seo";
@@ -34,10 +34,6 @@ const Login = () => {
 
       <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-10">
         <div className="flex flex-1 flex-col justify-center">
-          <span className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5" /> Preparação para concursos · Angola
-          </span>
-
           <div className="flex items-center gap-3">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white font-display text-3xl font-black text-primary shadow-lg">
               P
@@ -51,7 +47,7 @@ const Login = () => {
           {/* Prova social em números */}
           <div className="mt-6 grid grid-cols-3 gap-2">
             {[
-              { icon: BookOpen, value: "10 mil+", label: "Questões" },
+              { icon: BookOpen, value: "35 mil+", label: "Questões" },
               { icon: GraduationCap, value: "75+", label: "Disciplinas" },
               { icon: Trophy, value: "Nacional", label: "Ranking" },
             ].map((s) => (
@@ -73,7 +69,7 @@ const Login = () => {
         <div className="mt-10">
           <div className="rounded-3xl border border-white/15 bg-white/10 p-5 shadow-elegant backdrop-blur-md">
             <p className="mb-4 text-center text-sm font-medium opacity-90">
-              Entra com a tua conta Google — é grátis.
+              Entra com a tua conta Google para começar.
             </p>
             <GoogleSignInButton
               onSuccess={async () => {
@@ -95,9 +91,10 @@ const Login = () => {
               .
             </p>
           </div>
-          <p className="mt-5 text-center">
-            <a href="/admin" className="text-[10px] font-light tracking-wide opacity-50 transition-opacity hover:opacity-100">
-              Yetuedu
+          <p className="mt-5 text-center text-xs">
+            <a href="/admin" className="transition-opacity hover:opacity-80">
+              <span className="font-light opacity-60">By </span>
+              <span className="font-bold text-white">Yetuedu</span>
             </a>
           </p>
         </div>
