@@ -127,6 +127,12 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
   foram ATIVADAS na app (saude:true) e entraram na geração (167 disciplinas
   no total, ~500 cada ≈ 83k questões alvo; custo estimado ~100 USD de Haiku
   para completar tudo). INCLUDE_ALL_AREAS=0 exclui as 5 áreas novas da geração.
+  **GERAÇÃO É SÓ LOCAL** (decisão do dono): o worker de produção
+  (AUTO_GENERATE_TARGET) foi REMOVIDO do index.ts — o Render nunca chegou a
+  gerar de forma fiável. No Mac correm DOIS workers com caffeinate:
+  `generate-interests.mjs 500` (disciplinas, log generation.log) e
+  `balance-categories.mjs 500` (categorias <500, log balance.log). Ambos
+  retomáveis; verificar com `ps aux | grep -E "generate|balance"`.
 - **Disciplinas cobertas**: 75 disciplinas de saúde (Medicina 25, Enfermagem 15,
   Fisioterapia 15, Farmácia 15, Análises Clínicas 15) + 10 extra. Cada uma usa slug
   como campo `disciplina` na BD (ex: `anatomia-humana-sistemica`).
