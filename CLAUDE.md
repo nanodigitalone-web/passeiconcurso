@@ -162,6 +162,14 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
   (pontos globais, liga via `profile.league`, sequência), cartão "A tua posição"
   (mostra quanto falta para ultrapassar o próximo), medalhas ouro/prata/bronze
   no top 3 da lista, números formatados pt-PT.
+- **Header + menu + Login** (`TopBar.tsx`, `BottomNav.tsx`, `DesktopSidebar.tsx`,
+  `Login.tsx`): TopBar com blur e chips de sequência/pontos; BottomNav flutuante
+  (item ativo em chip gradiente); sidebar com Simulado Nacional e Prontidão;
+  Login redesenhado (prova social, cartão de vidro no botão Google).
+  **"Percurso" renomeado para "Relatório"** em toda a UI (rota `/percurso` mantém-se).
+- **Marca multi-área**: expressão "saúde" removida dos textos visíveis (Login,
+  Seo de Concursos, partilhas, banner/certificado canvas). Mantêm-se nomes reais
+  de cursos ("Técnico — Saúde") e o disclaimer legal do MINSA.
 
 ### 2026-07-01 (admin metrics resilience + UX melhorias)
 - **Admin – UserStatsModal reutilizável**: componente partilhado entre Top 3 e UsersTab.
