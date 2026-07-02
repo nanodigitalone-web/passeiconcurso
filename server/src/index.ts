@@ -361,11 +361,16 @@ if (process.env.AUTO_GENERATE_TARGET) {
   const target = String(Number(process.env.AUTO_GENERATE_TARGET) || 500);
   const serverDir = fileURLToPath(new URL("..", import.meta.url));
   const startWorker = () => {
-    console.log(`[auto-generate] a lançar geração (alvo ${target}/disciplina)`);
+    console.log(`[auto-generate] a lançar geração (alvo ${target}/disciplina; node=${process.execPath}; cwd=${serverDir})`);
     const child = spawn(process.execPath, ["scripts/generate-interests.mjs", target], {
       cwd: serverDir,
       stdio: "inherit",
       env: process.env,
+    });
+    console.log(`[auto-generate] worker pid=${child.pid ?? "FALHOU"}`);
+    child.on("error", (err) => {
+      console.error(`[auto-generate] erro ao lançar worker: ${err.message}; tenta em 60s`);
+      setTimeout(startWorker, 60_000);
     });
     child.on("exit", (code) => {
       if (code === 0) {
