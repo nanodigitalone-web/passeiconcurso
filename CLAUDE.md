@@ -170,6 +170,15 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
 - **Marca multi-área**: expressão "saúde" removida dos textos visíveis (Login,
   Seo de Concursos, partilhas, banner/certificado canvas). Mantêm-se nomes reais
   de cursos ("Técnico — Saúde") e o disclaimer legal do MINSA.
+- **Menu inferior com gaveta "···"**: 4 itens principais (Início, Concursos,
+  Aprender, Ranking) + botão Mais que abre Drawer com atalhos coloridos
+  (Simulado, Prontidão, Planos, Sacar, Convidar, Recursos, Relatório, Perfil).
+- **Home reorganizada**: stats (sequência/pontos/acerto) dentro do hero azul;
+  no lugar deles, mini-trilha Aprender (planeta atual via `src/lib/celestial.ts`
+  partilhado, progresso, botão Jogar → abre a sessão directamente).
+- **Notificações**: só mensagens dos últimos 2 dias. **Sobre**: sem linha de
+  login Google, créditos "By Yetuedu". **Travessões** removidos de todos os
+  textos visíveis (pedido do dono: nada que denuncie escrita de IA).
 - **Fix batalhas** (`battles.ts`, `battlesService.ts`, `Batalha.tsx`): criação
   usa o motor do servidor (funcionava só com o banco local, vazio para plano/
   interesses). Novo `GET /battles/:id/questions` — ambos jogam o MESMO conjunto.
