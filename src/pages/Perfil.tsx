@@ -22,6 +22,7 @@ import {
   Bell, BellOff, BellRing, Coins, ChevronRight, ChevronDown, Gift,
   Pencil, X, Users, Camera, Loader2, Search, Star, Zap,
   UserCheck, MapPin, GraduationCap, Flame, Snowflake,
+  User, Mail, CalendarDays, Quote,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -597,20 +598,36 @@ const Perfil = () => {
         </button>
 
         {!editing ? (
-          <div className="border-t border-border/40 px-4 pb-4 pt-3 space-y-2.5 text-sm">
-            {[
-              { label: "Nome",     value: profile?.nome },
-              { label: "Bio",      value: profile?.bio },
-              { label: "Email",    value: user?.email },
-              { label: "Escola",   value: profile?.universidade },
-              { label: "Curso",    value: profile?.curso },
-              { label: "Ano",      value: profile?.ano },
-            ].map((row) => row.value ? (
-              <div key={row.label} className="flex items-start justify-between gap-4">
-                <span className="w-20 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground pt-0.5">{row.label}</span>
-                <span className="text-right font-medium leading-snug">{row.value}</span>
-              </div>
-            ) : null)}
+          <div className="border-t border-border/40 px-4 pb-4 pt-3">
+            {(() => {
+              const rows = [
+                { icon: User, value: profile?.nome, accent: "bg-blue-50 text-blue-600" },
+                { icon: Quote, value: profile?.bio, accent: "bg-violet-50 text-violet-600" },
+                { icon: Mail, value: user?.email, accent: "bg-sky-50 text-sky-600" },
+                { icon: GraduationCap, value: profile?.universidade, accent: "bg-emerald-50 text-emerald-600" },
+                { icon: BookOpen, value: profile?.curso, accent: "bg-amber-50 text-amber-600" },
+                { icon: CalendarDays, value: profile?.ano, accent: "bg-rose-50 text-rose-600" },
+              ].filter((r) => r.value);
+              if (rows.length === 0) {
+                return (
+                  <p className="py-2 text-center text-sm text-muted-foreground">
+                    Toca em Editar para preencheres o teu perfil.
+                  </p>
+                );
+              }
+              return (
+                <ul className="space-y-1">
+                  {rows.map((row, i) => (
+                    <li key={i} className="flex items-center gap-3 rounded-xl px-1.5 py-2">
+                      <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", row.accent)}>
+                        <row.icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 break-words text-sm font-medium leading-snug">{row.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
           </div>
         ) : (
           <div className="border-t border-border/40 px-4 pb-4 pt-3 space-y-4">
