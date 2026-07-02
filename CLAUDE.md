@@ -105,8 +105,12 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
   área nova "Ciências Básicas e Línguas": Biologia, Biologia Médica, Química,
   Química Orgânica, Bioquímica, Física, Matemática, Bioestatística, Anatomia I,
   Inglês, Francês, Espanhol → concurso geral/geral). Alvo: **500/disciplina**
-  (97 disciplinas). Log: `server/generation.log` (gitignored). Retomar se
-  interrompido (a partir de `server/`):
+  (97 disciplinas). Log: `server/generation.log` (gitignored).
+  **Worker em produção**: com `AUTO_GENERATE_TARGET=500` nas envs do Render, o
+  servidor lança a geração no arranque e relança-a se cair (retomável). PASSO
+  PENDENTE DO DONO: adicionar essa env var no Render; depois parar o worker
+  local do Mac (`pkill -f generate-interests`) para não haver dois a correr.
+  Retoma local (fallback, a partir de `server/`):
   `nohup caffeinate -i node scripts/generate-interests.mjs 500 >> generation.log 2>&1 &`
 - **Disciplinas cobertas**: 75 disciplinas de saúde (Medicina 25, Enfermagem 15,
   Fisioterapia 15, Farmácia 15, Análises Clínicas 15) + 10 extra. Cada uma usa slug
