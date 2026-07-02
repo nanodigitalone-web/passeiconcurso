@@ -112,6 +112,15 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
   local do Mac (`pkill -f generate-interests`) para não haver dois a correr.
   Retoma local (fallback, a partir de `server/`):
   `nohup caffeinate -i node scripts/generate-interests.mjs 500 >> generation.log 2>&1 &`
+  **Estado 2026-07-02 (tarde)**: worker do Render CONFIRMADO a gerar (envs
+  adicionadas pelo dono; worker local parado). Em paralelo corre no Mac o
+  `scripts/balance-categories.mjs 500` (log `server/balance.log`): equilibra
+  as categorias <500 (psicologia 77, uan/medicina 114, cardiopneumologia 133,
+  gineco-obstetricia 162) até 500, mais pequenas primeiro. REGRA do dono:
+  nenhuma categoria/disciplina recebe geração acima de 500 enquanto houver
+  outras abaixo (ambos os scripts respeitam: cap 500 + menor primeiro).
+  Nota: categorias grandes (medico 13.5k) são a SOMA das suas disciplinas
+  (25 × 500) — o cap é por disciplina.
 - **Disciplinas cobertas**: 75 disciplinas de saúde (Medicina 25, Enfermagem 15,
   Fisioterapia 15, Farmácia 15, Análises Clínicas 15) + 10 extra. Cada uma usa slug
   como campo `disciplina` na BD (ex: `anatomia-humana-sistemica`).
