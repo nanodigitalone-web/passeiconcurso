@@ -163,7 +163,13 @@ const Planos = () => {
     if (!user) return;
     setSettingMode(true);
     try {
-      await authService.setCategoria(user.id, concursoId, categoriaId, categoriaNome);
+      // Deactivate interesses override so concurso_id takes priority everywhere
+      await authService.updateProfile(user.id, {
+        concurso_id: concursoId,
+        categoria_id: categoriaId,
+        categoria_nome: categoriaNome,
+        interesses_ativo: false,
+      });
       await refreshProfile();
       toast.success("Modo de estudo activado.");
     } catch {

@@ -71,9 +71,11 @@ const Aprender = () => {
     };
   }, []);
 
-  const interessesAtivo = !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
-  const concursoId  = interessesAtivo ? "interesses" : profile?.concurso_id  ?? null;
-  const categoriaId = interessesAtivo ? "interesses" : profile?.categoria_id ?? null;
+  // plano mode takes absolute priority over interesses_ativo
+  const isPlanoMode     = profile?.concurso_id === "plano";
+  const interessesAtivo = !isPlanoMode && !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
+  const concursoId  = isPlanoMode ? "plano" : interessesAtivo ? "interesses" : profile?.concurso_id  ?? null;
+  const categoriaId = isPlanoMode ? "meu-plano" : interessesAtivo ? "interesses" : profile?.categoria_id ?? null;
   const isPlano     = concursoId === "plano";
   const cat         = !interessesAtivo && !isPlano && concursoId && categoriaId ? quizService.getCategoria(concursoId, categoriaId) : null;
   const hasTrilha   = interessesAtivo || isPlano || !!cat;

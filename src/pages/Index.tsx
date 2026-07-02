@@ -44,15 +44,19 @@ const Index = () => {
   };
 
   // ── Destinos ────────────────────────────────────────────────────────────────
-  const interessesAtivo = !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
+  // plano mode takes absolute priority; interesses only when no explicit mode is set
+  const isPlanoMode     = profile?.concurso_id === "plano";
+  const interessesAtivo = !isPlanoMode && !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
   const temInteresses   = (profile?.interesses?.length ?? 0) > 0;
   const hasCateg        = !!(profile?.concurso_id && profile?.categoria_id);
 
-  const simuladoTo = interessesAtivo
-    ? "/quiz/interesses/interesses"
-    : hasCateg
-      ? `/quiz/${profile!.concurso_id}/${profile!.categoria_id}`
-      : "/concursos";
+  const simuladoTo = isPlanoMode
+    ? "/quiz/plano/meu-plano"
+    : interessesAtivo
+      ? "/quiz/interesses/interesses"
+      : hasCateg
+        ? `/quiz/${profile!.concurso_id}/${profile!.categoria_id}`
+        : "/concursos";
 
   // ── Stats locais ────────────────────────────────────────────────────────────
   const results  = resultsService.getResults();
