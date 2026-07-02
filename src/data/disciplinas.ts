@@ -6,7 +6,7 @@
 export type Area = {
   area: string;
   emoji: string;
-  /** true = área de saúde (já tem banco de questões); false = ainda sem conteúdo. */
+  /** true = área ativa (selecionável e com geração de questões); false = "em breve". */
   saude: boolean;
   disciplinas: string[];
 };
@@ -112,7 +112,7 @@ export const AREAS: Area[] = [
   {
     area: "Economia",
     emoji: "📈",
-    saude: false,
+    saude: true,
     disciplinas: [
       "Introdução à Economia", "Microeconomia I", "Macroeconomia I",
       "História Económica Geral", "Econometria", "Desenvolvimento Económico",
@@ -124,7 +124,7 @@ export const AREAS: Area[] = [
   {
     area: "Direito",
     emoji: "⚖️",
-    saude: false,
+    saude: true,
     disciplinas: [
       "Introdução ao Estudo do Direito", "Direito Constitucional",
       "Direito Civil (Parte Geral)", "Direito Penal I", "Direito Processual Civil",
@@ -136,7 +136,7 @@ export const AREAS: Area[] = [
   {
     area: "Contabilidade",
     emoji: "🧾",
-    saude: false,
+    saude: true,
     disciplinas: [
       "Contabilidade Financeira I", "Contabilidade de Gestão", "Auditoria Financeira",
       "Contabilidade Avançada", "Fiscalidade Portuguesa/Internacional",
@@ -149,7 +149,7 @@ export const AREAS: Area[] = [
   {
     area: "Gestão",
     emoji: "📊",
-    saude: false,
+    saude: true,
     disciplinas: [
       "Princípios de Gestão", "Comportamento Organizacional",
       "Gestão de Recursos Humanos", "Marketing Estratégico", "Gestão Financeira",
@@ -162,7 +162,7 @@ export const AREAS: Area[] = [
   {
     area: "Engenharias",
     emoji: "⚙️",
-    saude: false,
+    saude: true,
     disciplinas: [
       "Cálculo Diferencial e Integral", "Álgebra Linear", "Física Mecânica",
       "Química Geral", "Geometria Descritiva", "Ciência e Engenharia dos Materiais",

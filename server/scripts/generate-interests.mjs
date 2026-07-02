@@ -122,10 +122,10 @@ const TARGETS = [
   ].map((nome) => ({ nome, slug: slugify(nome), concurso_id: "geral", categoria_id: "geral", area: "Ciências Básicas e Línguas" }))),
 ];
 
-// Áreas ainda "em breve" na app (Economia, Direito, Contabilidade, Gestão,
-// Engenharias). Só entram na geração com INCLUDE_ALL_AREAS=1, para não gastar
-// créditos de API em conteúdo que os utilizadores ainda não podem escolher.
-if (process.env.INCLUDE_ALL_AREAS === "1") {
+// Áreas ativadas em 2026-07-02 (Economia, Direito, Contabilidade, Gestão,
+// Engenharias): entram na geração por defeito. Definir INCLUDE_ALL_AREAS=0
+// para as excluir (ex: poupar créditos e focar só na saúde).
+if (process.env.INCLUDE_ALL_AREAS !== "0") {
   const EXTRA = {
     "Economia": ["Introdução à Economia", "Microeconomia I", "Macroeconomia I", "História Económica Geral", "Econometria", "Desenvolvimento Económico", "Economia Internacional", "Moeda e Bancos", "Economia do Setor Público", "Teoria dos Jogos", "Economia Ambiental", "Finanças Públicas", "Pensamento Económico", "Economia Industrial"],
     "Direito": ["Introdução ao Estudo do Direito", "Direito Constitucional", "Direito Civil (Parte Geral)", "Direito Penal I", "Direito Processual Civil", "Direito do Trabalho", "Direito Administrativo", "Direito Comercial e Empresarial", "Direito Internacional Público", "Direito Fiscal e Tributário", "Direitos Humanos", "Filosofia do Direito", "Direito Processual Penal", "Direito do Ambiente"],
