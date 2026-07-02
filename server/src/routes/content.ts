@@ -169,20 +169,37 @@ contentRouter.post("/aprender-level", requireAuth, async (req: AuthedRequest, re
   try {
     let row: { n: number } | null;
     if (concursoId === "plano") {
-      const subDisc = await one<{ disciplines: string[] }>(`
-        SELECT disciplines FROM user_subscriptions
-        WHERE user_id = $1 AND status = 'active'
-          AND (expires_at IS NULL OR expires_at > now())
-          AND disciplines IS NOT NULL AND disciplines != '[]'::jsonb
-        UNION ALL
-        SELECT sm.disciplines FROM subscription_members sm
-        JOIN user_subscriptions us ON us.id = sm.subscription_id
-        WHERE sm.member_user_id = $1 AND us.status = 'active'
-          AND (us.expires_at IS NULL OR us.expires_at > now())
-          AND sm.disciplines IS NOT NULL AND sm.disciplines != '[]'::jsonb
-        LIMIT 1
-      `, [req.userId]);
-      const disciplinas = expandInterestSlugs((subDisc?.disciplines as string[]) ?? []);
+      // Get disciplines: try as owner first, then as family member.
+      let rawDisc: any[] = [];
+      const ownerRow = await one<{ disciplines: any }>(
+        `SELECT disciplines FROM user_subscriptions
+         WHERE user_id = $1 AND status = 'active'
+           AND (expires_at IS NULL OR expires_at > now())`,
+        [req.userId],
+      );
+      if (ownerRow) {
+        const d = ownerRow.disciplines;
+        rawDisc = Array.isArray(d) ? d
+          : typeof d === "string" ? (() => { try { return JSON.parse(d); } catch { return []; } })()
+          : [];
+      }
+      if (rawDisc.length === 0) {
+        const memRow = await one<{ disciplines: any }>(
+          `SELECT sm.disciplines FROM subscription_members sm
+           JOIN user_subscriptions us ON us.id = sm.subscription_id
+           WHERE sm.member_user_id = $1 AND us.status = 'active'
+             AND (us.expires_at IS NULL OR us.expires_at > now())
+           LIMIT 1`,
+          [req.userId],
+        );
+        if (memRow) {
+          const d = memRow.disciplines;
+          rawDisc = Array.isArray(d) ? d
+            : typeof d === "string" ? (() => { try { return JSON.parse(d); } catch { return []; } })()
+            : [];
+        }
+      }
+      const disciplinas = expandInterestSlugs(rawDisc as string[]);
       row = disciplinas.length === 0
         ? { n: 0 }
         : await one<{ n: number }>(
@@ -253,72 +270,113 @@ contentRouter.post("/questions", requireAuth, async (req: AuthedRequest, res) =>
 
   // Virtual "plano" category: serve questions filtered by the user's subscription disciplines.
   if (concursoId === "plano") {
-    const subDisc = await one<{ disciplines: string[] }>(`
-      SELECT disciplines FROM user_subscriptions
-      WHERE user_id = $1 AND status = 'active'
-        AND (expires_at IS NULL OR expires_at > now())
-        AND disciplines IS NOT NULL AND disciplines != '[]'::jsonb
-      UNION ALL
-      SELECT sm.disciplines FROM subscription_members sm
-      JOIN user_subscriptions us ON us.id = sm.subscription_id
-      WHERE sm.member_user_id = $1 AND us.status = 'active'
-        AND (us.expires_at IS NULL OR us.expires_at > now())
-        AND sm.disciplines IS NOT NULL AND sm.disciplines != '[]'::jsonb
-      LIMIT 1
-    `, [req.userId]);
+    try {
+      // Step 1: find raw disciplines — try owner first, then family member.
+      // Two separate queries (not UNION ALL) for clarity and error isolation.
+      let rawDisc: any[] = [];
 
-    if (!subDisc || !(subDisc.disciplines as any[]).length) return res.json({ questions: [] });
-    const disciplinas = expandInterestSlugs(subDisc.disciplines as string[]);
+      const ownerRow = await one<{ disciplines: any }>(
+        `SELECT disciplines FROM user_subscriptions
+         WHERE user_id = $1 AND status = 'active'
+           AND (expires_at IS NULL OR expires_at > now())`,
+        [req.userId],
+      );
+      if (ownerRow) {
+        const d = ownerRow.disciplines;
+        rawDisc = Array.isArray(d) ? d
+          : typeof d === "string" ? (() => { try { return JSON.parse(d); } catch { return []; } })()
+          : [];
+      }
 
-    const placeholders = disciplinas.map((_: string, i: number) => `$${i + 2}`).join(",");
-    all = (
-      await query(
-        `select id, disciplina, enunciado, opcoes, correta, comentario, source
-           from questions
-          where disciplina in (${placeholders}) and active`,
-        [req.userId, ...disciplinas],
-      )
-    ).rows;
-    if (all.length === 0) return res.json({ questions: [] });
+      if (rawDisc.length === 0) {
+        const memberRow = await one<{ disciplines: any }>(
+          `SELECT sm.disciplines FROM subscription_members sm
+           JOIN user_subscriptions us ON us.id = sm.subscription_id
+           WHERE sm.member_user_id = $1 AND us.status = 'active'
+             AND (us.expires_at IS NULL OR us.expires_at > now())
+           LIMIT 1`,
+          [req.userId],
+        );
+        if (memberRow) {
+          const d = memberRow.disciplines;
+          rawDisc = Array.isArray(d) ? d
+            : typeof d === "string" ? (() => { try { return JSON.parse(d); } catch { return []; } })()
+            : [];
+        }
+      }
 
-    const statsRows = (
-      await query(
-        `select question_id,
-                sum(case when not correct then 1 else 0 end)::int as wrong_count,
-                max(answered_at) as last_at,
-                (array_agg(correct order by answered_at desc))[1] as last_correct
-           from question_attempts
-          where user_id = $1 and disciplina = any($2::text[])
-          group by question_id`,
-        [req.userId, disciplinas],
-      )
-    ).rows;
-    const stats = new Map<string, any>();
-    for (const s of statsRows) stats.set(s.question_id, s);
-    const COOLDOWN_MS = 5 * 60 * 60 * 1000;
-    const MAX_WRONG_REPEATS = 3;
-    const now = Date.now();
-    const eligible: { q: any; s: number }[] = [];
-    const fallback: { q: any; s: number }[] = [];
-    for (const q of all) {
-      const st = stats.get(q.id);
-      let s = Math.random();
-      if (q.source === "seed") s += 1;
-      if (!st) { eligible.push({ q, s: s + 2 }); continue; }
-      const lastAt = new Date(st.last_at).getTime();
-      const cooling = now - lastAt < COOLDOWN_MS;
-      const mastered = st.last_correct === true;
-      const exhausted = st.wrong_count >= MAX_WRONG_REPEATS;
-      if (!cooling && !mastered && !exhausted) eligible.push({ q, s: s + 1.5 });
-      else fallback.push({ q, s: -(now - lastAt) });
+      console.log(`[plano/questions] user=${req.userId} rawDisc=${JSON.stringify(rawDisc)}`);
+
+      if (rawDisc.length === 0) {
+        return res.json({ questions: [], reason: "no_disciplines" });
+      }
+
+      // Step 2: expand slugs → include both slug and readable name so old + new questions match.
+      let disciplinas: string[];
+      try {
+        disciplinas = expandInterestSlugs(rawDisc as string[]);
+      } catch (e: any) {
+        console.error("[plano/questions] expandInterestSlugs failed:", e?.message);
+        disciplinas = rawDisc as string[];
+      }
+
+      // Step 3: fetch questions for those disciplines.
+      const placeholders = disciplinas.map((_: string, i: number) => `$${i + 2}`).join(",");
+      all = (
+        await query(
+          `select id, disciplina, enunciado, opcoes, correta, comentario, source
+             from questions
+            where disciplina in (${placeholders}) and active`,
+          [req.userId, ...disciplinas],
+        )
+      ).rows;
+
+      console.log(`[plano/questions] disciplinas=${JSON.stringify(disciplinas)} found=${all.length}`);
+
+      if (all.length === 0) return res.json({ questions: [], reason: "no_questions" });
+
+      const statsRows = (
+        await query(
+          `select question_id,
+                  sum(case when not correct then 1 else 0 end)::int as wrong_count,
+                  max(answered_at) as last_at,
+                  (array_agg(correct order by answered_at desc))[1] as last_correct
+             from question_attempts
+            where user_id = $1 and disciplina = any($2::text[])
+            group by question_id`,
+          [req.userId, disciplinas],
+        )
+      ).rows;
+      const stats = new Map<string, any>();
+      for (const s of statsRows) stats.set(s.question_id, s);
+      const COOLDOWN_MS = 5 * 60 * 60 * 1000;
+      const MAX_WRONG_REPEATS = 3;
+      const now = Date.now();
+      const eligible: { q: any; s: number }[] = [];
+      const fallback: { q: any; s: number }[] = [];
+      for (const q of all) {
+        const st = stats.get(q.id);
+        let s = Math.random();
+        if (q.source === "seed") s += 1;
+        if (!st) { eligible.push({ q, s: s + 2 }); continue; }
+        const lastAt = new Date(st.last_at).getTime();
+        const cooling = now - lastAt < COOLDOWN_MS;
+        const mastered = st.last_correct === true;
+        const exhausted = st.wrong_count >= MAX_WRONG_REPEATS;
+        if (!cooling && !mastered && !exhausted) eligible.push({ q, s: s + 1.5 });
+        else fallback.push({ q, s: -(now - lastAt) });
+      }
+      eligible.sort((a, b) => b.s - a.s);
+      let chosen = eligible.slice(0, cap);
+      if (chosen.length < cap) {
+        fallback.sort((a, b) => b.s - a.s);
+        chosen = chosen.concat(fallback.slice(0, cap - chosen.length));
+      }
+      return res.json({ questions: chosen.map(({ q }) => shuffleOptions(q)) });
+    } catch (e: any) {
+      console.error("[content/questions plano]", e?.message, e?.stack?.split("\n")[1]);
+      return res.status(500).json({ error: "server_error", detail: e?.message });
     }
-    eligible.sort((a, b) => b.s - a.s);
-    let chosen = eligible.slice(0, cap);
-    if (chosen.length < cap) {
-      fallback.sort((a, b) => b.s - a.s);
-      chosen = chosen.concat(fallback.slice(0, cap - chosen.length));
-    }
-    return res.json({ questions: chosen.map(({ q }) => shuffleOptions(q)) });
   }
 
   // Virtual "interesses" category: serve questions filtered by the user's

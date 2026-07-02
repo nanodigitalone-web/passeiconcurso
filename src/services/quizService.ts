@@ -102,16 +102,25 @@ export const quizService = {
    * unreachable, so the quiz never breaks.
    */
   async loadQuestionSet(concursoId: string, categoriaId: string, limit = 20): Promise<Question[]> {
+    const isVirtual = concursoId === "plano" || concursoId === "interesses";
     try {
-      const data = await api.post<{ questions: Question[] }>("/content/questions", {
+      const data = await api.post<{ questions: Question[]; reason?: string }>("/content/questions", {
         concursoId,
         categoriaId,
         limit,
       });
       const qs = data?.questions ?? [];
       if (qs.length > 0) return qs;
-    } catch {
-      /* fall through to bundled fallback */
+      // For virtual categories (plano/interesses), no bundled fallback exists.
+      // Return empty so the UI can show the appropriate message.
+      if (isVirtual) return [];
+    } catch (e: any) {
+      // For virtual categories, propagate so the UI shows error (not silent empty).
+      if (isVirtual) {
+        console.error("[loadQuestionSet]", concursoId, e?.message);
+        return [];
+      }
+      /* For real categories, fall through to bundled fallback */
     }
     // Fallback: bundled smart selection (no AI questions, but app keeps working).
     const local = this.getSmartQuestions(concursoId, categoriaId, limit);

@@ -229,13 +229,18 @@ const Quiz = () => {
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 mx-auto mb-4">
               <BookOpen className="h-7 w-7" />
             </div>
-            <h2 className="font-display text-xl font-bold mb-2">Sem disciplinas escolhidas</h2>
+            <h2 className="font-display text-xl font-bold mb-2">Sem questões disponíveis</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Ainda não escolheste as tuas disciplinas de estudo. Vai a Planos → Meu Plano para as seleccionar.
+              Ainda não há questões para as tuas disciplinas, ou as disciplinas ainda não foram escolhidas. Verifica o teu plano e tenta novamente.
             </p>
-            <Button className="rounded-full w-full bg-gradient-primary" onClick={() => navigate("/planos")}>
-              Ir para Planos
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button className="rounded-full w-full bg-gradient-primary" onClick={() => navigate("/planos")}>
+                Ver Planos
+              </Button>
+              <Button variant="outline" className="rounded-full w-full" onClick={() => window.location.reload()}>
+                Tentar de Novo
+              </Button>
+            </div>
           </Card>
         </div>
       );

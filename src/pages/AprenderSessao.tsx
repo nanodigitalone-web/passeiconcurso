@@ -153,14 +153,20 @@ const AprenderSessao = () => {
         <div className="min-h-screen bg-gradient-soft flex items-center justify-center px-4">
           <div className="max-w-sm w-full rounded-3xl border border-border/60 bg-card p-8 text-center shadow-elegant">
             <Zap className="mx-auto mb-4 h-12 w-12 text-amber-400" />
-            <h2 className="font-display text-xl font-bold mb-2">Sem disciplinas escolhidas</h2>
+            <h2 className="font-display text-xl font-bold mb-2">Sem questões disponíveis</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Escolhe as tuas disciplinas de estudo em Planos → Meu Plano.
+              Ainda não há questões para as tuas disciplinas, ou as disciplinas ainda não foram escolhidas. Verifica o teu plano e tenta novamente.
             </p>
-            <button onClick={() => navigate("/planos")}
-              className="inline-flex w-full items-center justify-center rounded-full bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-white">
-              Ir para Planos
-            </button>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => navigate("/planos")}
+                className="inline-flex w-full items-center justify-center rounded-full bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-white">
+                Ver Planos
+              </button>
+              <button onClick={() => window.location.reload()}
+                className="inline-flex w-full items-center justify-center rounded-full border border-border/60 px-4 py-2.5 text-sm font-semibold text-muted-foreground">
+                Tentar de Novo
+              </button>
+            </div>
           </div>
         </div>
       );
