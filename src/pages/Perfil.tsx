@@ -578,23 +578,26 @@ const Perfil = () => {
       <Card className="mb-4 overflow-hidden border-border/60 shadow-card">
         <button
           onClick={() => !editing && setEditing(true)}
-          className="flex w-full items-center justify-between px-4 py-4 text-left"
+          className="group flex w-full items-center justify-between px-4 py-4 text-left"
         >
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
-              <Pencil className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700 transition-transform group-hover:scale-110">
+              <Pencil className="h-5 w-5" />
             </span>
-            Informações pessoais
+            <div>
+              <p className="font-display text-sm font-semibold leading-tight">Informações pessoais</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">Nome, bio e dados académicos</p>
+            </div>
           </div>
           {!editing && (
-            <span className="rounded-full border border-border/60 px-3 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               Editar
             </span>
           )}
         </button>
 
         {!editing ? (
-          <div className="border-t border-border/40 px-4 pb-4 pt-3 space-y-2 text-sm">
+          <div className="border-t border-border/40 px-4 pb-4 pt-3 space-y-2.5 text-sm">
             {[
               { label: "Nome",     value: profile?.nome },
               { label: "Bio",      value: profile?.bio },
@@ -604,8 +607,8 @@ const Perfil = () => {
               { label: "Ano",      value: profile?.ano },
             ].map((row) => row.value ? (
               <div key={row.label} className="flex items-start justify-between gap-4">
-                <span className="text-muted-foreground w-20 shrink-0">{row.label}</span>
-                <span className="font-medium text-right">{row.value}</span>
+                <span className="w-20 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground pt-0.5">{row.label}</span>
+                <span className="text-right font-medium leading-snug">{row.value}</span>
               </div>
             ) : null)}
           </div>
@@ -662,16 +665,21 @@ const Perfil = () => {
       <Card className="mb-4 overflow-hidden border-border/60 shadow-card">
         <button
           onClick={() => setPlansOpen((o) => !o)}
-          className="flex w-full items-center justify-between px-4 py-4 text-left"
+          className="group flex w-full items-center justify-between px-4 py-4 text-left"
         >
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-              <CreditCard className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700 transition-transform group-hover:scale-110">
+              <CreditCard className="h-5 w-5" />
             </span>
-            Os meus planos
-            {plans.length > 0 && (
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{plans.length}</span>
-            )}
+            <div>
+              <p className="font-display text-sm font-semibold leading-tight">
+                Os meus planos
+                {plans.length > 0 && (
+                  <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{plans.length}</span>
+                )}
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-tight">Acessos ativos e validade</p>
+            </div>
           </div>
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", plansOpen && "rotate-180")} />
         </button>
@@ -707,16 +715,16 @@ const Perfil = () => {
       <Card className="mb-4 divide-y divide-border/40 border-border/60 shadow-card">
         {/* Notificações */}
         <div className="flex items-center justify-between gap-3 px-4 py-4">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
             <span className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-              pushStatus === "granted" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+              pushStatus === "granted" ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground",
             )}>
-              <pushLabel.icon className="h-4 w-4" />
+              <pushLabel.icon className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="font-semibold leading-tight">Notificações — {pushLabel.text}</p>
-              <p className="text-xs text-muted-foreground leading-tight mt-0.5">{pushLabel.desc}</p>
+              <p className="font-display text-sm font-semibold leading-tight">Notificações — {pushLabel.text}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">{pushLabel.desc}</p>
             </div>
           </div>
           <Switch
@@ -729,13 +737,13 @@ const Perfil = () => {
         {/* Ocultar conta */}
         <div className="px-4 py-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <EyeOff className="h-4 w-4" />
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                <EyeOff className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <p className="font-semibold leading-tight">Ocultar do ranking</p>
-                <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                <p className="font-display text-sm font-semibold leading-tight">Ocultar do ranking</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">
                   {canHide ? "O teu perfil fica invisível para outros." : "Funcionalidade exclusiva para contas pagas."}
                 </p>
               </div>
@@ -753,13 +761,19 @@ const Perfil = () => {
       </Card>
 
       {/* ── TERMINAR SESSÃO ──────────────────────────────────────────────────── */}
-      <Button
-        variant="outline"
+      <Card
         onClick={handleSignOut}
-        className="w-full rounded-full text-destructive border-destructive/30 hover:bg-destructive/5 mb-4"
+        className="mb-4 flex cursor-pointer items-center gap-3 border-destructive/20 bg-destructive/[0.03] p-3.5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elegant active:scale-[0.98]"
       >
-        <LogOut className="mr-2 h-4 w-4" /> Terminar sessão
-      </Button>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+          <LogOut className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-sm font-semibold leading-tight text-destructive">Terminar sessão</p>
+          <p className="text-[11px] text-muted-foreground leading-tight">Sais da conta neste dispositivo</p>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-destructive/40" />
+      </Card>
 
       {/* ── DIALOG: seguidores / a seguir ─────────────────────────────────── */}
       <Dialog open={!!socialType} onOpenChange={(o) => { if (!o) setSocialType(null); }}>
