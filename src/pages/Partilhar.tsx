@@ -33,13 +33,13 @@ const Partilhar = () => {
   const shareInvite = async () => {
     const r = await shareLink(
       inviteLink,
-      "Junta-te a mim no Passei — prepara-te para os concursos da saúde em Angola! 🎯",
+      "Junta-te a mim no Passei — prepara-te para os concursos públicos em Angola!",
     );
     if (r === "copied") toast.success("Link copiado para partilhares!");
   };
 
   const shareApp = async () => {
-    const r = await shareLink(origin, "Passei — simulados e trilhas para concursos da saúde em Angola.");
+    const r = await shareLink(origin, "Passei — simulados e trilhas para concursos públicos em Angola.");
     if (r === "copied") toast.success("Link da app copiado!");
   };
 

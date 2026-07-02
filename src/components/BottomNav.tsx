@@ -7,18 +7,22 @@ const items = [
   { to: "/concursos", label: "Concursos", icon: BookOpen },
   { to: "/aprender", label: "Aprender", icon: Zap },
   { to: "/recursos", label: "Recursos", icon: Sparkles },
-  { to: "/percurso", label: "Percurso", icon: BarChart3 },
+  { to: "/percurso", label: "Relatório", icon: BarChart3 },
   { to: "/ranking", label: "Ranking", icon: Trophy },
 ];
 
 export const BottomNav = () => {
   const { pathname } = useLocation();
-  if (pathname.startsWith("/quiz/") || pathname.startsWith("/aprender/sessao")) return null;
+  if (
+    pathname.startsWith("/quiz/") ||
+    pathname.startsWith("/aprender/sessao") ||
+    /^\/simulado-nacional\/[^/]+$/.test(pathname)
+  ) return null;
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background shadow-card md:hidden">
-      <div className="mx-auto max-w-2xl px-1">
-        <ul className="grid grid-cols-6">
+    <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(0.65rem+env(safe-area-inset-bottom))] md:hidden">
+      <div className="mx-auto max-w-2xl rounded-3xl border border-border/60 bg-background/95 shadow-elegant backdrop-blur-xl">
+        <ul className="grid grid-cols-6 px-1 py-1.5">
           {items.map(({ to, label, icon: Icon }) => (
             <li key={to}>
               <NavLink
@@ -27,17 +31,20 @@ export const BottomNav = () => {
                 aria-label={label}
                 className={({ isActive }) =>
                   cn(
-                    "flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-smooth",
+                    "flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition-smooth",
                     isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={cn("flex h-9 w-9 items-center justify-center rounded-2xl transition-smooth", isActive && "bg-primary/10")}>
-                      <Icon className="h-5 w-5" />
+                    <span className={cn(
+                      "flex h-8 w-10 items-center justify-center rounded-2xl transition-smooth",
+                      isActive && "bg-gradient-primary text-primary-foreground shadow-card",
+                    )}>
+                      <Icon className="h-[18px] w-[18px]" />
                     </span>
-                    <span>{label}</span>
+                    <span className={cn(isActive && "font-semibold")}>{label}</span>
                   </>
                 )}
               </NavLink>

@@ -40,8 +40,8 @@ const Concursos = () => {
   return (
     <AppShell>
       <Seo
-        title="Concursos Públicos de Saúde Abertos em Angola"
-        description="Explore os concursos públicos da saúde disponíveis em Angola e escolha um para iniciar seus simulados comentados."
+        title="Concursos Públicos Abertos em Angola"
+        description="Explora os concursos públicos disponíveis em Angola e escolhe um para iniciar os teus simulados comentados."
         path="/concursos"
       />
 

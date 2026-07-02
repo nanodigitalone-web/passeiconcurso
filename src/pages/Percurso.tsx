@@ -42,7 +42,7 @@ const shortDay = (iso: string) => {
 
 // PDF print: temporarily hide app shell nav
 const exportPDF = () => {
-  document.title = "Percurso — Passei";
+  document.title = "Relatório — Passei";
   window.print();
 };
 
@@ -202,7 +202,7 @@ const Percurso = () => {
       {/* ── Page Header ───────────────────────────────────────────────────── */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 animate-fade-in" data-print-hide="">
         <div>
-          <h1 className="font-display text-2xl font-bold">Relatório de Percurso</h1>
+          <h1 className="font-display text-2xl font-bold">Relatório de Estudo</h1>
           <p className="text-sm text-muted-foreground">
             {profile?.nome && <span className="font-medium text-foreground">{profile.nome} · </span>}
             {profile?.categoria_nome || "Todas as categorias"}

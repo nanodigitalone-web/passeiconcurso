@@ -60,7 +60,7 @@ export async function buildBanner(profile: ProfileLike, pontos: number): Promise
   ctx.fillText("Passei", W / 2, 145);
   ctx.font = "500 28px Arial";
   ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.fillText("Concursos da Saúde · Angola", W / 2, 190);
+  ctx.fillText("Concursos Públicos · Angola", W / 2, 190);
 
   const avatar = await loadImage(profile.avatar_url);
   const cx = W / 2, cy = 440, r = 145;
@@ -123,7 +123,7 @@ export async function buildCertificate(profile: ProfileLike, pontos: number): Pr
   ctx.textAlign = "center";
   ctx.fillStyle = "#1e6fd9";
   ctx.font = "bold 40px Georgia, serif";
-  ctx.fillText("Passei · Concursos da Saúde", W / 2, 150);
+  ctx.fillText("Passei · Concursos Públicos", W / 2, 150);
 
   ctx.fillStyle = "#222";
   ctx.font = "bold 64px Georgia, serif";
