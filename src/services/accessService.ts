@@ -6,7 +6,9 @@ import type { AccessInfo } from "./types";
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 min
 
-type CacheEntry = { ts: number; expiresAt: number | null };
+// Cache stores hasPaidAccess directly — avoids the Infinity→null JSON bug
+// (JSON.stringify(Infinity) === "null", so we can't recompute from expiresAt)
+type CacheEntry = { ts: number; hasPaidAccess: boolean; expiresAt: number | null };
 const cache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<CacheEntry>>();
 
@@ -51,16 +53,21 @@ export const accessService = {
       entry = await inflight.get(key)!;
     } else {
       const p = (async () => {
+        let hasPaidAccess = false;
         let expiresAt: number | null = null;
         try {
           const r = await api.get<{ hasPaidAccess: boolean; expiresAt: number | null }>(
             `/access/check?conc=${encodeURIComponent(concursoId)}&cat=${encodeURIComponent(categoriaId)}`,
           );
+          // Use hasPaidAccess directly from backend — never recompute from expiresAt
+          // because Infinity is serialized as null in JSON
+          hasPaidAccess = !!r.hasPaidAccess;
           expiresAt = r.expiresAt;
         } catch {
+          hasPaidAccess = false;
           expiresAt = null;
         }
-        const result: CacheEntry = { ts: Date.now(), expiresAt };
+        const result: CacheEntry = { ts: Date.now(), hasPaidAccess, expiresAt };
         cache.set(key, result);
         inflight.delete(key);
         return result;
@@ -70,7 +77,7 @@ export const accessService = {
     }
 
     return {
-      hasPaidAccess: entry.expiresAt !== null && entry.expiresAt > Date.now(),
+      hasPaidAccess: entry.hasPaidAccess,
       expiresAt: entry.expiresAt,
     };
   },
