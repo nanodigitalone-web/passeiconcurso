@@ -170,6 +170,12 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
 - **Marca multi-área**: expressão "saúde" removida dos textos visíveis (Login,
   Seo de Concursos, partilhas, banner/certificado canvas). Mantêm-se nomes reais
   de cursos ("Técnico — Saúde") e o disclaimer legal do MINSA.
+- **Redesign notificações + Perfil inferior** (`Notificacoes.tsx`,
+  `NotificationToaster.tsx`, `PlatformAlertModal.tsx`, `Perfil.tsx`): página com
+  hero e ícones por tipo de mensagem (heurística no conteúdo), toast com ação
+  "Ver" (silenciado também na prova do Simulado Nacional), modal de alertas sem
+  emojis com blur e CTA branco, secções do Perfil (infos pessoais → sair) com
+  chips coloridos e sair como cartão destrutivo.
 
 ### 2026-07-01 (admin metrics resilience + UX melhorias)
 - **Admin – UserStatsModal reutilizável**: componente partilhado entre Top 3 e UsersTab.
