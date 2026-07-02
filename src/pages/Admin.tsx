@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { disciplinaById } from "@/data/disciplinas";
+import { ExamesTab } from "@/components/admin/ExamesTab";
 
 const concursos = quizService.getConcursos();
 
@@ -81,6 +82,7 @@ const NAV_ITEMS = [
   { key: "carregamentos", label: "Moedas",          Icon: Coins      },
   { key: "saques",        label: "Saques",          Icon: Banknote   },
   { key: "promocoes",     label: "Promoções",       Icon: Tag        },
+  { key: "exames",        label: "Exames",          Icon: Trophy     },
 ];
 
 // ── Root ─────────────────────────────────────────────────────────────────────
@@ -177,6 +179,7 @@ const Admin = () => {
         {tab === "carregamentos" && <CarregamentosTab />}
         {tab === "saques"        && <SaquesTab />}
         {tab === "promocoes"     && <PromocoesTab />}
+        {tab === "exames"        && <ExamesTab />}
       </main>
     </div>
   );

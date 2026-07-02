@@ -3,6 +3,7 @@ import { createRequire } from "module";
 import { requireAuth, type AuthedRequest } from "../lib/auth.js";
 import { hasCategoryAccess } from "../lib/access.js";
 import { one, query } from "../lib/db.js";
+import { computeStreak } from "../lib/streak.js";
 // @ts-ignore - resolved at runtime by tsx
 import { getRecursos } from "../../data/_source/recursos.ts";
 // @ts-ignore - resolved at runtime by tsx
@@ -95,25 +96,10 @@ contentRouter.post("/attempts", requireAuth, async (req: AuthedRequest, res) => 
     params,
   );
 
-  // Update streak + last_seen in profiles so the admin panel and ranking show current data.
+  // Update streak + last_seen in profiles so the admin panel and ranking show
+  // current data. Streak freezes bridge missed days (see lib/streak.ts).
   try {
-    const streakRows = (await query(
-      `select distinct (answered_at at time zone 'Africa/Luanda')::date::text as day
-         from question_attempts
-        where user_id = $1 and answered_at >= now() - '90 days'::interval
-        order by 1 desc`,
-      [req.userId],
-    )).rows;
-    const activeDays = new Set(streakRows.map((r: any) => r.day));
-    let streak = 0;
-    const today = new Date();
-    for (let i = 0; i < 90; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().split("T")[0];
-      if (activeDays.has(key)) streak++;
-      else if (i > 0) break;
-    }
+    const streak = await computeStreak(req.userId!);
     await query(
       "update profiles set streak = $2, last_seen = now(), updated_at = now() where id = $1",
       [req.userId, streak],

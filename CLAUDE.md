@@ -79,8 +79,9 @@ Online: **www.passeii.com**. Criada originalmente no Lovable.
 005 referrals · 006 fix points drift · 007 attempt.mode · 008 perfil
 académico+interesses · 009 follows · 010 interesses_ativo · 011 interesses_max ·
 012 reset_interesses (interesses nullable + reset ALL to NULL) ·
-013 promotions (tabela promoções, gerida pelo admin).
-Todas aplicadas em **Neon**. 010–013 ainda **não confirmadas em local** (Docker
+013 promotions · 014 payment_amount · 015 plans/subscrições ·
+016 ligas semanais + streak freeze + Simulado Nacional.
+Todas aplicadas em **Neon**. 010–016 ainda **não confirmadas em local** (Docker
 indisponível) — aplicar quando o ambiente local estiver disponível.
 
 ## 6. Ações pendentes do DONO (externas)
@@ -131,6 +132,29 @@ indisponível) — aplicar quando o ambiente local estiver disponível.
 ---
 
 ## 9. Registo de sessões (mais recente no topo)
+
+### 2026-07-02 (3 funcionalidades novas: prontidão + ligas/freeze + Simulado Nacional)
+- **Diagnóstico de Prontidão** (`/prontidao`, `GET /profile/readiness`): score 0–100 por
+  disciplina (65% precisão recente-ponderada + 35% cobertura de questões dominadas,
+  alvo cap 100). Página com anel de score, resumo e barras por disciplina (fracas
+  primeiro). Entrada nas ações rápidas da Home.
+- **Ligas semanais** (tab "Liga" no Ranking, `GET /ranking/league`): 5 divisões
+  (Bronze→Lenda) em `profiles.league`; pontos da semana vêm do `points_log`. Rollover
+  lazy no 1.º pedido da semana (advisory lock + tabela `league_rollovers`): top 10 de
+  cada divisão sobe, quem não pontuou desce.
+- **Streak freeze**: `profiles.streak_freezes` (máx. 2, 300 moedas via
+  `POST /profile/streak-freeze/buy`), consumo automático em `server/src/lib/streak.ts`
+  (lib nova partilhada por `/content/attempts` e `/profile/dashboard`; dias congelados
+  em `streak_freeze_uses`). Cartão de compra no Perfil.
+- **Simulado Nacional** (`/simulado-nacional`, router `server/src/routes/exams.ts`):
+  evento cronometrado com questões congeladas na criação (iguais para todos), inscrição
+  grátis ou paga em moedas, prova com deadline server-side (grace 30s no submit),
+  correção no servidor, pontos = acertos (contam para a liga), attempts com mode='exame'
+  (não consome o limite diário free), prémios em moedas ao pódio (finalização lazy com
+  advisory lock + notificações). Admin: tab "Exames" (`src/components/admin/ExamesTab.tsx`,
+  endpoints `/admin/exams`) cria/apaga exames e anuncia por broadcast.
+- Migração **016** aplicada na **Neon** (local pendente, Docker off). `schema.sql`
+  atualizado. Build Vite + `tsc --noEmit` (front e server) OK; smoke test do server OK.
 
 ### 2026-07-01 (admin metrics resilience + UX melhorias)
 - **Admin – UserStatsModal reutilizável**: componente partilhado entre Top 3 e UsersTab.

@@ -13,6 +13,7 @@ import {
   Play, BookMarked, Flame, Zap, BarChart2,
   Gift, Banknote, Swords, Users, MapPin,
   ChevronRight, Loader2, Plus, Sparkles, X, Megaphone, CreditCard, Crown,
+  Trophy, Gauge,
 } from "lucide-react";
 
 const Index = () => {
@@ -330,6 +331,20 @@ const Index = () => {
       <section className="mt-5">
         <div className="grid grid-cols-2 gap-2.5">
           {[
+            {
+              to: "/simulado-nacional",
+              icon: Trophy,
+              label: "Simulado Nacional",
+              desc: "Compete pelo pódio",
+              accent: "bg-amber-100 text-amber-700",
+            },
+            {
+              to: "/prontidao",
+              icon: Gauge,
+              label: "Prontidão",
+              desc: "Estás pronto para passar?",
+              accent: "bg-sky-100 text-sky-700",
+            },
             {
               to: "/planos",
               icon: CreditCard,

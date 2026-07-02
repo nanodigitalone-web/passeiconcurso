@@ -27,6 +27,8 @@ export type Profile = {
   interesses_ativo?: boolean;
   plan_id?: string | null;
   disciplines_locked?: boolean | null;
+  league?: number;
+  streak_freezes?: number;
 };
 
 export type AuthUser = { id: string; email: string | null; created_at: string };

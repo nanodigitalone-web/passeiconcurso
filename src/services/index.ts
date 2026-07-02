@@ -32,3 +32,8 @@ export type { CursoPreparatorio } from "./cursosService";
 export { coinsService, COIN_RULES } from "./coinsService";
 export type { CoinTx, TopupRequest, WithdrawalRequest } from "./coinsService";
 export type { PushStatus } from "./pushService";
+export { examsService } from "./examsService";
+export type { ExamSummary, ExamQuestion, ExamRanking, ExamRankRow } from "./examsService";
+export { progressService } from "./progressService";
+export type { Readiness, ReadinessDiscipline } from "./progressService";
+export type { LeagueInfo } from "./rankingService";

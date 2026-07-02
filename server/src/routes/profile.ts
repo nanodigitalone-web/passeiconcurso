@@ -5,6 +5,9 @@ import fs from "fs";
 import { v2 as cloudinary } from "cloudinary";
 import { one, query } from "../lib/db.js";
 import { requireAuth, type AuthedRequest } from "../lib/auth.js";
+import { computeStreak } from "../lib/streak.js";
+// @ts-ignore - resolved at runtime by tsx
+import { ALL_DISCIPLINAS } from "../../../src/data/disciplinas.ts";
 
 export const profileRouter = Router();
 
@@ -150,7 +153,7 @@ profileRouter.get("/dashboard", requireAuth, async (req: AuthedRequest, res) => 
     const isMonth = req.query.period === "month";
     const days = isMonth ? 30 : 7;
 
-    const [dailyR, discR, ptsR, battlesR, profileR, streakR] = await Promise.all([
+    const [dailyR, discR, ptsR, battlesR, profileR, streak] = await Promise.all([
       // Per-day question stats
       query(
         `select (answered_at at time zone 'Africa/Luanda')::date as day,
@@ -195,26 +198,9 @@ profileRouter.get("/dashboard", requireAuth, async (req: AuthedRequest, res) => 
         `select nome, pontos_globais, categoria_nome from profiles where id = $1`,
         [req.userId],
       ),
-      // All days with activity (for streak), up to 90 days back
-      query(
-        `select distinct (answered_at at time zone 'Africa/Luanda')::date as day
-           from question_attempts where user_id = $1
-            and answered_at >= now() - '90 days'::interval order by 1 desc`,
-        [req.userId],
-      ),
+      // Streak (freeze-aware, shared with POST /content/attempts)
+      computeStreak(req.userId!),
     ]);
-
-    // Compute streak (consecutive days from today backwards)
-    const activeDays = new Set<string>(streakR.rows.map((r: any) => String(r.day)));
-    let streak = 0;
-    const today = new Date();
-    for (let i = 0; i < 90; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().split("T")[0];
-      if (activeDays.has(key)) streak++;
-      else if (i > 0) break;
-    }
 
     const totalQ = dailyR.rows.reduce((s: number, r: any) => s + r.total, 0);
     const correctQ = dailyR.rows.reduce((s: number, r: any) => s + r.correct, 0);
@@ -239,6 +225,125 @@ profileRouter.get("/dashboard", requireAuth, async (req: AuthedRequest, res) => 
         losses: (battlesR?.total ?? 0) - (battlesR?.wins ?? 0),
       },
     });
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
+// ---- Diagnóstico de prontidão ----------------------------------------
+// Per-discipline readiness: blends recent accuracy (what you get right) with
+// coverage (how much of the bank you've mastered) into a 0–100 score. Only
+// disciplines with ≥5 attempts are scored — below that there's no signal.
+profileRouter.get("/readiness", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const [statsR, masteredR, bankR] = await Promise.all([
+      query(
+        `select disciplina,
+                count(*)::int as total,
+                count(*) filter (where correct)::int as correct,
+                count(*) filter (where answered_at >= now() - '30 days'::interval)::int as total30,
+                count(*) filter (where correct and answered_at >= now() - '30 days'::interval)::int as correct30
+           from question_attempts
+          where user_id = $1 and disciplina is not null
+          group by disciplina
+         having count(*) >= 5`,
+        [req.userId],
+      ),
+      // Distinct questions whose LAST attempt was correct (mastered).
+      query(
+        `select disciplina, count(*)::int as mastered from (
+           select distinct on (question_id) disciplina, correct
+             from question_attempts
+            where user_id = $1 and disciplina is not null
+            order by question_id, answered_at desc
+         ) t where correct group by disciplina`,
+        [req.userId],
+      ),
+      query(
+        `select disciplina, count(*)::int as n
+           from questions where active and disciplina is not null
+          group by disciplina`,
+      ),
+    ]);
+
+    const mastered = new Map<string, number>();
+    for (const r of masteredR.rows) mastered.set(r.disciplina, r.mastered);
+    const bank = new Map<string, number>();
+    for (const r of bankR.rows) bank.set(r.disciplina, r.n);
+
+    const displayName = (d: string) =>
+      (ALL_DISCIPLINAS as any[]).find((x: any) => x.id === d)?.nome || d;
+
+    const disciplines = statsR.rows.map((r: any) => {
+      const accAll = r.total > 0 ? r.correct / r.total : 0;
+      const acc30 = r.total30 > 0 ? r.correct30 / r.total30 : accAll;
+      const accuracy = 0.7 * acc30 + 0.3 * accAll;
+      const bankN = bank.get(r.disciplina) ?? 0;
+      // Coverage target caps at 100 questions so big banks stay reachable.
+      const target = Math.max(1, Math.min(bankN || r.total, 100));
+      const coverage = Math.min(1, (mastered.get(r.disciplina) ?? 0) / target);
+      const readiness = Math.round(100 * (0.65 * accuracy + 0.35 * coverage));
+      return {
+        disciplina: r.disciplina,
+        nome: displayName(r.disciplina),
+        total: r.total,
+        accuracy: Math.round(accuracy * 100),
+        mastered: mastered.get(r.disciplina) ?? 0,
+        bank: bankN,
+        coverage: Math.round(coverage * 100),
+        readiness,
+      };
+    });
+    disciplines.sort((a: any, b: any) => a.readiness - b.readiness);
+
+    const totalAttempts = disciplines.reduce((s: number, d: any) => s + d.total, 0);
+    const overallScore = totalAttempts
+      ? Math.round(disciplines.reduce((s: number, d: any) => s + d.readiness * d.total, 0) / totalAttempts)
+      : 0;
+    const overallAccuracy = totalAttempts
+      ? Math.round(disciplines.reduce((s: number, d: any) => s + d.accuracy * d.total, 0) / totalAttempts)
+      : 0;
+
+    res.json({
+      overall: {
+        score: overallScore,
+        accuracy: overallAccuracy,
+        attempted: totalAttempts,
+        mastered: disciplines.reduce((s: number, d: any) => s + d.mastered, 0),
+        disciplines: disciplines.length,
+      },
+      disciplines,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
+// ---- Streak freeze -----------------------------------------------------
+// Buy one freeze for 300 moedas (hold at most 2). A freeze auto-bridges a
+// missed day so the streak survives (consumed lazily in lib/streak.ts).
+const FREEZE_COST = 300;
+const FREEZE_MAX = 2;
+profileRouter.post("/streak-freeze/buy", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const p = await one<{ moedas: number; streak_freezes: number }>(
+      "select moedas, streak_freezes from profiles where id = $1 for update",
+      [req.userId],
+    );
+    if (!p) return res.status(404).json({ error: "not_found" });
+    if (p.streak_freezes >= FREEZE_MAX)
+      return res.status(400).json({ error: "max_freezes" });
+    if (p.moedas < FREEZE_COST)
+      return res.status(400).json({ error: "insufficient_coins" });
+    await query(
+      "update profiles set moedas = moedas - $2, streak_freezes = streak_freezes + 1, updated_at = now() where id = $1",
+      [req.userId, FREEZE_COST],
+    );
+    await query(
+      "insert into coin_transactions (user_id, tipo, amount, descricao) values ($1,'streak_freeze',$2,'Congelamento de streak')",
+      [req.userId, -FREEZE_COST],
+    );
+    res.json({ ok: true, streak_freezes: p.streak_freezes + 1, cost: FREEZE_COST });
   } catch (e: any) {
     res.status(500).json({ error: "server_error", detail: e?.message });
   }

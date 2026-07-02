@@ -35,6 +35,9 @@ import Carteira from "./pages/Carteira";
 import Partilhar from "./pages/Partilhar";
 import Interesses from "./pages/Interesses";
 import PerfilPublico from "./pages/PerfilPublico";
+import Prontidao from "./pages/Prontidao";
+import SimuladoNacional from "./pages/SimuladoNacional";
+import SimuladoNacionalProva from "./pages/SimuladoNacionalProva";
 import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient({
@@ -78,6 +81,9 @@ const App = () => (
             <Route path="/carteira" element={<P><Carteira /></P>} />
             <Route path="/partilhar" element={<P><Partilhar /></P>} />
             <Route path="/interesses" element={<P><Interesses /></P>} />
+            <Route path="/prontidao" element={<P><Prontidao /></P>} />
+            <Route path="/simulado-nacional" element={<P><SimuladoNacional /></P>} />
+            <Route path="/simulado-nacional/:id" element={<P><SimuladoNacionalProva /></P>} />
             <Route path="/aprender" element={<P><Aprender /></P>} />
             <Route path="/aprender/sessao/:concursoId/:categoriaId" element={<P><AprenderSessao /></P>} />
             <Route path="/acesso/:concursoId/:categoriaId" element={<P><Acesso /></P>} />

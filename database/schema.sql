@@ -66,6 +66,8 @@ create table if not exists profiles (
   interesses     jsonb default null,                   -- ids de disciplinas de interesse (null = nunca configurou)
   interesses_ativo boolean not null default false,     -- personaliza Aprender/Simulado pelos interesses
   interesses_max int not null default 0,               -- 0=free/5, 10=básico (1000 AOA), 30=pro (2000 AOA)
+  league         integer not null default 0,           -- liga semanal: 0=Bronze,1=Prata,2=Ouro,3=Diamante,4=Lenda
+  streak_freezes integer not null default 0,           -- congelamentos de streak em posse (máx. 2)
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
@@ -289,6 +291,60 @@ create table if not exists follows (
 );
 create index if not exists idx_follows_follower  on follows(follower_id);
 create index if not exists idx_follows_following on follows(following_id);
+
+-- ---------- ligas semanais --------------------------------------------
+-- Semanas já processadas (promoções/despromoções aplicadas; rollover lazy).
+create table if not exists league_rollovers (
+  week_start   date primary key,
+  processed_at timestamptz not null default now()
+);
+
+-- ---------- streak freeze ---------------------------------------------
+-- Dias em que um congelamento foi consumido (contam como dia activo).
+create table if not exists streak_freeze_uses (
+  user_id uuid not null references users(id) on delete cascade,
+  day     date not null,
+  used_at timestamptz not null default now(),
+  primary key (user_id, day)
+);
+
+-- ---------- Simulado Nacional -----------------------------------------
+-- Evento cronometrado: todos respondem ao mesmo conjunto de questões
+-- (congelado em question_ids na criação) dentro da janela starts_at..ends_at.
+create table if not exists national_exams (
+  id                uuid primary key default gen_random_uuid(),
+  title             text not null,
+  description       text,
+  concurso_id       text,                          -- null = geral (banco todo)
+  categoria_id      text,
+  question_ids      jsonb not null default '[]',
+  question_count    integer not null default 50,
+  duration_minutes  integer not null default 45,
+  entry_cost_moedas integer not null default 0,    -- 0 = grátis
+  prize_moedas      jsonb not null default '[200,100,50]', -- prémios 1.º/2.º/3.º
+  starts_at         timestamptz not null,
+  ends_at           timestamptz not null,
+  finalized         boolean not null default false,
+  created_by        uuid references users(id) on delete set null,
+  created_at        timestamptz not null default now()
+);
+create index if not exists idx_national_exams_window on national_exams(starts_at, ends_at);
+
+create table if not exists national_exam_entries (
+  id          uuid primary key default gen_random_uuid(),
+  exam_id     uuid not null references national_exams(id) on delete cascade,
+  user_id     uuid not null references users(id) on delete cascade,
+  joined_at   timestamptz not null default now(),
+  started_at  timestamptz,
+  finished_at timestamptz,
+  score       integer,          -- nº de respostas certas
+  total       integer,
+  duration_ms integer,
+  answers     jsonb,
+  unique (exam_id, user_id)
+);
+create index if not exists idx_exam_entries_exam on national_exam_entries(exam_id, score desc, duration_ms asc);
+create index if not exists idx_exam_entries_user on national_exam_entries(user_id);
 
 -- ---------- promotions ------------------------------------------------
 create table if not exists promotions (

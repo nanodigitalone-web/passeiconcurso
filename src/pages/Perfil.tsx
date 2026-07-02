@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { authService, accessService, quizService } from "@/services";
+import { authService, accessService, quizService, progressService } from "@/services";
 import { api } from "@/lib/api";
 import { ALL_DISCIPLINAS, AREAS, slugify } from "@/data/disciplinas";
 import { ESCOLAS, escolaByValue } from "@/data/escolas";
@@ -21,7 +21,7 @@ import {
   BookOpen, Check, CreditCard, EyeOff, Lock, LogOut, Save,
   Bell, BellOff, BellRing, Coins, ChevronRight, ChevronDown, Gift,
   Pencil, X, Users, Camera, Loader2, Search, Star, Zap,
-  UserCheck, MapPin, GraduationCap, Flame,
+  UserCheck, MapPin, GraduationCap, Flame, Snowflake,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -49,6 +49,7 @@ const Perfil = () => {
   const [ano, setAno]                   = useState("");
   const [saving, setSaving]             = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [buyingFreeze, setBuyingFreeze] = useState(false);
 
   // ── Interests ──────────────────────────────────────────────────────────────
   const [interesses, setInteresses]     = useState<string[]>([]);
@@ -351,6 +352,43 @@ const Perfil = () => {
             <ChevronRight className="h-4 w-4 shrink-0 text-primary/40 group-hover:text-primary transition-transform group-hover:translate-x-0.5" />
           </Card>
         </Link>
+
+        {/* Congelamento de streak: protege a sequência num dia sem estudo. */}
+        <Card className="flex items-center gap-3 border-sky-200/70 bg-sky-50/50 p-3.5 shadow-card">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+            <Snowflake className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Congelamento de streak</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              Protege a tua sequência num dia sem estudo · tens {profile?.streak_freezes ?? 0} de 2
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 rounded-full border-sky-300 text-sky-700 hover:bg-sky-100"
+            disabled={buyingFreeze || (profile?.streak_freezes ?? 0) >= 2}
+            onClick={async () => {
+              setBuyingFreeze(true);
+              try {
+                await progressService.buyStreakFreeze();
+                await refreshProfile();
+                toast.success("Congelamento comprado! Será usado automaticamente se falhares um dia.");
+              } catch (e: any) {
+                toast.error(
+                  e?.code === "insufficient_coins" ? "Moedas insuficientes (custa 300)."
+                  : e?.code === "max_freezes" ? "Já tens o máximo de 2 congelamentos."
+                  : "Não foi possível comprar.",
+                );
+              } finally {
+                setBuyingFreeze(false);
+              }
+            }}
+          >
+            {buyingFreeze ? <Loader2 className="h-4 w-4 animate-spin" /> : (profile?.streak_freezes ?? 0) >= 2 ? "Máximo" : "300 moedas"}
+          </Button>
+        </Card>
       </div>
 
       {/* ── INTERESSES removido — gerido em /planos ── */}

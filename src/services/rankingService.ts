@@ -28,4 +28,22 @@ export const rankingService = {
       return [];
     }
   },
+
+  /** Liga semanal — divisão do utilizador + classificação dentro dela. */
+  async getLeague(): Promise<LeagueInfo | null> {
+    try {
+      return await api.get<LeagueInfo>("/ranking/league");
+    } catch {
+      return null;
+    }
+  },
+};
+
+export type LeagueInfo = {
+  league: number;
+  league_name: string;
+  leagues: string[];
+  promote_top: number;
+  week_ends_at: string | null;
+  standings: { id: string; nome: string; avatar_url: string | null; pontos: number }[];
 };

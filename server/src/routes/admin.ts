@@ -62,6 +62,93 @@ adminRouter.get("/questions-stats", async (_req, res) => {
   }
 });
 
+// ---- Simulado Nacional (gestão) ----
+adminRouter.get("/exams", async (_req, res) => {
+  try {
+    const rows = (
+      await query(
+        `select e.*,
+                (select count(*)::int from national_exam_entries en where en.exam_id = e.id) as participants,
+                (select count(*)::int from national_exam_entries en where en.exam_id = e.id and en.finished_at is not null) as finished
+           from national_exams e order by e.starts_at desc limit 50`,
+      )
+    ).rows;
+    res.json(rows);
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
+// Create an exam: freezes a random question set (real-exam/seed questions
+// first) and announces it to everyone via broadcast notification.
+adminRouter.post("/exams", async (req: any, res) => {
+  try {
+    const { title, description, concursoId, categoriaId, questionCount, durationMinutes, entryCost, prizes, startsAt, endsAt } = req.body || {};
+    if (!title || !startsAt || !endsAt)
+      return res.status(400).json({ error: "missing_params" });
+    const starts = new Date(startsAt);
+    const ends = new Date(endsAt);
+    if (!(starts < ends)) return res.status(400).json({ error: "invalid_window" });
+    const count = Math.min(Math.max(5, Number(questionCount) || 50), 100);
+    const duration = Math.min(Math.max(5, Number(durationMinutes) || 45), 180);
+    const cost = Math.max(0, Number(entryCost) || 0);
+    const prizeArr = Array.isArray(prizes) && prizes.length
+      ? prizes.map((p: any) => Math.max(0, Number(p) || 0))
+      : [200, 100, 50];
+
+    const qRows = (
+      await query(
+        `select id from questions
+          where active
+            and ($1::text is null or concurso_id = $1)
+            and ($2::text is null or categoria_id = $2)
+          order by (source = 'seed') desc, random()
+          limit $3`,
+        [concursoId || null, categoriaId || null, count],
+      )
+    ).rows;
+    if (qRows.length < count)
+      return res.status(400).json({ error: "not_enough_questions", available: qRows.length });
+
+    const exam = await one(
+      `insert into national_exams
+         (title, description, concurso_id, categoria_id, question_ids, question_count,
+          duration_minutes, entry_cost_moedas, prize_moedas, starts_at, ends_at, created_by)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       returning *`,
+      [
+        title, description || null, concursoId || null, categoriaId || null,
+        JSON.stringify(qRows.map((r: any) => r.id)), count, duration, cost,
+        JSON.stringify(prizeArr), starts.toISOString(), ends.toISOString(), req.userId ?? null,
+      ],
+    );
+
+    // Broadcast announcement (user_id null = todos).
+    const dia = starts.toLocaleDateString("pt-PT", { day: "numeric", month: "long", timeZone: "Africa/Luanda" });
+    const hora = starts.toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Luanda" });
+    await query(
+      "insert into notifications (user_id, title, body) values (null,$1,$2)",
+      [
+        `🏆 ${title}`,
+        `Simulado Nacional a ${dia} às ${hora}: ${count} questões, ${duration} minutos. ${cost > 0 ? `Inscrição: ${cost} moedas.` : "Inscrição grátis."} Prémios para o pódio!`,
+      ],
+    );
+
+    res.json(exam);
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
+adminRouter.delete("/exams/:id", async (req, res) => {
+  try {
+    await query("delete from national_exams where id = $1", [req.params.id]);
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
 // ---- Users ----
 adminRouter.get("/profiles", async (req, res) => {
   const limit = Number(req.query.limit) || 500;

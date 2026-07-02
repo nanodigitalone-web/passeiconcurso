@@ -10,12 +10,14 @@ import { cn } from "@/lib/utils";
 import { Crown, Trophy } from "lucide-react";
 import { WeeklyTop } from "@/components/ranking/WeeklyTop";
 import { FriendsPanel } from "@/components/ranking/FriendsPanel";
+import { LigaPanel } from "@/components/ranking/LigaPanel";
 
 type Filtro = "todos" | "minha";
-type Tab = "geral" | "semana" | "amigos";
+type Tab = "geral" | "liga" | "semana" | "amigos";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "geral", label: "Geral" },
+  { id: "liga", label: "Liga" },
   { id: "semana", label: "Semana" },
   { id: "amigos", label: "Amigos" },
 ];
@@ -179,7 +181,7 @@ const GeralRanking = () => {
 const Ranking = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initial = (searchParams.get("tab") as Tab) || "geral";
-  const [tab, setTab] = useState<Tab>(["geral", "semana", "amigos"].includes(initial) ? initial : "geral");
+  const [tab, setTab] = useState<Tab>(["geral", "liga", "semana", "amigos"].includes(initial) ? initial : "geral");
 
   const changeTab = (t: Tab) => {
     setTab(t);
@@ -214,6 +216,7 @@ const Ranking = () => {
       </div>
 
       {tab === "geral" && <GeralRanking />}
+      {tab === "liga" && <LigaPanel />}
       {tab === "semana" && <WeeklyTop />}
       {tab === "amigos" && <FriendsPanel />}
     </AppShell>
