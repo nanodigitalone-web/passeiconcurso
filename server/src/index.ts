@@ -50,6 +50,17 @@ const authLimiter = rateLimit({
   message: { error: "too_many_requests" },
 });
 
+// Global ceiling per IP: generous for real users (a study session is a few
+// dozen calls), hostile to scrapers hammering the question endpoints.
+const apiLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 800,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "too_many_requests" },
+  skip: (req) => req.path === "/health" || req.path === "/",
+});
+
 const origins = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map((o) => o.trim())
@@ -76,6 +87,7 @@ app.get("/health", async (_req, res) => {
   }
 });
 
+app.use(apiLimiter);
 app.use("/auth", authLimiter, authRouter);
 app.use("/profile", profileRouter);
 app.use("/access", accessRouter);
