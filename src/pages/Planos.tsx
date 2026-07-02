@@ -95,6 +95,7 @@ const Planos = () => {
   const [fixedDiscs, setFixedDiscs] = useState<Set<string>>(new Set()); // already saved, can't be removed
   const [saving, setSaving] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [discSearch, setDiscSearch] = useState("");
 
   // Study mode state
   const [settingMode, setSettingMode] = useState(false);
@@ -598,9 +599,24 @@ const Planos = () => {
                     </Card>
                   )}
 
+                  {/* Search disciplines */}
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Pesquisar disciplina..."
+                      value={discSearch}
+                      onChange={e => setDiscSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+
                   <div className="space-y-4">
                     {AREAS.filter(a => a.saude).map(area => {
-                      const areaDiscs = area.disciplinas.map(d => ({ nome: d, slug: slugify(d) }));
+                      const searchLow = discSearch.toLowerCase();
+                      const areaDiscs = area.disciplinas
+                        .map(d => ({ nome: d, slug: slugify(d) }))
+                        .filter(d => !searchLow || d.nome.toLowerCase().includes(searchLow));
+                      if (areaDiscs.length === 0) return null;
                       const anySelected = areaDiscs.some(d => selected.has(d.slug));
                       return (
                         <div key={area.area}>

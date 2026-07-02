@@ -171,9 +171,17 @@ async function main() {
   console.log(`Questões alvo por disciplina: ${PER_DISC}`);
   console.log(`Total esperado gerado: ~${TARGETS.length * PER_DISC}\n`);
 
+  // Conta questões actuais por disciplina para ordenar (menos primeiro)
+  const { rows: counts } = await db.query(
+    "select disciplina, count(*)::int n from questions where active group by disciplina"
+  );
+  const countMap = new Map(counts.map(r => [r.disciplina, r.n]));
+  const sorted = [...TARGETS].sort((a, b) => (countMap.get(a.slug) ?? 0) - (countMap.get(b.slug) ?? 0));
+  console.log(`Ordem: menor nº de questões primeiro.\n`);
+
   let grandTotal = 0;
 
-  for (const [i, target] of TARGETS.entries()) {
+  for (const [i, target] of sorted.entries()) {
     // Conta quantas já existem com este slug (disciplina)
     const { rows: [{ n: existingCount }] } = await db.query(
       "select count(*)::int n from questions where concurso_id=$1 and categoria_id=$2 and disciplina=$3 and active",
