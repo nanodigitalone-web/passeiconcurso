@@ -112,6 +112,14 @@ const TARGETS = [
     "Gestão da Qualidade no Laboratório Clínico", "Instrumentação e Automação Laboratorial",
     "Toxicologia Analítica e Forense", "Genética Laboratorial e Citogenética",
   ].map((nome) => ({ nome, slug: slugify(nome), concurso_id: "minsa", categoria_id: "laboratorio", area: "Análises Clínicas" }))),
+
+  // Ciências Básicas e Línguas → geral/geral (não entram nos quizzes por
+  // categoria; servem os interesses/planos, que filtram só por disciplina)
+  ...([
+    "Biologia", "Biologia Médica", "Química", "Química Orgânica", "Bioquímica",
+    "Física", "Matemática", "Bioestatística", "Anatomia I (Aparelho Locomotor)",
+    "Inglês", "Francês", "Espanhol",
+  ].map((nome) => ({ nome, slug: slugify(nome), concurso_id: "geral", categoria_id: "geral", area: "Ciências Básicas e Línguas" }))),
 ];
 
 function extractJsonArray(text) {

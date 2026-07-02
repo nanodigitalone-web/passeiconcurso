@@ -33,7 +33,7 @@ export const progressService = {
     }
   },
 
-  /** Compra 1 congelamento de streak (300 moedas, máx. 2 em posse). */
+  /** Compra 1 congelamento de streak (300 pontos, máx. 2 em posse). */
   buyStreakFreeze() {
     return api.post<{ ok: boolean; streak_freezes: number; cost: number }>(
       "/profile/streak-freeze/buy",

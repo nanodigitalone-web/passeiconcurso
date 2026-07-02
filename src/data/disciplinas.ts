@@ -100,6 +100,16 @@ export const AREAS: Area[] = [
     ],
   },
   {
+    area: "Ciências Básicas e Línguas",
+    emoji: "📚",
+    saude: true,
+    disciplinas: [
+      "Biologia", "Biologia Médica", "Química", "Química Orgânica", "Bioquímica",
+      "Física", "Matemática", "Bioestatística", "Anatomia I (Aparelho Locomotor)",
+      "Inglês", "Francês", "Espanhol",
+    ],
+  },
+  {
     area: "Economia",
     emoji: "📈",
     saude: false,

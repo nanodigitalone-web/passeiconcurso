@@ -6,10 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { authService, accessService, quizService, progressService } from "@/services";
 import { api } from "@/lib/api";
 import { ALL_DISCIPLINAS, AREAS, slugify } from "@/data/disciplinas";
@@ -18,8 +16,8 @@ import { CURSOS, cursoByValue } from "@/data/cursos";
 import { Combobox } from "@/components/ui/combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  BookOpen, Check, CreditCard, EyeOff, Lock, LogOut, Save,
-  Bell, BellOff, BellRing, Coins, ChevronRight, ChevronDown, Gift,
+  BookOpen, Check, CreditCard, LogOut, Save,
+  Coins, ChevronRight, ChevronDown, Gift,
   Pencil, X, Users, Camera, Loader2, Search, Star, Zap,
   UserCheck, MapPin, GraduationCap, Flame, Snowflake,
   User, Mail, CalendarDays, Quote, Info,
@@ -39,7 +37,6 @@ const PRO_COST   = 2000;
 
 const Perfil = () => {
   const { profile, user, refreshProfile, signOut } = useAuth();
-  const { status: pushStatus, toggle: togglePush } = usePushNotifications();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -68,28 +65,16 @@ const Perfil = () => {
   const [socialLoading, setSocialLoading] = useState(false);
 
   // ── Other state ────────────────────────────────────────────────────────────
-  const [hidden, setHidden]             = useState(false);
-  const [canHide, setCanHide]           = useState(false);
-  const [togglingHide, setTogglingHide] = useState(false);
   const [plansOpen, setPlansOpen]       = useState(false);
   const [plans, setPlans]               = useState<
     { concursoId: string; categoriaId: string; nome: string; expiresAt: number | null }[]
   >([]);
   const [followStats, setFollowStats]   = useState<{ followers: number; following: number } | null>(null);
 
-  const pushLabel = {
-    granted:     { icon: BellRing, text: "Activas",       desc: "Recebe lembretes de estudo no dispositivo." },
-    denied:      { icon: BellOff,  text: "Bloqueadas",    desc: "A permissão foi negada no browser." },
-    prompt:      { icon: Bell,     text: "Desactivadas",  desc: "Activa para receber lembretes de estudo." },
-    unsupported: { icon: BellOff,  text: "Não suportado", desc: "O teu dispositivo/browser não suporta notificações." },
-    loading:     { icon: Bell,     text: "A verificar…",  desc: "" },
-  }[pushStatus] ?? { icon: Bell, text: "Desactivadas", desc: "Activa para receber lembretes de estudo." };
-
   useEffect(() => {
     if (!profile) return;
     setNome(profile.nome);
     setBio(profile.bio || "");
-    setHidden(!!profile.hidden);
     setInteresses(profile.interesses ?? []);
     const uniMatch = ESCOLAS.find((e) => e.label === profile.universidade || e.value === profile.universidade);
     setUniversidade(uniMatch?.value ?? profile.universidade ?? "");
@@ -97,8 +82,6 @@ const Perfil = () => {
     setCurso(cursoMatch?.value ?? profile.curso ?? "");
     setAno(profile.ano || "");
   }, [profile]);
-
-  useEffect(() => { if (user) accessService.hasAnyPaidAccess(user.id).then(setCanHide); }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -220,17 +203,6 @@ const Perfil = () => {
       setAno(profile.ano || "");
     }
     setEditing(false);
-  };
-
-  const toggleHidden = async (value: boolean) => {
-    if (!user) return;
-    setTogglingHide(true);
-    setHidden(value);
-    const { error } = await authService.updateProfile(user.id, { hidden: value });
-    setTogglingHide(false);
-    if (error) { setHidden(!value); return toast.error("Erro ao atualizar privacidade"); }
-    await refreshProfile();
-    toast.success(value ? "Conta oculta no ranking" : "Conta visível no ranking");
   };
 
   const handleSignOut = async () => { await signOut(); navigate("/login", { replace: true }); };
@@ -383,7 +355,7 @@ const Perfil = () => {
                 toast.success("Congelamento comprado! Será usado automaticamente se falhares um dia.");
               } catch (e: any) {
                 toast.error(
-                  e?.code === "insufficient_coins" ? "Moedas insuficientes (custa 300)."
+                  e?.code === "insufficient_points" ? "Pontos insuficientes (custa 300)."
                   : e?.code === "max_freezes" ? "Já tens o máximo de 2 congelamentos."
                   : "Não foi possível comprar.",
                 );
@@ -392,7 +364,7 @@ const Perfil = () => {
               }
             }}
           >
-            {buyingFreeze ? <Loader2 className="h-4 w-4 animate-spin" /> : (profile?.streak_freezes ?? 0) >= 2 ? "Máximo" : "300 moedas"}
+            {buyingFreeze ? <Loader2 className="h-4 w-4 animate-spin" /> : (profile?.streak_freezes ?? 0) >= 2 ? "Máximo" : "300 pontos"}
           </Button>
         </Card>
       </div>
@@ -635,47 +607,79 @@ const Perfil = () => {
             })()}
           </div>
         ) : (
-          <div className="border-t border-border/40 px-4 pb-4 pt-3 space-y-4">
-            <div>
-              <Label htmlFor="nome">Nome</Label>
-              <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="mt-1" placeholder="Conta um pouco sobre ti..." />
-            </div>
-            <p className="text-xs text-muted-foreground">Para trocar a foto, toca no ícone de câmara sobre o avatar.</p>
-            <div>
-              <Label>Universidade / Escola</Label>
-              <div className="mt-1">
-                <Combobox options={ESCOLAS} value={universidade} onChange={setUniversidade} placeholder="Selecionar escola…" searchPlaceholder="Pesquisar escola…" emptyMessage="Escola não encontrada." grouped />
+          <div className="border-t border-border/40 px-4 pb-4 pt-4 space-y-5">
+            {/* Identidade */}
+            <div className="space-y-3.5">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <User className="h-3.5 w-3.5" /> Identidade
+              </p>
+              <div>
+                <Label htmlFor="nome" className="text-xs font-semibold">Nome</Label>
+                <Input
+                  id="nome" value={nome} onChange={(e) => setNome(e.target.value)}
+                  placeholder="O teu nome completo"
+                  className="mt-1.5 h-11 rounded-xl border-border/60"
+                />
+              </div>
+              <div>
+                <Label htmlFor="bio" className="text-xs font-semibold">Bio</Label>
+                <Textarea
+                  id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3}
+                  maxLength={160}
+                  placeholder="Conta um pouco sobre ti…"
+                  className="mt-1.5 rounded-xl border-border/60 resize-none"
+                />
+                <p className="mt-1 text-right text-[10px] text-muted-foreground">{bio.length}/160</p>
+              </div>
+              <div className="flex items-start gap-2 rounded-xl bg-sky-50/70 px-3 py-2.5">
+                <Camera className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-600" />
+                <p className="text-[11px] leading-snug text-sky-800">
+                  Para trocares a foto, toca no ícone de câmara sobre o teu avatar.
+                </p>
               </div>
             </div>
-            <div>
-              <Label>Curso</Label>
-              <div className="mt-1">
-                <Combobox options={CURSOS} value={curso} onChange={setCurso} placeholder="Selecionar curso…" searchPlaceholder="Pesquisar curso…" emptyMessage="Curso não encontrado." grouped />
+
+            {/* Percurso académico */}
+            <div className="space-y-3.5">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <GraduationCap className="h-3.5 w-3.5" /> Percurso académico
+              </p>
+              <div>
+                <Label className="text-xs font-semibold">Universidade / Escola</Label>
+                <div className="mt-1.5">
+                  <Combobox options={ESCOLAS} value={universidade} onChange={setUniversidade} placeholder="Selecionar escola…" searchPlaceholder="Pesquisar escola…" emptyMessage="Escola não encontrada." grouped />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs font-semibold">Curso</Label>
+                  <div className="mt-1.5">
+                    <Combobox options={CURSOS} value={curso} onChange={setCurso} placeholder="Selecionar curso…" searchPlaceholder="Pesquisar curso…" emptyMessage="Curso não encontrado." grouped />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">Ano / Nível</Label>
+                  <Select value={ano} onValueChange={setAno}>
+                    <SelectTrigger className="mt-1.5 h-11 rounded-xl border-border/60">
+                      <SelectValue placeholder="Selecionar ano…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["1º Ano","2º Ano","3º Ano","4º Ano","5º Ano","6º Ano",
+                        "Internato / Residência","Pós-Graduação","Mestrado","Doutoramento","Já Formado/a"].map((v) => (
+                        <SelectItem key={v} value={v}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-            <div>
-              <Label>Ano / Nível</Label>
-              <Select value={ano} onValueChange={setAno}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecionar ano…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {["1º Ano","2º Ano","3º Ano","4º Ano","5º Ano","6º Ano",
-                    "Internato / Residência","Pós-Graduação","Mestrado","Doutoramento","Já Formado/a"].map((v) => (
-                    <SelectItem key={v} value={v}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={save} disabled={saving} className="flex-1 rounded-full bg-gradient-primary">
-                <Save className="mr-2 h-4 w-4" /> {saving ? "A guardar…" : "Guardar"}
+
+            <div className="flex gap-2 pt-1">
+              <Button onClick={save} disabled={saving} size="lg" className="flex-1 rounded-2xl bg-gradient-primary font-semibold">
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {saving ? "A guardar…" : "Guardar alterações"}
               </Button>
-              <Button onClick={cancelEdit} variant="outline" className="rounded-full px-4">
+              <Button onClick={cancelEdit} variant="outline" size="lg" className="rounded-2xl px-4">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -735,52 +739,6 @@ const Perfil = () => {
 
       {/* ── DEFINIÇÕES ───────────────────────────────────────────────────────── */}
       <Card className="mb-4 divide-y divide-border/40 border-border/60 shadow-card">
-        {/* Notificações */}
-        <div className="flex items-center justify-between gap-3 px-4 py-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-              pushStatus === "granted" ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground",
-            )}>
-              <pushLabel.icon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="font-display text-sm font-semibold leading-tight">Notificações · {pushLabel.text}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">{pushLabel.desc}</p>
-            </div>
-          </div>
-          <Switch
-            checked={pushStatus === "granted"}
-            disabled={pushStatus === "unsupported" || pushStatus === "denied" || pushStatus === "loading"}
-            onCheckedChange={togglePush}
-          />
-        </div>
-
-        {/* Ocultar conta */}
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
-                <EyeOff className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="font-display text-sm font-semibold leading-tight">Ocultar do ranking</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">
-                  {canHide ? "O teu perfil fica invisível para outros." : "Funcionalidade exclusiva para contas pagas."}
-                </p>
-              </div>
-            </div>
-            <Switch checked={hidden} disabled={!canHide || togglingHide} onCheckedChange={toggleHidden} />
-          </div>
-          {!canHide && (
-            <Button asChild variant="outline" size="sm" className="mt-3 w-full rounded-full">
-              <Link to="/concursos">
-                <Lock className="mr-2 h-3.5 w-3.5" /> Obter acesso para desbloquear
-              </Link>
-            </Button>
-          )}
-        </div>
-
         {/* Sobre a aplicação */}
         <AboutModal
           trigger={

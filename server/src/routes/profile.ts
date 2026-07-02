@@ -320,28 +320,25 @@ profileRouter.get("/readiness", requireAuth, async (req: AuthedRequest, res) => 
 });
 
 // ---- Streak freeze -----------------------------------------------------
-// Buy one freeze for 300 moedas (hold at most 2). A freeze auto-bridges a
-// missed day so the streak survives (consumed lazily in lib/streak.ts).
+// Buy one freeze for 300 PONTOS (spendable balance; hold at most 2). Only
+// `pontos` drops — `pontos_globais` (ranking) never goes down. A freeze
+// auto-bridges a missed day so the streak survives (see lib/streak.ts).
 const FREEZE_COST = 300;
 const FREEZE_MAX = 2;
 profileRouter.post("/streak-freeze/buy", requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const p = await one<{ moedas: number; streak_freezes: number }>(
-      "select moedas, streak_freezes from profiles where id = $1 for update",
+    const p = await one<{ pontos: number; streak_freezes: number }>(
+      "select pontos, streak_freezes from profiles where id = $1 for update",
       [req.userId],
     );
     if (!p) return res.status(404).json({ error: "not_found" });
     if (p.streak_freezes >= FREEZE_MAX)
       return res.status(400).json({ error: "max_freezes" });
-    if (p.moedas < FREEZE_COST)
-      return res.status(400).json({ error: "insufficient_coins" });
+    if (p.pontos < FREEZE_COST)
+      return res.status(400).json({ error: "insufficient_points" });
     await query(
-      "update profiles set moedas = moedas - $2, streak_freezes = streak_freezes + 1, updated_at = now() where id = $1",
+      "update profiles set pontos = pontos - $2, streak_freezes = streak_freezes + 1, updated_at = now() where id = $1",
       [req.userId, FREEZE_COST],
-    );
-    await query(
-      "insert into coin_transactions (user_id, tipo, amount, descricao) values ($1,'streak_freeze',$2,'Congelamento de streak')",
-      [req.userId, -FREEZE_COST],
     );
     res.json({ ok: true, streak_freezes: p.streak_freezes + 1, cost: FREEZE_COST });
   } catch (e: any) {
