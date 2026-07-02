@@ -12,9 +12,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Play, BookMarked, Flame, Zap, BarChart2,
-  Gift, Banknote, Swords, Users, MapPin,
-  ChevronRight, Loader2, Plus, Sparkles, X, Megaphone, CreditCard, Crown,
-  Trophy, Gauge,
+  Swords, Users, MapPin,
+  ChevronRight, Loader2, Plus, Sparkles, X, Megaphone, Crown,
 } from "lucide-react";
 
 const Index = () => {
@@ -384,69 +383,6 @@ const Index = () => {
             </Link>
           </div>
         )}
-      </section>
-
-      {/* ── ACÇÕES RÁPIDAS (não estão no menu inferior) ───────────────────────── */}
-      <section className="mt-5">
-        <div className="grid grid-cols-2 gap-2.5">
-          {[
-            {
-              to: "/simulado-nacional",
-              icon: Trophy,
-              label: "Simulado Nacional",
-              desc: "Compete pelo pódio",
-              accent: "bg-amber-100 text-amber-700",
-            },
-            {
-              to: "/prontidao",
-              icon: Gauge,
-              label: "Prontidão",
-              desc: "Estás pronto para passar?",
-              accent: "bg-sky-100 text-sky-700",
-            },
-            {
-              to: "/planos",
-              icon: CreditCard,
-              label: "Planos",
-              desc: "Ver e aderir a planos",
-              accent: "bg-violet-100 text-violet-700",
-            },
-            {
-              to: "/partilhar",
-              icon: Gift,
-              label: "Convidar",
-              desc: "+50 pontos por amigo",
-              accent: "bg-emerald-100 text-emerald-700",
-            },
-            {
-              to: "/carteira",
-              icon: Banknote,
-              label: "Sacar",
-              desc: "Levanta os teus pontos",
-              accent: "bg-amber-100 text-amber-700",
-            },
-            {
-              to: "/concursos",
-              icon: BarChart2,
-              label: "Concursos",
-              desc: "Explorar categorias",
-              accent: "bg-rose-100 text-rose-700",
-            },
-          ].map((a) => (
-            <Link key={a.to} to={a.to}>
-              <Card className="group flex items-center gap-3 border-border/60 p-3.5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elegant active:scale-[0.98]">
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${a.accent} transition-transform group-hover:scale-110`}>
-                  <a.icon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold leading-tight">{a.label}</p>
-                  <p className="text-[11px] text-muted-foreground leading-tight">{a.desc}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-              </Card>
-            </Link>
-          ))}
-        </div>
       </section>
 
       {/* ── RECENTES ────────────────────────────────────────────────────────── */}
