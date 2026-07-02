@@ -69,13 +69,20 @@ const PlanoPagamento = () => {
         <ArrowLeft className="mr-1 h-4 w-4" /> Planos
       </button>
 
-      <header className="mb-5">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">Subscrição</p>
-        <h1 className="font-display text-2xl font-bold">Plano {nome}</h1>
-        <p className="text-sm text-muted-foreground">
-          <strong>{preco.toLocaleString("pt-PT")} Kz</strong> · 30 dias de acesso
-        </p>
-      </header>
+      <div className="relative mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-blue-700 to-indigo-800 p-6 text-white shadow-elegant animate-fade-in">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-white/5 blur-2xl" />
+        <div className="relative">
+          <p className="text-xs font-bold uppercase tracking-wider opacity-70">Subscrição</p>
+          <h1 className="mt-1 font-display text-2xl font-bold">Plano {nome}</h1>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="rounded-full bg-white/15 px-3 py-1 font-display text-lg font-bold backdrop-blur-sm">
+              {preco.toLocaleString("pt-PT")} Kz
+            </span>
+            <span className="text-xs opacity-80">30 dias de acesso</span>
+          </div>
+        </div>
+      </div>
 
       {/* Stepper */}
       <div className="mb-5 flex items-center gap-2 text-xs">
@@ -179,18 +186,21 @@ const PlanoPagamento = () => {
       )}
 
       {step === "aguardar" && (
-        <Card className="border-0 bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground shadow-elegant text-center">
-          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/15">
-            <Clock className="h-7 w-7" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary via-blue-700 to-indigo-800 p-6 text-center text-white shadow-elegant animate-scale-in">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+              <Clock className="h-7 w-7" />
+            </div>
+            <h2 className="font-display text-2xl font-bold">Comprovativo recebido!</h2>
+            <p className="mt-2 text-sm leading-relaxed opacity-90">
+              A nossa equipa vai validar o pagamento em até 24 horas.
+              Receberás uma notificação quando o plano for activado.
+            </p>
+            <Button asChild size="lg" className="mt-5 w-full rounded-2xl bg-white font-bold text-primary shadow-lg hover:bg-white/90">
+              <a href="/">Voltar ao início</a>
+            </Button>
           </div>
-          <h2 className="font-display text-xl font-bold">Comprovativo recebido!</h2>
-          <p className="mt-2 text-sm opacity-90">
-            A nossa equipa vai validar o pagamento em até 24 horas.<br />
-            Receberás uma notificação quando o plano for activado.
-          </p>
-          <Button asChild variant="secondary" className="mt-5 w-full rounded-full font-semibold">
-            <a href="/">Voltar ao início</a>
-          </Button>
         </Card>
       )}
     </AppShell>

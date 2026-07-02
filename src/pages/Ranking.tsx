@@ -11,6 +11,7 @@ import { Crown, Flame, Shield, Trophy, Zap } from "lucide-react";
 import { WeeklyTop } from "@/components/ranking/WeeklyTop";
 import { FriendsPanel } from "@/components/ranking/FriendsPanel";
 import { LigaPanel } from "@/components/ranking/LigaPanel";
+import { PlanBadge } from "@/components/PlanBadge";
 
 type Filtro = "todos" | "minha";
 type Tab = "geral" | "liga" | "semana" | "amigos";
@@ -125,12 +126,14 @@ const GeralRanking = () => {
                       <Crown className="mb-1 h-7 w-7 fill-amber-400 text-amber-400 animate-float drop-shadow" />
                     )}
                     <Link to={`/perfil/${u.id}`} className="relative">
-                      <Avatar className={cn(avatarSize, "ring-4 ring-offset-2 ring-offset-background shadow-elegant", ringColor)}>
-                        <AvatarImage src={u.avatar_url || undefined} />
-                        <AvatarFallback className="bg-gradient-primary font-display text-lg font-bold text-primary-foreground">
-                          {u.nome?.charAt(0).toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PlanBadge planId={u.plan_id}>
+                        <Avatar className={cn(avatarSize, "ring-4 ring-offset-2 ring-offset-background shadow-elegant", ringColor)}>
+                          <AvatarImage src={u.avatar_url || undefined} />
+                          <AvatarFallback className="bg-gradient-primary font-display text-lg font-bold text-primary-foreground">
+                            {u.nome?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </PlanBadge>
                       <span className={cn(
                         "absolute -bottom-2 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full font-display text-xs font-bold text-white shadow-card",
                         pedestal
@@ -184,12 +187,14 @@ const GeralRanking = () => {
                       )}>
                         {i + 1}
                       </div>
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={u.avatar_url || undefined} />
-                        <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
-                          {u.nome?.charAt(0).toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PlanBadge planId={u.plan_id} size="sm">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={u.avatar_url || undefined} />
+                          <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                            {u.nome?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </PlanBadge>
                       <div className="min-w-0 flex-1">
                         <p className={cn("truncate text-sm font-medium", isMe && "text-primary")}>
                           {u.nome}{isMe ? " (você)" : ""}

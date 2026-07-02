@@ -87,7 +87,10 @@ rankingRouter.get("/league", requireAuth, async (req: AuthedRequest, res) => {
 
     const rows = (
       await query(
-        `select p.id, p.nome, p.avatar_url, coalesce(sum(l.delta),0)::int as pontos
+        `select p.id, p.nome, p.avatar_url, coalesce(sum(l.delta),0)::int as pontos,
+                (select us.plan_id from user_subscriptions us
+                  where us.user_id = p.id and us.status = 'active'
+                    and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
            from profiles p
            left join points_log l
              on l.user_id = p.id and l.created_at >= date_trunc('week', now())
@@ -95,7 +98,7 @@ rankingRouter.get("/league", requireAuth, async (req: AuthedRequest, res) => {
           group by p.id, p.nome, p.avatar_url
          having coalesce(sum(l.delta),0) > 0 or p.id = $1
           order by pontos desc, p.nome
-          limit 100`,
+          limit 20`,
         [req.userId, league],
       )
     ).rows;
@@ -121,12 +124,15 @@ rankingRouter.get("/league", requireAuth, async (req: AuthedRequest, res) => {
 rankingRouter.get("/", requireAuth, async (req: AuthedRequest, res) => {
   const categoria = (req.query.categoria as string) || null;
   const r = await query(
-    `select id, nome, avatar_url, pontos_globais as pontos, categoria_nome
-       from profiles
-      where (hidden = false or id = $1)
-        and ($2::text is null or categoria_id = $2)
-      order by pontos_globais desc
-      limit 100`,
+    `select p.id, p.nome, p.avatar_url, p.pontos_globais as pontos, p.categoria_nome,
+            (select us.plan_id from user_subscriptions us
+              where us.user_id = p.id and us.status = 'active'
+                and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
+       from profiles p
+      where (p.hidden = false or p.id = $1)
+        and ($2::text is null or p.categoria_id = $2)
+      order by p.pontos_globais desc
+      limit 20`,
     [req.userId, categoria],
   );
   res.json(r.rows);
@@ -135,7 +141,10 @@ rankingRouter.get("/", requireAuth, async (req: AuthedRequest, res) => {
 // Weekly ranking (points earned since the start of the week).
 rankingRouter.get("/weekly", requireAuth, async (req: AuthedRequest, res) => {
   const r = await query(
-    `select p.id, p.nome, p.avatar_url, coalesce(sum(l.delta),0)::int as pontos, p.categoria_nome
+    `select p.id, p.nome, p.avatar_url, coalesce(sum(l.delta),0)::int as pontos, p.categoria_nome,
+            (select us.plan_id from user_subscriptions us
+              where us.user_id = p.id and us.status = 'active'
+                and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
        from profiles p
        join points_log l on l.user_id = p.id
       where l.created_at >= date_trunc('week', now())
@@ -143,7 +152,7 @@ rankingRouter.get("/weekly", requireAuth, async (req: AuthedRequest, res) => {
       group by p.id, p.nome, p.avatar_url, p.categoria_nome
      having coalesce(sum(l.delta),0) > 0
       order by pontos desc
-      limit 50`,
+      limit 20`,
     [req.userId],
   );
   res.json(r.rows);

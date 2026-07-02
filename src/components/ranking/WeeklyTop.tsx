@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { rankingService, type RankRow } from "@/services";
+import { PlanBadge } from "@/components/PlanBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Crown, Sparkles, PartyPopper } from "lucide-react";
@@ -45,12 +46,14 @@ export const WeeklyTop = () => {
           </div>
           <div className="relative my-2">
             <Crown className="absolute -top-7 left-1/2 h-9 w-9 -translate-x-1/2 fill-amber-300 text-amber-300 drop-shadow animate-float" />
-            <Avatar className="h-24 w-24 ring-4 ring-white/70 shadow-elegant">
-              <AvatarImage src={champion.avatar_url || undefined} />
-              <AvatarFallback className="bg-white/20 font-display text-3xl font-black text-white">
-                {champion.nome?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <PlanBadge planId={champion.plan_id}>
+              <Avatar className="h-24 w-24 ring-4 ring-white/70 shadow-elegant">
+                <AvatarImage src={champion.avatar_url || undefined} />
+                <AvatarFallback className="bg-white/20 font-display text-3xl font-black text-white">
+                  {champion.nome?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </PlanBadge>
           </div>
           <h2 className="font-display text-xl font-black">{champion.nome}</h2>
           <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-white/90">
@@ -85,12 +88,14 @@ export const WeeklyTop = () => {
                 >
                   {i + 1}
                 </div>
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={u.avatar_url || undefined} />
-                  <AvatarFallback className="bg-gradient-primary text-xs font-bold text-primary-foreground">
-                    {u.nome?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <PlanBadge planId={u.plan_id} size="sm">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={u.avatar_url || undefined} />
+                    <AvatarFallback className="bg-gradient-primary text-xs font-bold text-primary-foreground">
+                      {u.nome?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </PlanBadge>
                 <div className="min-w-0 flex-1">
                   <p className={cn("truncate text-sm font-medium", isMe && "text-primary")}>
                     {u.nome}

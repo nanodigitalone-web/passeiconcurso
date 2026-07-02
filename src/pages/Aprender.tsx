@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
-import { quizService } from "@/services";
+import { quizService, authService } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { Flame, Lock, Check, Play, Sparkles } from "lucide-react";
+import { Flame, Lock, Check, Play, Sparkles, Heart, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePromo, useIsPromoActive } from "@/contexts/PromoContext";
 
@@ -89,6 +89,12 @@ const Aprender = () => {
     quizService.getAprenderLevel(concursoId, categoriaId).then(setInfo);
   }, [concursoId, categoriaId]);
 
+  // Vidas persistentes (recarga server-side) — só para mostrar no header.
+  const [vidas, setVidas] = useState<number | null>(null);
+  useEffect(() => {
+    authService.getLives().then((r) => setVidas(r.vidas)).catch(() => {});
+  }, []);
+
   const level       = info?.level       ?? 1;
   const perLevel    = info?.perLevel    ?? 300;
   const doneInLevel = info?.doneInLevel ?? 0;
@@ -155,11 +161,17 @@ const Aprender = () => {
               </div>
             </div>
 
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-1.5">
               {streak > 0 && (
                 <div className="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1">
-                  <Flame className="h-4 w-4 text-orange-400" />
+                  <Flame className="h-4 w-4 fill-orange-400 text-orange-400" />
                   <span className="font-display text-sm font-bold">{streak}</span>
+                </div>
+              )}
+              {vidas !== null && (
+                <div className="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1">
+                  <Heart className="h-4 w-4 fill-rose-400 text-rose-400" />
+                  <span className="font-display text-sm font-bold">{vidas}</span>
                 </div>
               )}
               <div className="text-right">
@@ -172,25 +184,39 @@ const Aprender = () => {
           <div className="relative mt-4">
             <div className="mb-1 flex items-center justify-between text-xs opacity-70">
               <span>Progresso no nível</span>
-              <span className="font-semibold">{doneInLevel}/{perLevel}</span>
+              <span className="font-semibold">{doneInLevel}/{perLevel} · {progressPct}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{ width: `${progressPct}%`, background: `linear-gradient(90deg, ${corpo.cor}, ${corpo.brilho})` }}
               />
             </div>
           </div>
+
+          <Button
+            asChild
+            size="lg"
+            className="relative mt-4 w-full rounded-2xl bg-white font-bold text-slate-900 shadow-lg transition-all hover:bg-white/90 active:scale-[0.98]"
+          >
+            <Link to={`/aprender/sessao/${concursoId}/${categoriaId}`} className="flex items-center justify-center gap-2">
+              <Play className="h-5 w-5 fill-slate-900" /> Continuar · Nível {level}
+            </Link>
+          </Button>
         </div>
       )}
 
       {/* ── Sem categoria ─────────────────────────────────────────────────── */}
       {!hasTrilha && (
-        <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 p-10 text-center text-white">
-          <p className="text-4xl">🚀</p>
-          <p className="font-display text-lg font-semibold">Escolhe o teu destino</p>
-          <p className="text-sm text-white/50">Define a tua categoria para começar a viajar pelo cosmos do conhecimento.</p>
-          <Button asChild className="rounded-full bg-gradient-primary">
+        <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center text-white">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10">
+            <Rocket className="h-8 w-8 text-white/70" />
+          </div>
+          <div>
+            <p className="font-display text-lg font-semibold">Escolhe o teu destino</p>
+            <p className="mt-1 text-sm text-white/50">Define a tua categoria para começar a viajar pelo cosmos do conhecimento.</p>
+          </div>
+          <Button asChild size="lg" className="rounded-2xl bg-white font-bold text-slate-900 shadow-lg hover:bg-white/90">
             <Link to="/concursos">Escolher categoria</Link>
           </Button>
         </div>
@@ -326,17 +352,22 @@ const Aprender = () => {
               { nome: "Universo",       firstLvl: 23 },
             ].map((sis) => {
               const unlocked = level >= sis.firstLvl;
+              const isCurrent = corpo.sistema === sis.nome;
               return (
                 <div
                   key={sis.nome}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
-                    unlocked
-                      ? "border-white/20 bg-white/10 text-white/80"
-                      : "border-white/5 bg-white/5 text-white/20",
+                    isCurrent
+                      ? "text-white"
+                      : unlocked
+                        ? "border-white/20 bg-white/10 text-white/80"
+                        : "border-white/5 bg-white/5 text-white/20",
                   )}
+                  style={isCurrent ? { borderColor: `${corpo.cor}60`, background: `${corpo.cor}25` } : undefined}
                 >
                   {sis.nome}
+                  {isCurrent && <span className="ml-1 opacity-70">· atual</span>}
                   {!unlocked && <span className="ml-1 opacity-50">· Nível {sis.firstLvl}+</span>}
                 </div>
               );

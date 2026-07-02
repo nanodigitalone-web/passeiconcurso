@@ -8,6 +8,7 @@ export type RankRow = {
   avatar_url: string | null;
   pontos: number;
   categoria_nome: string | null;
+  plan_id?: string | null;
 };
 
 export const rankingService = {
@@ -45,5 +46,5 @@ export type LeagueInfo = {
   leagues: string[];
   promote_top: number;
   week_ends_at: string | null;
-  standings: { id: string; nome: string; avatar_url: string | null; pontos: number }[];
+  standings: { id: string; nome: string; avatar_url: string | null; pontos: number; plan_id?: string | null }[];
 };

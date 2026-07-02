@@ -138,20 +138,26 @@ const Acesso = () => {
         <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
       </button>
 
-      <header className="mb-4">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">{concurso.sigla} · {cat.nome}</p>
-        <h1 className="font-display text-2xl font-bold">Obter acesso completo</h1>
-        <p className="text-sm text-muted-foreground">
-          {pricing.isPromo && pricing.normalLabel && (
-            <span className="line-through opacity-60 mr-1">{pricing.normalLabel}</span>
-          )}
-          <span className="font-semibold text-foreground">{pricing.valorLabel}</span>
-          {pricing.isPromo && (
-            <span className="ml-1 inline-flex items-center rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">PROMO</span>
-          )}
-          {" "}· 4 meses de acesso à categoria
-        </p>
-      </header>
+      <div className="relative mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-blue-700 to-indigo-800 p-6 text-white shadow-elegant animate-fade-in">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-6 h-36 w-36 rounded-full bg-white/5 blur-2xl" />
+        <div className="relative">
+          <p className="text-xs font-bold uppercase tracking-wider opacity-70">{concurso.sigla} · {cat.nome}</p>
+          <h1 className="mt-1 font-display text-2xl font-bold">Obter acesso completo</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {pricing.isPromo && pricing.normalLabel && (
+              <span className="text-sm line-through opacity-60">{pricing.normalLabel}</span>
+            )}
+            <span className="rounded-full bg-white/15 px-3 py-1 font-display text-lg font-bold backdrop-blur-sm">
+              {pricing.valorLabel}
+            </span>
+            {pricing.isPromo && (
+              <span className="rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase text-amber-950">Promo</span>
+            )}
+            <span className="text-xs opacity-80">4 meses de acesso</span>
+          </div>
+        </div>
+      </div>
 
 
       {/* Stepper */}
@@ -171,21 +177,25 @@ const Acesso = () => {
       </div>
 
       {step === "instrucoes" && (
-        <Card className="mb-4 border-primary/30 bg-primary/5 p-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <Coins className="h-5 w-5 text-primary" /> Pagar com moedas (instantâneo)
+        <Card className="mb-4 border-amber-200/70 bg-amber-50/50 p-4 shadow-card">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+              <Coins className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-display text-sm font-semibold leading-tight">Pagar com moedas</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                Activação instantânea · tens {(profile?.moedas ?? 0).toLocaleString("pt-PT")} moedas
+              </p>
+            </div>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Tem <strong>{(profile?.moedas ?? 0).toLocaleString("pt-PT")}</strong> moedas. Este acesso custa{" "}
-            <strong>{pricing.valor.toLocaleString("pt-PT")}</strong> moedas e é activado de imediato.
-          </p>
           <Button
             onClick={pagarComMoedas}
             disabled={payingCoins || (profile?.moedas ?? 0) < pricing.valor}
-            className="mt-3 w-full rounded-full bg-gradient-primary"
+            className="mt-3 w-full rounded-full bg-gradient-primary font-semibold"
           >
             {payingCoins ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Coins className="mr-2 h-4 w-4" />}
-            {(profile?.moedas ?? 0) < pricing.valor ? "Moedas insuficientes" : `Desbloquear por ${pricing.valor} moedas`}
+            {(profile?.moedas ?? 0) < pricing.valor ? "Moedas insuficientes" : `Desbloquear por ${pricing.valor.toLocaleString("pt-PT")} moedas`}
           </Button>
         </Card>
       )}
@@ -308,15 +318,18 @@ const Acesso = () => {
       )}
 
       {step === "concluido" && (
-        <Card className="border-0 bg-gradient-primary p-6 text-primary-foreground shadow-elegant">
-          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
-            <Check className="h-6 w-6" />
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-6 text-center text-white shadow-elegant animate-scale-in">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+              <Check className="h-7 w-7" />
+            </div>
+            <h2 className="font-display text-2xl font-bold">Acesso activado!</h2>
+            <p className="mt-1 text-sm opacity-90">Já tens acesso completo a {cat.nome}. Bons estudos!</p>
+            <Button asChild size="lg" className="mt-5 w-full rounded-2xl bg-white font-bold text-emerald-700 shadow-lg hover:bg-white/90">
+              <a href={`/concursos/${concurso.id}/${cat.id}`}>Ir para a categoria</a>
+            </Button>
           </div>
-          <h2 className="font-display text-xl font-bold">Acesso activado!</h2>
-          <p className="mt-1 text-sm opacity-90">Já tem acesso completo a {cat.nome}. Bons estudos!</p>
-          <Button asChild variant="secondary" className="mt-4 w-full rounded-full font-semibold">
-            <a href={`/concursos/${concurso.id}/${cat.id}`}>Ir para a categoria</a>
-          </Button>
         </Card>
       )}
     </AppShell>

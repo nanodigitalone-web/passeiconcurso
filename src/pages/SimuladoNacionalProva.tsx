@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { examsService, type ExamQuestion, type ExamRanking } from "@/services";
+import { PlanBadge } from "@/components/PlanBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -229,12 +230,14 @@ const SimuladoNacionalProva = () => {
                       )}>
                         {i + 1}
                       </div>
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={u.avatar_url || undefined} />
-                        <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
-                          {u.nome?.charAt(0).toUpperCase() || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <PlanBadge planId={u.plan_id} size="sm">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={u.avatar_url || undefined} />
+                          <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                            {u.nome?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </PlanBadge>
                       <div className="min-w-0 flex-1">
                         <p className={cn("truncate text-sm font-medium", isMe && "text-primary")}>
                           {u.nome}{isMe ? " (você)" : ""}

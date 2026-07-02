@@ -5,7 +5,7 @@ import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { battlesService, quizService, authService, type BattleRow, type Question } from "@/services";
+import { battlesService, authService, type BattleRow, type Question } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Swords, Trophy, Clock, ArrowLeft } from "lucide-react";
@@ -45,28 +45,17 @@ const Batalha = () => {
         const iAmChallenger = b.challenger_id === myId;
         const alreadyDone = iAmChallenger ? b.challenger_done : b.opponent_done;
         if (!alreadyDone) {
-          if (iAmChallenger) {
-            // Challenger plays the questions stored with the battle (their category).
-            await quizService.ensureAnswers(b.concurso_id, b.categoria_id);
-            const all = quizService.getQuestions(b.concurso_id, b.categoria_id);
-            const byId = new Map(all.map((q) => [q.id, q]));
-            const qs = b.question_ids.map((qid) => byId.get(qid)).filter(Boolean) as Question[];
-            setQuestions(qs);
-          } else {
-            // Opponent plays 8 questions from THEIR own category — no need to
-            // share the same category as the challenger.
-            const conc = profile?.concurso_id;
-            const cat = profile?.categoria_id;
-            if (!conc || !cat) {
-              setError("Escolha a sua categoria no perfil para jogar a batalha.");
-              return;
-            }
-            await quizService.ensureAnswers(conc, cat);
-            setQuestions(quizService.getSmartQuestions(conc, cat, 8));
+          // Ambos os jogadores respondem ao MESMO conjunto de questões da
+          // batalha, servido pela API (funciona também para plano/interesses).
+          const qs = await battlesService.getQuestions(b.id);
+          if (qs.length === 0) {
+            setError("Não foi possível carregar as questões desta batalha.");
+            return;
           }
+          setQuestions(qs as Question[]);
         }
       } catch (e) {
-        setError("Precisa de acesso à sua categoria para jogar a batalha.");
+        setError("Não foi possível carregar a batalha. Tenta de novo.");
       } finally {
         setLoading(false);
       }

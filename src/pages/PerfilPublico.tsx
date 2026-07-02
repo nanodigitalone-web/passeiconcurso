@@ -5,6 +5,7 @@ import { Seo } from "@/components/Seo";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlanBadge, PlanPill } from "@/components/PlanBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { ArrowLeft, UserCheck, UserPlus, GraduationCap, Building2, BookOpen, Trophy } from "lucide-react";
@@ -95,12 +96,14 @@ const PerfilPublico = () => {
             <div className="bg-gradient-to-br from-primary via-blue-700 to-indigo-800 h-24 w-full" />
             <div className="px-5 pb-5 -mt-12">
               <div className="flex items-end justify-between">
-                <Avatar className="h-20 w-20 ring-4 ring-background shadow-elegant">
-                  <AvatarImage src={profile.avatar_url || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-indigo-600 text-white text-2xl font-bold">
-                    {profile.nome?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <PlanBadge planId={(profile as any).plan_id}>
+                  <Avatar className="h-20 w-20 ring-4 ring-background shadow-elegant">
+                    <AvatarImage src={profile.avatar_url || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-indigo-600 text-white text-2xl font-bold">
+                      {profile.nome?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </PlanBadge>
 
                 {!isOwnProfile && (
                   <Button
@@ -125,7 +128,10 @@ const PerfilPublico = () => {
                 )}
               </div>
 
-              <h1 className="mt-3 text-xl font-bold">{profile.nome}</h1>
+              <div className="mt-3 flex items-center gap-2">
+                <h1 className="text-xl font-bold">{profile.nome}</h1>
+                <PlanPill planId={(profile as any).plan_id} />
+              </div>
               {profile.bio && (
                 <p className="mt-1 text-sm text-muted-foreground">{profile.bio}</p>
               )}

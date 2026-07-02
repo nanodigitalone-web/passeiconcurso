@@ -336,7 +336,10 @@ examsRouter.get("/:id/ranking", requireAuth, async (req: AuthedRequest, res) => 
 
     const rows = (
       await query(
-        `select p.id, p.nome, p.avatar_url, en.score, en.total, en.duration_ms
+        `select p.id, p.nome, p.avatar_url, en.score, en.total, en.duration_ms,
+                (select us.plan_id from user_subscriptions us
+                  where us.user_id = p.id and us.status = 'active'
+                    and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
            from national_exam_entries en
            join profiles p on p.id = en.user_id
           where en.exam_id = $1 and en.finished_at is not null

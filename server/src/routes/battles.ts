@@ -35,6 +35,49 @@ battlesRouter.post("/", requireAuth, async (req: AuthedRequest, res) => {
   res.json({ ok: true, id: row!.id });
 });
 
+// Shuffle option positions (remapping `correta`) so each player gets a fresh
+// layout — same trick as the quiz engine.
+function shuffleOptions(q: any) {
+  const opcoes: string[] = Array.isArray(q.opcoes) ? q.opcoes : JSON.parse(q.opcoes);
+  const order = opcoes.map((_: string, i: number) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return {
+    id: q.id,
+    disciplina: q.disciplina,
+    enunciado: q.enunciado,
+    opcoes: order.map((i: number) => opcoes[i]),
+    correta: order.indexOf(q.correta),
+    comentario: q.comentario,
+  };
+}
+
+// The battle's questions (same set for BOTH players — fair duel). Fetched from
+// the DB bank, so battles work for plano/interesses users too.
+battlesRouter.get("/:id/questions", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const b = await one<any>("select * from battles where id = $1", [req.params.id]);
+    if (!b) return res.status(404).json({ error: "not_found" });
+    if (b.challenger_id !== req.userId && b.opponent_id !== req.userId)
+      return res.status(403).json({ error: "not_participant" });
+    const ids: string[] = Array.isArray(b.question_ids) ? b.question_ids : JSON.parse(b.question_ids);
+    const rows = (
+      await query(
+        `select id, disciplina, enunciado, opcoes, correta, comentario
+           from questions where id = any($1::text[])`,
+        [ids],
+      )
+    ).rows;
+    const byId = new Map(rows.map((q: any) => [q.id, q]));
+    const questions = ids.map((qid) => byId.get(qid)).filter(Boolean).map(shuffleOptions);
+    res.json({ questions });
+  } catch (e: any) {
+    res.status(500).json({ error: "server_error", detail: e?.message });
+  }
+});
+
 // Submit my score for a battle (mirrors submit_battle_result).
 battlesRouter.post("/:id/result", requireAuth, async (req: AuthedRequest, res) => {
   const score = Number(req.body?.score) || 0;

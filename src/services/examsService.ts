@@ -54,6 +54,7 @@ export type ExamRankRow = {
   score: number;
   total: number;
   duration_ms: number | null;
+  plan_id?: string | null;
 };
 
 export type ExamRanking = {

@@ -359,7 +359,10 @@ profileRouter.get("/:id", requireAuth, async (req: AuthedRequest, res) => {
       `select p.*,
         (select count(*) from follows where following_id = p.id)::int as followers_count,
         (select count(*) from follows where follower_id = p.id)::int  as following_count,
-        exists(select 1 from follows where follower_id = $2 and following_id = p.id) as is_following
+        exists(select 1 from follows where follower_id = $2 and following_id = p.id) as is_following,
+        (select us.plan_id from user_subscriptions us
+          where us.user_id = p.id and us.status = 'active'
+            and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
        from profiles p where p.id = $1`,
       [req.params.id, req.userId],
     );
@@ -375,7 +378,10 @@ profileRouter.get("/:id/followers", requireAuth, async (req: AuthedRequest, res)
   if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
   try {
     const rows = await query(
-      `select p.id, p.nome, p.avatar_url, p.pontos_globais
+      `select p.id, p.nome, p.avatar_url, p.pontos_globais,
+              (select us.plan_id from user_subscriptions us
+                where us.user_id = p.id and us.status = 'active'
+                  and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
          from follows f join profiles p on p.id = f.follower_id
         where f.following_id = $1 order by p.pontos_globais desc limit 100`,
       [req.params.id],
@@ -391,7 +397,10 @@ profileRouter.get("/:id/following", requireAuth, async (req: AuthedRequest, res)
   if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: "not_found" });
   try {
     const rows = await query(
-      `select p.id, p.nome, p.avatar_url, p.pontos_globais
+      `select p.id, p.nome, p.avatar_url, p.pontos_globais,
+              (select us.plan_id from user_subscriptions us
+                where us.user_id = p.id and us.status = 'active'
+                  and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
          from follows f join profiles p on p.id = f.following_id
         where f.follower_id = $1 order by p.pontos_globais desc limit 100`,
       [req.params.id],

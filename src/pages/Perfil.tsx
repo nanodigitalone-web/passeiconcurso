@@ -22,9 +22,11 @@ import {
   Bell, BellOff, BellRing, Coins, ChevronRight, ChevronDown, Gift,
   Pencil, X, Users, Camera, Loader2, Search, Star, Zap,
   UserCheck, MapPin, GraduationCap, Flame, Snowflake,
-  User, Mail, CalendarDays, Quote,
+  User, Mail, CalendarDays, Quote, Info,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PlanBadge, PlanPill } from "@/components/PlanBadge";
+import { AboutModal } from "@/components/AboutModal";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -282,7 +284,10 @@ const Perfil = () => {
               <input ref={fileRef} type="file" accept="image/*" className="hidden" disabled={uploadingAvatar} onChange={handleAvatarFile} />
             </div>
 
-            <h1 className="font-display text-2xl font-bold leading-tight">{profile?.nome || "Utilizador"}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-2xl font-bold leading-tight">{profile?.nome || "Utilizador"}</h1>
+              <PlanPill planId={profile?.plan_id} />
+            </div>
             {profile?.bio && <p className="mt-1 text-sm text-white/70 max-w-xs">{profile.bio}</p>}
 
             <div className="mt-2 flex flex-wrap justify-center gap-2">
@@ -775,6 +780,24 @@ const Perfil = () => {
             </Button>
           )}
         </div>
+
+        {/* Sobre a aplicação */}
+        <AboutModal
+          trigger={
+            <button className="group flex w-full items-center justify-between gap-3 px-4 py-4 text-left">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 transition-transform group-hover:scale-110">
+                  <Info className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-display text-sm font-semibold leading-tight">Sobre a aplicação</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">Versão, funcionalidades e créditos</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+            </button>
+          }
+        />
       </Card>
 
       {/* ── TERMINAR SESSÃO ──────────────────────────────────────────────────── */}
@@ -794,65 +817,71 @@ const Perfil = () => {
 
       {/* ── DIALOG: seguidores / a seguir ─────────────────────────────────── */}
       <Dialog open={!!socialType} onOpenChange={(o) => { if (!o) setSocialType(null); }}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm gap-0 overflow-hidden p-0">
-          {/* Header gradient */}
-          <div className="bg-gradient-to-br from-primary via-blue-700 to-indigo-900 px-5 py-4 text-white">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold text-white">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm gap-0 overflow-hidden rounded-3xl border-0 p-0">
+          {/* Header gradient — mesma linguagem dos heros */}
+          <div className="relative bg-gradient-to-br from-primary via-blue-700 to-indigo-800 px-5 py-5 text-white">
+            <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
+            <DialogHeader className="relative">
+              <DialogTitle className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+                  {socialType === "followers" ? <Users className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                </span>
                 {socialType === "followers" ? "Seguidores" : "A seguir"}
+                {!socialLoading && socialList.length > 0 && (
+                  <span className="ml-auto rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold backdrop-blur-sm">
+                    {socialList.length}
+                  </span>
+                )}
               </DialogTitle>
             </DialogHeader>
-            {!socialLoading && (
-              <p className="mt-0.5 text-xs text-white/60">
-                {socialList.length === 0
-                  ? socialType === "followers" ? "Sem seguidores ainda" : "Não segues ninguém ainda"
-                  : `${socialList.length} ${socialType === "followers" ? "seguidor" + (socialList.length !== 1 ? "es" : "") : "utilizador" + (socialList.length !== 1 ? "es" : "")}`}
-              </p>
-            )}
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto p-2">
             {socialLoading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : socialList.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center px-6">
-                <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">
-                  {socialType === "followers" ? "Ainda não tens seguidores." : "Ainda não segues ninguém."}
-                </p>
+              <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-border">
+                  <Users className="h-6 w-6 text-muted-foreground/40" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">
+                    {socialType === "followers" ? "Ainda sem seguidores" : "Ainda não segues ninguém"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {socialType === "followers"
+                      ? "Partilha o teu perfil e sobe no ranking para ganhares seguidores."
+                      : "Explora o ranking e segue outros candidatos."}
+                  </p>
+                </div>
               </div>
             ) : (
               <ul className="divide-y divide-border/40">
-                {socialList.map((u, i) => (
+                {socialList.map((u) => (
                   <li key={u.id}>
                     <Link
                       to={`/perfil/${u.id}`}
                       onClick={() => setSocialType(null)}
-                      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40 active:bg-muted/60"
+                      className="flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-muted/50 active:bg-muted"
                     >
-                      <div className="relative shrink-0">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-600 text-white font-display font-bold text-sm overflow-hidden">
-                          {u.avatar_url
-                            ? <img src={u.avatar_url} alt={u.nome} className="h-full w-full object-cover" />
-                            : u.nome.charAt(0).toUpperCase()}
-                        </div>
-                        {i < 3 && (
-                          <span className={cn(
-                            "absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white",
-                            i === 0 ? "bg-yellow-500" : i === 1 ? "bg-slate-400" : "bg-amber-600",
-                          )}>
-                            {i + 1}
-                          </span>
-                        )}
+                      <PlanBadge planId={(u as any).plan_id} size="sm">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={u.avatar_url || undefined} />
+                          <AvatarFallback className="bg-gradient-primary font-display text-sm font-bold text-primary-foreground">
+                            {u.nome.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </PlanBadge>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{u.nome}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {u.pontos_globais.toLocaleString("pt-PT")} pontos
+                        </p>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{u.nome}</p>
-                        <p className="text-xs text-muted-foreground">{u.pontos_globais.toLocaleString("pt-PT")} pontos</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/30" />
                     </Link>
                   </li>
                 ))}
