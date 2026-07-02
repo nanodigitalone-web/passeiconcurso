@@ -122,6 +122,23 @@ const TARGETS = [
   ].map((nome) => ({ nome, slug: slugify(nome), concurso_id: "geral", categoria_id: "geral", area: "Ciências Básicas e Línguas" }))),
 ];
 
+// Áreas ainda "em breve" na app (Economia, Direito, Contabilidade, Gestão,
+// Engenharias). Só entram na geração com INCLUDE_ALL_AREAS=1, para não gastar
+// créditos de API em conteúdo que os utilizadores ainda não podem escolher.
+if (process.env.INCLUDE_ALL_AREAS === "1") {
+  const EXTRA = {
+    "Economia": ["Introdução à Economia", "Microeconomia I", "Macroeconomia I", "História Económica Geral", "Econometria", "Desenvolvimento Económico", "Economia Internacional", "Moeda e Bancos", "Economia do Setor Público", "Teoria dos Jogos", "Economia Ambiental", "Finanças Públicas", "Pensamento Económico", "Economia Industrial"],
+    "Direito": ["Introdução ao Estudo do Direito", "Direito Constitucional", "Direito Civil (Parte Geral)", "Direito Penal I", "Direito Processual Civil", "Direito do Trabalho", "Direito Administrativo", "Direito Comercial e Empresarial", "Direito Internacional Público", "Direito Fiscal e Tributário", "Direitos Humanos", "Filosofia do Direito", "Direito Processual Penal", "Direito do Ambiente"],
+    "Contabilidade": ["Contabilidade Financeira I", "Contabilidade de Gestão", "Auditoria Financeira", "Contabilidade Avançada", "Fiscalidade Portuguesa/Internacional", "Consolidação de Contas", "Sistemas de Informação Contabilística", "Contabilidade Pública", "Análise de Demonstrações Financeiras", "Ética e Deontologia Contabilística", "Contabilidade de Sociedades", "Perícia Contábil", "Relato Financeiro", "Contabilidade Orçamental"],
+    "Gestão": ["Princípios de Gestão", "Comportamento Organizacional", "Gestão de Recursos Humanos", "Marketing Estratégico", "Gestão Financeira", "Estratégia Empresarial", "Gestão de Operações e Logística", "Empreendedorismo", "Negociação e Gestão de Conflitos", "Gestão de Projetos", "Sistemas de Apoio à Decisão", "Gestão da Qualidade", "Negócios Internacionais", "Responsabilidade Social Corporativa"],
+    "Engenharias": ["Cálculo Diferencial e Integral", "Álgebra Linear", "Física Mecânica", "Química Geral", "Geometria Descritiva", "Ciência e Engenharia dos Materiais", "Termodinâmica Aplicada", "Mecânica dos Fluidos", "Resistência dos Materiais", "Eletrotecnia Geral", "Programação e Computação", "Estatística e Probabilidades", "Investigação Operacional", "Fenómenos de Transferência"],
+  };
+  for (const [area, nomes] of Object.entries(EXTRA)) {
+    const cid = slugify(area);
+    TARGETS.push(...nomes.map((nome) => ({ nome, slug: slugify(nome), concurso_id: cid, categoria_id: cid, area })));
+  }
+}
+
 function extractJsonArray(text) {
   let t = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
   const s = t.indexOf("["), e = t.lastIndexOf("]");
@@ -175,98 +192,93 @@ async function genBatch(target, n) {
 async function main() {
   const { rows: [{ n: totalStart }] } = await db.query("select count(*)::int n from questions where active");
   console.log(`Total inicial na BD: ${totalStart}`);
-  console.log(`Disciplinas a processar: ${TARGETS.length}`);
-  console.log(`Questões alvo por disciplina: ${PER_DISC}`);
-  console.log(`Total esperado gerado: ~${TARGETS.length * PER_DISC}\n`);
+  console.log(`Disciplinas: ${TARGETS.length} · alvo ${PER_DISC} cada`);
+  console.log(`Estratégia: SUBIDA EM CONJUNTO — cada lote vai para a disciplina`);
+  console.log(`com MENOS questões nesse momento. Nenhuma passa das ${PER_DISC} enquanto`);
+  console.log(`houver outra abaixo.\n`);
 
-  // Conta questões actuais por disciplina para ordenar (menos primeiro)
-  const { rows: counts } = await db.query(
-    "select disciplina, count(*)::int n from questions where active group by disciplina"
-  );
-  const countMap = new Map(counts.map(r => [r.disciplina, r.n]));
-  const sorted = [...TARGETS].sort((a, b) => (countMap.get(a.slug) ?? 0) - (countMap.get(b.slug) ?? 0));
-  console.log(`Ordem: menor nº de questões primeiro.\n`);
-
+  const slugs = TARGETS.map((t) => t.slug);
+  const seenCache = new Map(); // slug → Set de enunciados (dedup)
   let grandTotal = 0;
+  let fails = 0;
 
-  for (const [i, target] of sorted.entries()) {
-    // Conta quantas já existem com este slug (disciplina)
-    const { rows: [{ n: existingCount }] } = await db.query(
-      "select count(*)::int n from questions where concurso_id=$1 and categoria_id=$2 and disciplina=$3 and active",
-      [target.concurso_id, target.categoria_id, target.slug]
+  for (;;) {
+    // Reconta na BD a cada lote e escolhe a disciplina mais pobre AGORA.
+    const { rows } = await db.query(
+      `select disciplina, count(*)::int n from questions
+        where active and disciplina = any($1::text[])
+        group by disciplina`,
+      [slugs],
     );
+    const countMap = new Map(rows.map((r) => [r.disciplina, r.n]));
+    let target = null;
+    let min = Infinity;
+    for (const t of TARGETS) {
+      const n = countMap.get(t.slug) ?? 0;
+      if (n < PER_DISC && n < min) { min = n; target = t; }
+    }
+    if (!target) break; // todas as disciplinas atingiram o alvo
 
-    const needed = Math.max(0, PER_DISC - existingCount);
-    if (needed === 0) {
-      console.log(`  [${i + 1}/${TARGETS.length}] ✓ já tem ${existingCount} — ${target.nome}`);
+    if (!seenCache.has(target.slug)) {
+      const { rows: existing } = await db.query(
+        "select lower(trim(enunciado)) e from questions where disciplina = $1",
+        [target.slug],
+      );
+      seenCache.set(target.slug, new Set(existing.map((r) => r.e)));
+    }
+    const seen = seenCache.get(target.slug);
+
+    let drafts;
+    try {
+      drafts = await genBatch(target, Math.min(BATCH, PER_DISC - min));
+      fails = 0;
+    } catch (e) {
+      fails++;
+      // Backoff exponencial: 5s, 10s, 20s... máx 5 min. NUNCA desiste.
+      const wait = Math.min(300000, 5000 * Math.pow(2, Math.min(fails - 1, 6)));
+      console.log(`  [erro ${fails}] ${e.message} — aguardar ${Math.round(wait / 1000)}s`);
+      await sleep(wait);
       continue;
     }
 
-    // Carrega enunciados existentes desta disciplina para deduplicação
-    const { rows: existing } = await db.query(
-      "select lower(trim(enunciado)) e from questions where concurso_id=$1 and categoria_id=$2 and disciplina=$3",
-      [target.concurso_id, target.categoria_id, target.slug]
-    );
-    const seen = new Set(existing.map((r) => r.e));
-
     let added = 0;
-    let fails = 0;
-
-    while (added < needed) {
-      const batchN = Math.min(BATCH, needed - added);
-      let drafts;
-      try {
-        drafts = await genBatch(target, batchN);
-        fails = 0;
-      } catch (e) {
-        fails++;
-        // Backoff exponencial: 5s, 10s, 20s, 40s... máx 5 min. NUNCA desiste.
-        const wait = Math.min(300000, 5000 * Math.pow(2, Math.min(fails - 1, 6)));
-        console.log(`    [erro ${fails}] ${e.message} — aguardar ${Math.round(wait/1000)}s`);
-        await sleep(wait);
-        continue;
+    try {
+      for (const q of drafts) {
+        if (!q || typeof q.enunciado !== "string" || !q.enunciado.trim()) continue;
+        if (!Array.isArray(q.opcoes) || q.opcoes.length < 2) continue;
+        if (!q.opcoes.every((o) => typeof o === "string" && o.trim())) continue;
+        if (!Number.isInteger(q.correta) || q.correta < 0 || q.correta >= q.opcoes.length) continue;
+        const key = q.enunciado.toLowerCase().trim();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        await db.query(
+          `insert into questions (id,concurso_id,categoria_id,disciplina,enunciado,opcoes,correta,comentario,source)
+           values ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,'ai') on conflict (id) do nothing`,
+          [
+            "ai-" + randomUUID().slice(0, 12),
+            target.concurso_id, target.categoria_id,
+            target.slug,
+            q.enunciado.trim(),
+            JSON.stringify(q.opcoes.map((o) => o.trim())),
+            q.correta,
+            typeof q.comentario === "string" ? q.comentario.trim() : null,
+          ],
+        );
+        added++;
+        grandTotal++;
       }
-
-      try {
-        for (const q of drafts) {
-          if (!q || typeof q.enunciado !== "string" || !q.enunciado.trim()) continue;
-          if (!Array.isArray(q.opcoes) || q.opcoes.length < 2) continue;
-          if (!q.opcoes.every((o) => typeof o === "string" && o.trim())) continue;
-          if (!Number.isInteger(q.correta) || q.correta < 0 || q.correta >= q.opcoes.length) continue;
-          const key = q.enunciado.toLowerCase().trim();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          await db.query(
-            `insert into questions (id,concurso_id,categoria_id,disciplina,enunciado,opcoes,correta,comentario,source)
-             values ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,'ai') on conflict (id) do nothing`,
-            [
-              "ai-" + randomUUID().slice(0, 12),
-              target.concurso_id, target.categoria_id,
-              target.slug,
-              q.enunciado.trim(),
-              JSON.stringify(q.opcoes.map((o) => o.trim())),
-              q.correta,
-              typeof q.comentario === "string" ? q.comentario.trim() : null,
-            ],
-          );
-          added++;
-          grandTotal++;
-          if (added >= needed) break;
-        }
-      } catch (e) {
-        console.log(`    (db: ${e.message}); a continuar`);
-        await sleep(3000);
-        continue;
-      }
-      await sleep(PACE_MS);
+    } catch (e) {
+      console.log(`  (db: ${e.message}); a continuar`);
+      await sleep(3000);
+      continue;
     }
-
-    console.log(`  [${i + 1}/${TARGETS.length}] +${added} — ${target.nome} (${target.area})`);
+    console.log(`  ${target.nome} (${target.area}): +${added} → ${min + added}/${PER_DISC} · total gerado ${grandTotal}`);
+    await sleep(PACE_MS);
   }
 
   const { rows: [{ n: totalEnd }] } = await db.query("select count(*)::int n from questions where active");
   console.log(`\n✅ Concluído: ${totalEnd} questões na BD (+${totalEnd - totalStart} nesta execução)`);
-  console.log(`   Disciplinas de interesses agora cobertas com slugs correctos.`);
+  console.log(`   Todas as ${TARGETS.length} disciplinas com ≥${PER_DISC} questões.`);
   await db.end();
 }
 
