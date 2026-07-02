@@ -158,6 +158,10 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
   rápidas (tópicos/recursos) e tópicos em tags azuis.
 - Dono confirmou: **já não existe ambiente local** — trabalho direto na produção
   (secção 3 atualizada).
+- **Redesign do Ranking** (`Ranking.tsx`): hero gradiente com stats do utilizador
+  (pontos globais, liga via `profile.league`, sequência), cartão "A tua posição"
+  (mostra quanto falta para ultrapassar o próximo), medalhas ouro/prata/bronze
+  no top 3 da lista, números formatados pt-PT.
 
 ### 2026-07-01 (admin metrics resilience + UX melhorias)
 - **Admin – UserStatsModal reutilizável**: componente partilhado entre Top 3 e UsersTab.
