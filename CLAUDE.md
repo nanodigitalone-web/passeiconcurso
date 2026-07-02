@@ -149,8 +149,15 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
   (não consome o limite diário free), prémios em moedas ao pódio (finalização lazy com
   advisory lock + notificações). Admin: tab "Exames" (`src/components/admin/ExamesTab.tsx`,
   endpoints `/admin/exams`) cria/apaga exames e anuncia por broadcast.
-- Migração **016** aplicada na **Neon** (local pendente, Docker off). `schema.sql`
-  atualizado. Build Vite + `tsc --noEmit` (front e server) OK; smoke test do server OK.
+- Migração **016** aplicada na **Neon**. `schema.sql` atualizado. Build Vite +
+  `tsc --noEmit` (front e server) OK; smoke test do server OK.
+- **Redesign da secção de concursos** (`Concursos.tsx`, `ConcursoDetail.tsx`,
+  `CategoriaDetail.tsx`): linguagem visual da Home — hero gradiente com blur,
+  pesquisa integrada, cartões com acentos coloridos rotativos, badges
+  "O teu"/"A tua" no concurso/categoria do utilizador, CTA branco, ações
+  rápidas (tópicos/recursos) e tópicos em tags azuis.
+- Dono confirmou: **já não existe ambiente local** — trabalho direto na produção
+  (secção 3 atualizada).
 
 ### 2026-07-01 (admin metrics resilience + UX melhorias)
 - **Admin – UserStatsModal reutilizável**: componente partilhado entre Top 3 e UsersTab.
