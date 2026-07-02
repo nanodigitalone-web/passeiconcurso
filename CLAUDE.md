@@ -170,6 +170,14 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
 - **Marca multi-área**: expressão "saúde" removida dos textos visíveis (Login,
   Seo de Concursos, partilhas, banner/certificado canvas). Mantêm-se nomes reais
   de cursos ("Técnico — Saúde") e o disclaimer legal do MINSA.
+- **Redesign das provas do simulado** (`Quiz.tsx`, `Resultado.tsx`): escolha de
+  formato com hero; prova com contador de acertos ao vivo, disciplina no cartão
+  da questão e comentário colorido por certo/errado; resultado com anel de
+  percentagem, chip "+N pontos" e erros comentados em blocos vermelho/verde.
+- **Login (ajustes do dono)**: sem badge do topo nem travessões; rodapé
+  "By Yetuedu" (negrito branco); prova social diz 35 mil+ questões.
+- **Perfil — informações pessoais**: vista normal mostra só as respostas com
+  chips de ícone coloridos; labels apenas no modo de edição.
 - **Redesign notificações + Perfil inferior** (`Notificacoes.tsx`,
   `NotificationToaster.tsx`, `PlatformAlertModal.tsx`, `Perfil.tsx`): página com
   hero e ícones por tipo de mensagem (heurística no conteúdo), toast com ação
