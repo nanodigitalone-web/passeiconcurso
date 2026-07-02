@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlanBadge, PlanPill } from "@/components/PlanBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
-import { ArrowLeft, UserCheck, UserPlus, GraduationCap, Building2, BookOpen, Trophy } from "lucide-react";
+import { ArrowLeft, UserCheck, UserPlus, GraduationCap, Building2, BookOpen, Trophy, Zap } from "lucide-react";
 
 type PublicProfile = {
   id: string;
@@ -139,9 +139,10 @@ const PerfilPublico = () => {
           </Card>
 
           {/* Estatísticas */}
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-4 gap-2">
             {[
               { label: "Pontos", value: (profile.pontos_globais || profile.pontos || 0).toLocaleString("pt-PT"), icon: Trophy },
+              { label: "Nível", value: String((profile as any).level ?? 1), icon: Zap },
               { label: "Seguidores", value: followCount.toLocaleString("pt-PT"), icon: UserCheck },
               { label: "A seguir", value: profile.following_count.toLocaleString("pt-PT"), icon: UserPlus },
             ].map((s) => (

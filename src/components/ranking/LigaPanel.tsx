@@ -128,6 +128,7 @@ export const LigaPanel = () => {
                       <p className={cn("truncate text-sm font-medium", isMe && "text-primary")}>
                         {u.nome}{isMe ? " (você)" : ""}
                       </p>
+                      <p className="text-[11px] text-muted-foreground">Nível {u.level ?? 1}</p>
                     </div>
                     {inPromoZone && <ArrowUp className="h-3.5 w-3.5 shrink-0 text-emerald-600" />}
                     <p className="font-display text-sm font-bold">

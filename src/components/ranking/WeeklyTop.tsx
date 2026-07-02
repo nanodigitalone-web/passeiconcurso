@@ -101,9 +101,9 @@ export const WeeklyTop = () => {
                     {u.nome}
                     {isMe ? " (você)" : ""}
                   </p>
-                  {u.categoria_nome && (
-                    <p className="truncate text-[11px] text-muted-foreground">{u.categoria_nome}</p>
-                  )}
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    Nível {u.level ?? 1}{u.categoria_nome ? ` · ${u.categoria_nome}` : ""}
+                  </p>
                 </div>
                 <p className="font-display text-sm font-bold">
                   {u.pontos}

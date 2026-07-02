@@ -90,7 +90,9 @@ rankingRouter.get("/league", requireAuth, async (req: AuthedRequest, res) => {
         `select p.id, p.nome, p.avatar_url, coalesce(sum(l.delta),0)::int as pontos,
                 (select us.plan_id from user_subscriptions us
                   where us.user_id = p.id and us.status = 'active'
-                    and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
+                    and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id,
+                (select floor(count(*) / 300) + 1 from question_attempts qa
+                  where qa.user_id = p.id and qa.mode = 'aprender')::int as level
            from profiles p
            left join points_log l
              on l.user_id = p.id and l.created_at >= date_trunc('week', now())
@@ -127,7 +129,9 @@ rankingRouter.get("/", requireAuth, async (req: AuthedRequest, res) => {
     `select p.id, p.nome, p.avatar_url, p.pontos_globais as pontos, p.categoria_nome,
             (select us.plan_id from user_subscriptions us
               where us.user_id = p.id and us.status = 'active'
-                and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
+                and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id,
+            (select floor(count(*) / 300) + 1 from question_attempts qa
+              where qa.user_id = p.id and qa.mode = 'aprender')::int as level
        from profiles p
       where (p.hidden = false or p.id = $1)
         and ($2::text is null or p.categoria_id = $2)
@@ -144,7 +148,9 @@ rankingRouter.get("/weekly", requireAuth, async (req: AuthedRequest, res) => {
     `select p.id, p.nome, p.avatar_url, coalesce(sum(l.delta),0)::int as pontos, p.categoria_nome,
             (select us.plan_id from user_subscriptions us
               where us.user_id = p.id and us.status = 'active'
-                and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
+                and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id,
+            (select floor(count(*) / 300) + 1 from question_attempts qa
+              where qa.user_id = p.id and qa.mode = 'aprender')::int as level
        from profiles p
        join points_log l on l.user_id = p.id
       where l.created_at >= date_trunc('week', now())

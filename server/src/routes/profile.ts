@@ -359,7 +359,9 @@ profileRouter.get("/:id", requireAuth, async (req: AuthedRequest, res) => {
         exists(select 1 from follows where follower_id = $2 and following_id = p.id) as is_following,
         (select us.plan_id from user_subscriptions us
           where us.user_id = p.id and us.status = 'active'
-            and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id
+            and (us.expires_at is null or us.expires_at > now()) limit 1) as plan_id,
+        (select floor(count(*) / 300) + 1 from question_attempts qa
+          where qa.user_id = p.id and qa.mode = 'aprender')::int as level
        from profiles p where p.id = $1`,
       [req.params.id, req.userId],
     );

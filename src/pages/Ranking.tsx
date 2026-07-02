@@ -145,6 +145,7 @@ const GeralRanking = () => {
                       <p className={cn("max-w-[92px] truncate text-xs font-bold", isMe && "text-primary")}>
                         {u.nome}{isMe ? " (você)" : ""}
                       </p>
+                      <p className="text-[10px] text-muted-foreground">Nível {u.level ?? 1}</p>
                       <p className={cn(
                         "font-display text-sm font-bold",
                         isFirst ? "text-primary" : "text-foreground/80"
@@ -199,9 +200,9 @@ const GeralRanking = () => {
                         <p className={cn("truncate text-sm font-medium", isMe && "text-primary")}>
                           {u.nome}{isMe ? " (você)" : ""}
                         </p>
-                        {u.categoria_nome && (
-                          <p className="truncate text-[11px] text-muted-foreground">{u.categoria_nome}</p>
-                        )}
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          Nível {u.level ?? 1}{u.categoria_nome ? ` · ${u.categoria_nome}` : ""}
+                        </p>
                       </div>
                       <p className="font-display text-sm font-bold">{u.pontos.toLocaleString("pt-PT")}<span className="ml-1 text-xs font-normal text-muted-foreground">pts</span></p>
                     </Link>
