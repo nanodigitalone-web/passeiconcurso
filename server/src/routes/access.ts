@@ -37,15 +37,17 @@ accessRouter.get("/check", requireAuth, async (req: AuthedRequest, res) => {
     return res.json({ hasPaidAccess: hasPaid, expiresAt: hasPaid ? Infinity : null });
   }
 
-  // Virtual "plano" category: grant access if user has an active subscription with disciplines locked.
+  // Virtual "plano" category: grant access if user has an active subscription with at least 1 discipline.
   if (conc === "plano") {
     const r = await query(
       `SELECT 1 FROM user_subscriptions
-       WHERE user_id = $1 AND status = 'active' AND expires_at > now() AND disciplines_locked = true
+       WHERE user_id = $1 AND status = 'active' AND expires_at > now()
+         AND disciplines IS NOT NULL AND jsonb_array_length(disciplines) > 0
        UNION ALL
        SELECT 1 FROM subscription_members sm
        JOIN user_subscriptions us ON us.id = sm.subscription_id
-       WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now() AND sm.disciplines_locked = true
+       WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now()
+         AND sm.disciplines IS NOT NULL AND jsonb_array_length(sm.disciplines) > 0
        LIMIT 1`,
       [req.userId],
     );

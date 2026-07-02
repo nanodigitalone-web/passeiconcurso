@@ -88,4 +88,9 @@ export const subscriptionService = {
     const r = await api.get<{ users: any[] }>(`/subscriptions/search-users?q=${encodeURIComponent(q)}`);
     return r.users;
   },
+
+  async getUserAccessPlans(): Promise<{ concursoId: string; categoriaId: string; expiresAt: number | null }[]> {
+    const r = await api.get<{ plans: any[] }>("/access/plans");
+    return r.plans;
+  },
 };

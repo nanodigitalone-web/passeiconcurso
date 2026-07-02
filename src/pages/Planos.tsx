@@ -10,8 +10,11 @@ import {
   Check, Star, Users, Zap, Crown, ArrowRight, Loader2, BookOpen,
   Calendar, Lock, Search, Plus, X, AlertTriangle,
   Stethoscope, Heart, Activity, Pill, Microscope, TrendingUp, Scale, Calculator, Settings,
+  GraduationCap, Play,
 } from "lucide-react";
 import { subscriptionService, type Plan, type UserSubscription, type UserMembership, type FamilyMember } from "@/services/subscriptionService";
+import { authService } from "@/services/authService";
+import { quizService } from "@/services";
 import { AREAS, slugify } from "@/data/disciplinas";
 
 const AREA_ICON: Record<string, React.ReactNode> = {
@@ -72,7 +75,7 @@ const slugToName = (() => {
 type Tab = "disponivel" | "meu";
 
 const Planos = () => {
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const [tab, setTab] = useState<Tab>("disponivel");
@@ -84,11 +87,17 @@ const Planos = () => {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Access plans (old category_access rows)
+  const [accessPlans, setAccessPlans] = useState<{ concursoId: string; categoriaId: string; expiresAt: number | null }[]>([]);
+
   // Discipline selection state
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [fixedDiscs, setFixedDiscs] = useState<Set<string>>(new Set()); // already saved, can't be removed
   const [saving, setSaving] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+
+  // Study mode state
+  const [settingMode, setSettingMode] = useState(false);
 
   // Family member search
   const [searchQ, setSearchQ] = useState("");
@@ -101,11 +110,13 @@ const Planos = () => {
     Promise.all([
       subscriptionService.getPlans(),
       subscriptionService.getMySubscription(),
-    ]).then(([p, { subscription, membership: m, members: mems }]) => {
+      subscriptionService.getUserAccessPlans(),
+    ]).then(([p, { subscription, membership: m, members: mems }, ap]) => {
       setPlans(p);
       setSub(subscription);
       setMembership(m);
       setMembers(mems);
+      setAccessPlans(ap);
       const existing = (subscription?.disciplines ?? m?.disciplines ?? []) as string[];
       if (existing.length > 0) {
         setSelected(new Set(existing));
@@ -147,6 +158,18 @@ const Planos = () => {
   const maxMembers = activeSub?.max_members ?? 0;
   const maxDisc    = activeSub?.max_disciplines ?? activeMem?.max_disciplines ?? 1;
   const subId      = activeSub?.id ?? membership?.subscription_id ?? "";
+
+  const setStudyMode = async (concursoId: string, categoriaId: string, categoriaNome: string) => {
+    if (!user) return;
+    setSettingMode(true);
+    try {
+      await authService.setCategoria(user.id, concursoId, categoriaId, categoriaNome);
+      await refreshProfile();
+      toast.success("Modo de estudo activado.");
+    } catch {
+      toast.error("Erro ao definir modo de estudo.");
+    } finally { setSettingMode(false); }
+  };
 
   const handleSelect = async (plan: Plan) => {
     if (!user) return navigate("/login");
@@ -405,22 +428,108 @@ const Planos = () => {
               )}
             </Card>
 
-            {/* ── CTAs de estudo ── */}
-            {discArr.length > 0 && (
-              <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-blue-500/5 p-4">
-                <p className="mb-3 text-sm font-semibold text-primary">Estudar com as tuas disciplinas</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Button className="w-full rounded-full font-semibold"
-                    onClick={() => navigate("/aprender/sessao/plano/meu-plano")}>
-                    Modo Aprender
-                  </Button>
-                  <Button variant="outline" className="w-full rounded-full font-semibold"
-                    onClick={() => navigate("/quiz/plano/meu-plano")}>
-                    Simulado
-                  </Button>
-                </div>
-              </Card>
-            )}
+            {/* ── Modo de Estudo Principal ── */}
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-primary" />
+                <h2 className="font-display font-semibold">Modo de Estudo Principal</h2>
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Escolhe como queres estudar. O modo seleccionado fica activo nos botões de início rápido.
+              </p>
+
+              <div className="space-y-2">
+                {/* Estudo por Disciplinas do Plano */}
+                {discArr.length > 0 && (() => {
+                  const isActive = profile?.concurso_id === "plano";
+                  return (
+                    <div
+                      className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
+                        isActive ? "border-primary bg-primary/5" : "border-border/60 bg-background"
+                      }`}
+                    >
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-primary text-white" : "bg-muted"}`}>
+                        <BookOpen className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold leading-tight">Estudo por Disciplinas</p>
+                        <p className="text-xs text-muted-foreground">
+                          {discArr.length} disciplina{discArr.length !== 1 ? "s" : ""} do plano
+                        </p>
+                      </div>
+                      {isActive ? (
+                        <div className="flex items-center gap-2">
+                          <Badge className="rounded-full bg-primary/10 text-primary text-[10px]">Activo</Badge>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-xs"
+                              onClick={() => navigate("/aprender/sessao/plano/meu-plano")}>
+                              <Play className="mr-1 h-3 w-3" />Aprender
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-xs"
+                              onClick={() => navigate("/quiz/plano/meu-plano")}>
+                              Simulado
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button size="sm" className="rounded-full shrink-0 text-xs" disabled={settingMode}
+                          onClick={() => setStudyMode("plano", "meu-plano", "Estudo por Disciplinas")}>
+                          {settingMode ? <Loader2 className="h-3 w-3 animate-spin" /> : "Activar"}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Categorias pagas (category_access) */}
+                {accessPlans.map(ap => {
+                  const cat = quizService.getCategoria(ap.concursoId, ap.categoriaId);
+                  const nome = cat?.nome || ap.categoriaId;
+                  const isActive = profile?.concurso_id === ap.concursoId && profile?.categoria_id === ap.categoriaId;
+                  return (
+                    <div key={`${ap.concursoId}-${ap.categoriaId}`}
+                      className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
+                        isActive ? "border-primary bg-primary/5" : "border-border/60 bg-background"
+                      }`}
+                    >
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-primary text-white" : "bg-muted"}`}>
+                        <GraduationCap className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold leading-tight truncate">{nome}</p>
+                        <p className="text-xs text-muted-foreground">{ap.concursoId}</p>
+                      </div>
+                      {isActive ? (
+                        <div className="flex items-center gap-2">
+                          <Badge className="rounded-full bg-primary/10 text-primary text-[10px]">Activo</Badge>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-xs"
+                              onClick={() => navigate(`/aprender/sessao/${ap.concursoId}/${ap.categoriaId}`)}>
+                              <Play className="mr-1 h-3 w-3" />Aprender
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-xs"
+                              onClick={() => navigate(`/quiz/${ap.concursoId}/${ap.categoriaId}`)}>
+                              Simulado
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button size="sm" className="rounded-full shrink-0 text-xs" disabled={settingMode}
+                          onClick={() => setStudyMode(ap.concursoId, ap.categoriaId, nome)}>
+                          {settingMode ? <Loader2 className="h-3 w-3 animate-spin" /> : "Activar"}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {discArr.length === 0 && accessPlans.length === 0 && (
+                  <p className="rounded-xl border border-dashed border-border/60 p-4 text-center text-sm text-muted-foreground">
+                    Escolhe as tuas disciplinas abaixo para activar o modo de estudo por plano.
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* ── Disciplinas ── */}
             <div>

@@ -74,8 +74,9 @@ const Aprender = () => {
   const interessesAtivo = !!profile?.interesses_ativo && (profile?.interesses?.length ?? 0) > 0;
   const concursoId  = interessesAtivo ? "interesses" : profile?.concurso_id  ?? null;
   const categoriaId = interessesAtivo ? "interesses" : profile?.categoria_id ?? null;
-  const cat         = !interessesAtivo && concursoId && categoriaId ? quizService.getCategoria(concursoId, categoriaId) : null;
-  const hasTrilha   = interessesAtivo || !!cat;
+  const isPlano     = concursoId === "plano";
+  const cat         = !interessesAtivo && !isPlano && concursoId && categoriaId ? quizService.getCategoria(concursoId, categoriaId) : null;
+  const hasTrilha   = interessesAtivo || isPlano || !!cat;
 
   const pontos  = profile?.pontos_globais ?? profile?.pontos ?? 0;
   const streak  = profile?.streak ?? 0;

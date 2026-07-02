@@ -148,36 +148,8 @@ const Index = () => {
               </Link>
             </Button>
 
-            {/* Plano activo com disciplinas escolhidas — botões de estudo por plano */}
-            {profile?.plan_id && profile?.disciplines_locked === true && (
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="lg"
-                  className="rounded-2xl border border-white/25 text-white hover:bg-white/10 font-semibold"
-                >
-                  <Link to="/aprender/sessao/plano/meu-plano" className="flex items-center justify-center gap-2">
-                    <BookMarked className="h-4 w-4" />
-                    Aprender
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="lg"
-                  className="rounded-2xl border border-white/25 text-white hover:bg-white/10 font-semibold"
-                >
-                  <Link to="/quiz/plano/meu-plano" className="flex items-center justify-center gap-2">
-                    <Play className="h-4 w-4" />
-                    Simulado
-                  </Link>
-                </Button>
-              </div>
-            )}
-
-            {/* Minhas Disciplinas (interesses) */}
-            {temInteresses && !profile?.plan_id && (
+            {/* Minhas Disciplinas (interesses) — só quando não tem plano nem categoria */}
+            {temInteresses && !profile?.plan_id && !hasCateg && (
               <Button
                 asChild
                 variant="ghost"
@@ -194,17 +166,17 @@ const Index = () => {
         </div>
       </div>
 
-      {/* ── BANNER: plano activo sem disciplinas escolhidas ─────────────────── */}
-      {profile?.plan_id && profile.disciplines_locked === false && (
+      {/* ── BANNER: plano activo mas modo de estudo não activado ────────────── */}
+      {profile?.plan_id && profile.concurso_id !== "plano" && (
         <Link to="/planos"
           className="mt-4 flex items-center gap-3 overflow-hidden rounded-2xl border border-amber-300/50 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3.5 transition-all hover:shadow-md animate-fade-in">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100">
             <Crown className="h-5 w-5 text-amber-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-amber-900 leading-tight">Plano activo — escolhe as tuas disciplinas</p>
+            <p className="text-sm font-bold text-amber-900 leading-tight">Plano activo — configura o teu modo de estudo</p>
             <p className="text-xs text-amber-700/80 mt-0.5 leading-tight">
-              Tens o plano activado mas ainda não escolheste as disciplinas de estudo.
+              Escolhe as disciplinas e activa o modo de estudo por plano.
             </p>
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-amber-600" />

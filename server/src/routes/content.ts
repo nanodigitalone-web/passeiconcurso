@@ -171,11 +171,13 @@ contentRouter.post("/aprender-level", requireAuth, async (req: AuthedRequest, re
     if (concursoId === "plano") {
       const subDisc = await one<{ disciplines: string[] }>(`
         SELECT disciplines FROM user_subscriptions
-        WHERE user_id = $1 AND status = 'active' AND expires_at > now() AND disciplines_locked = true
+        WHERE user_id = $1 AND status = 'active' AND expires_at > now()
+          AND disciplines IS NOT NULL AND jsonb_array_length(disciplines) > 0
         UNION ALL
         SELECT sm.disciplines FROM subscription_members sm
         JOIN user_subscriptions us ON us.id = sm.subscription_id
-        WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now() AND sm.disciplines_locked = true
+        WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now()
+          AND sm.disciplines IS NOT NULL AND jsonb_array_length(sm.disciplines) > 0
         LIMIT 1
       `, [req.userId]);
       const disciplinas = expandInterestSlugs((subDisc?.disciplines as string[]) ?? []);
@@ -251,11 +253,13 @@ contentRouter.post("/questions", requireAuth, async (req: AuthedRequest, res) =>
   if (concursoId === "plano") {
     const subDisc = await one<{ disciplines: string[] }>(`
       SELECT disciplines FROM user_subscriptions
-      WHERE user_id = $1 AND status = 'active' AND expires_at > now() AND disciplines_locked = true
+      WHERE user_id = $1 AND status = 'active' AND expires_at > now()
+        AND disciplines IS NOT NULL AND jsonb_array_length(disciplines) > 0
       UNION ALL
       SELECT sm.disciplines FROM subscription_members sm
       JOIN user_subscriptions us ON us.id = sm.subscription_id
-      WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now() AND sm.disciplines_locked = true
+      WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now()
+        AND sm.disciplines IS NOT NULL AND jsonb_array_length(sm.disciplines) > 0
       LIMIT 1
     `, [req.userId]);
 
