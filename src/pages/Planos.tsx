@@ -157,12 +157,14 @@ const Planos = () => {
   const planId     = activeSub?.plan_id ?? activeMem?.plan_id ?? "";
   const planName   = activeSub?.plan_name ?? activeMem?.plan_name ?? planId;
   const discArr    = (activeSub?.disciplines ?? activeMem?.disciplines ?? []) as string[];
-  const isLocked   = !!(activeSub?.disciplines_locked ?? activeMem?.disciplines_locked);
   const expiresAt  = activeSub?.expires_at ?? activeMem?.sub_expires_at;
   const isFamilia  = planId === "familia";
   const isOwner    = !!activeSub;
   const maxMembers = activeSub?.max_members ?? 0;
   const maxDisc    = activeSub?.max_disciplines ?? activeMem?.max_disciplines ?? 1;
+  // Only truly locked when all discipline slots are filled AND disciplines_locked flag is set.
+  // Prevents bug where disciplines_locked=true was set incorrectly (e.g. on plan upgrade).
+  const isLocked   = !!(activeSub?.disciplines_locked ?? activeMem?.disciplines_locked) && discArr.length >= maxDisc;
   const subId      = activeSub?.id ?? membership?.subscription_id ?? "";
 
   const setStudyMode = async (concursoId: string, categoriaId: string, categoriaNome: string) => {

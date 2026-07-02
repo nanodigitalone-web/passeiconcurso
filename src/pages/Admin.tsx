@@ -464,6 +464,7 @@ const StatsTab = () => {
   }>({ total: 0, bySource: [], byCat: [] });
   const [s, setS] = useState({ users: 0, blocked: 0, hidden: 0, paid: 0, codesUsed: 0, codesAvail: 0, payments: 0 });
   const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [discSearch, setDiscSearch] = useState("");
 
   useEffect(() => {
     adminService.getMetrics().then(setM);
@@ -859,13 +860,27 @@ const StatsTab = () => {
         });
         const totalQ = enriched.reduce((s, d) => s + d.n, 0);
         const withTarget = enriched.filter(d => d.n >= TARGET_PER_DISC).length;
+        const searchLow = discSearch.toLowerCase();
+        const filtered = enriched
+          .filter(d => !searchLow || d.nome.toLowerCase().includes(searchLow) || d.area.toLowerCase().includes(searchLow) || d.slug.toLowerCase().includes(searchLow))
+          .sort((a, b) => b.n - a.n);
         return (
           <ChartCard
             title="Questões por Disciplina (Temas)"
             sub={`${enriched.length} disciplinas · ${totalQ.toLocaleString("pt-PT")} questões · ${withTarget}/${enriched.length} com ≥${TARGET_PER_DISC}`}
           >
+            <input
+              type="text"
+              placeholder="Pesquisar disciplina ou área..."
+              value={discSearch}
+              onChange={e => setDiscSearch(e.target.value)}
+              className="mb-3 w-full rounded-lg border border-border/60 bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {discSearch && (
+              <p className="mb-2 text-xs text-muted-foreground">{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</p>
+            )}
             <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-              {enriched.sort((a, b) => b.n - a.n).map(d => {
+              {filtered.map(d => {
                 const pct = Math.min(100, Math.round((d.n / TARGET_PER_DISC) * 100));
                 return (
                   <div key={d.slug}>
@@ -884,6 +899,7 @@ const StatsTab = () => {
                   </div>
                 );
               })}
+              {filtered.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma disciplina encontrada.</p>}
             </div>
           </ChartCard>
         );
