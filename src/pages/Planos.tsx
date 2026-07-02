@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { subscriptionService, type Plan, type UserSubscription, type UserMembership, type FamilyMember } from "@/services/subscriptionService";
 import { authService } from "@/services/authService";
-import { quizService } from "@/services";
+import { quizService, clearAccessCache } from "@/services";
 import { AREAS, slugify } from "@/data/disciplinas";
 
 const AREA_ICON: Record<string, React.ReactNode> = {
@@ -128,6 +128,12 @@ const Planos = () => {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
+  // Clear stale access cache whenever Planos page is opened, so the study
+  // mode buttons reflect the real subscription state without 5-min delay.
+  useEffect(() => {
+    if (user?.id) clearAccessCache(user.id);
+  }, [user?.id]);
+
   // Debounced member search
   useEffect(() => {
     if (searchQ.length < 2) { setSearchResults([]); return; }
@@ -163,13 +169,13 @@ const Planos = () => {
     if (!user) return;
     setSettingMode(true);
     try {
-      // Deactivate interesses override so concurso_id takes priority everywhere
       await authService.updateProfile(user.id, {
         concurso_id: concursoId,
         categoria_id: categoriaId,
         categoria_nome: categoriaNome,
         interesses_ativo: false,
       });
+      clearAccessCache(user.id); // stale cache would deny access on next navigation
       await refreshProfile();
       toast.success("Modo de estudo activado.");
     } catch {
@@ -221,10 +227,12 @@ const Planos = () => {
     setSaving(true);
     try {
       const result = await subscriptionService.chooseDisciplines(subId, Array.from(selected));
+      clearAccessCache(user?.id); // disciplines changed — invalidate plano access cache
       toast.success("Disciplinas guardadas.");
       setSub(p => p ? { ...p, disciplines: result.disciplines, disciplines_locked: result.disciplines_locked } : p);
       setMembership(p => p ? { ...p, disciplines: result.disciplines, disciplines_locked: result.disciplines_locked } : p);
       setFixedDiscs(new Set(result.disciplines));
+      setSelected(new Set(result.disciplines));
       setConfirmed(false);
     } catch (e: any) {
       if ((e?.message ?? "").includes("already_locked")) toast.info("As disciplinas já foram definidas.");
