@@ -98,11 +98,16 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
 - **Google Cloud Console**: origens de produção autorizadas (já feito; confirmar).
 
 ## 7. Problemas conhecidos / em curso
-- **Questões por disciplinas de interesse**: geração em curso (2026-07-01).
-  Script: `server/scripts/generate-interests.mjs`. Alvo: **500 questões por disciplina**
-  (85 disciplinas × 500 = 42.500 questões de disciplinas). Progresso: BD em ~10.100+.
-  Retomar se interrompido (a partir de `server/`):
-  `node scripts/generate-interests.mjs 500`  (lê `server/.env` automaticamente).
+- **Questões por disciplinas de interesse**: geração RELANÇADA 2026-07-02 com
+  `caffeinate -i` (a paragem anterior foi provavelmente o Mac a adormecer;
+  última inserção tinha sido 01:22 UTC). BD em **21.400+**; 20 disciplinas já
+  com ≥500. Script: `server/scripts/generate-interests.mjs` (agora inclui a
+  área nova "Ciências Básicas e Línguas": Biologia, Biologia Médica, Química,
+  Química Orgânica, Bioquímica, Física, Matemática, Bioestatística, Anatomia I,
+  Inglês, Francês, Espanhol → concurso geral/geral). Alvo: **500/disciplina**
+  (97 disciplinas). Log: `server/generation.log` (gitignored). Retomar se
+  interrompido (a partir de `server/`):
+  `nohup caffeinate -i node scripts/generate-interests.mjs 500 >> generation.log 2>&1 &`
 - **Disciplinas cobertas**: 75 disciplinas de saúde (Medicina 25, Enfermagem 15,
   Fisioterapia 15, Farmácia 15, Análises Clínicas 15) + 10 extra. Cada uma usa slug
   como campo `disciplina` na BD (ex: `anatomia-humana-sistemica`).
