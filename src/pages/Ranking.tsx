@@ -88,7 +88,7 @@ const GeralRanking = () => {
                 <p className="text-sm font-semibold leading-tight">A tua posição</p>
                 <p className="text-[11px] text-muted-foreground leading-tight">
                   {myIdx === 0
-                    ? "Estás em 1.º lugar — defende o trono!"
+                    ? "Estás em 1.º lugar. Defende o trono!"
                     : `Faltam ${(data[myIdx - 1].pontos - data[myIdx].pontos + 1).toLocaleString("pt-PT")} pts para ultrapassar ${data[myIdx - 1].nome.split(" ")[0]}`}
                 </p>
               </div>

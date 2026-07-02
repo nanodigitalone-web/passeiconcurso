@@ -143,7 +143,7 @@ export const LigaPanel = () => {
 
       {myIdx === -1 && (
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          Ainda não pontuaste esta semana — responde a questões para entrar na classificação.
+          Ainda não pontuaste esta semana. Responde a questões para entrar na classificação.
         </p>
       )}
     </>

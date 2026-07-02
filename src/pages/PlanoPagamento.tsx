@@ -167,7 +167,7 @@ const PlanoPagamento = () => {
             o plano será activado e receberás uma notificação.
           </p>
           <div className="mt-4 space-y-3">
-            <Label htmlFor="file">Ficheiro (JPG, PNG, WEBP ou PDF — máx. 5MB)</Label>
+            <Label htmlFor="file">Ficheiro (JPG, PNG, WEBP ou PDF · máx. 5MB)</Label>
             <Input id="file" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             {file && <p className="text-xs text-muted-foreground">{file.name}</p>}

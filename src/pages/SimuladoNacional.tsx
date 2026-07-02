@@ -121,7 +121,7 @@ const SimuladoNacional = () => {
         </div>
 
         <p className={cn("mt-2 text-[11px]", highlight ? "opacity-70" : "text-muted-foreground")}>
-          {ended ? `Decorreu a ${fmtDate(exam.starts_at)}` : `${fmtDate(exam.starts_at)} — janela até ${fmtDate(exam.ends_at)}`}
+          {ended ? `Decorreu a ${fmtDate(exam.starts_at)}` : `${fmtDate(exam.starts_at)} · janela até ${fmtDate(exam.ends_at)}`}
         </p>
 
         <div className="mt-4">
@@ -133,7 +133,7 @@ const SimuladoNacional = () => {
             >
               <Trophy className="mr-2 h-4 w-4" />
               {finished && exam.my_entry?.score != null
-                ? `Fizeste ${exam.my_entry.score}/${exam.my_entry.total} — ver classificação`
+                ? `Fizeste ${exam.my_entry.score}/${exam.my_entry.total} · ver classificação`
                 : "Ver classificação"}
             </Button>
           ) : !joined ? (
@@ -161,7 +161,7 @@ const SimuladoNacional = () => {
             </Button>
           ) : (
             <Button disabled variant={highlight ? "secondary" : "outline"} className="w-full rounded-full font-semibold">
-              Inscrito ✓ — abre {cd ? `em ${cd}` : "brevemente"}
+              Inscrito · abre {cd ? `em ${cd}` : "brevemente"}
             </Button>
           )}
         </div>

@@ -101,7 +101,7 @@ const Resultado = () => {
             ? { icon: TrendingUp, text: "Bom trabalho! Revê os erros comentados e continua a praticar.", accent: "bg-sky-50 border-sky-200/70 text-sky-900" }
             : taxa >= 40
             ? { icon: TrendingUp, text: "Continua a praticar! Cada simulado aproxima-te da aprovação.", accent: "bg-amber-50 border-amber-200/70 text-amber-900" }
-            : { icon: RotateCcw, text: "Não desanimes! Revê os erros abaixo — eles são a tua maior aula.", accent: "bg-rose-50 border-rose-200/70 text-rose-900" };
+            : { icon: RotateCcw, text: "Não desanimes! Revê os erros abaixo: eles são a tua maior aula.", accent: "bg-rose-50 border-rose-200/70 text-rose-900" };
         return (
           <div className={`mb-5 flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${accent}`}>
             <Icon className="mt-0.5 h-4 w-4 shrink-0 opacity-70" />

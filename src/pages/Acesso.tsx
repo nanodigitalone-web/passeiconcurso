@@ -274,7 +274,7 @@ const Acesso = () => {
             receberá um <strong>código de 6 dígitos</strong> exclusivo desta categoria.
           </p>
           <div className="mt-4 space-y-3">
-            <Label htmlFor="file" className="text-sm">Ficheiro (JPG, PNG, WEBP ou PDF — máx. 5MB)</Label>
+            <Label htmlFor="file" className="text-sm">Ficheiro (JPG, PNG, WEBP ou PDF · máx. 5MB)</Label>
             <Input
               id="file" type="file"
               accept="image/jpeg,image/png,image/webp,application/pdf"

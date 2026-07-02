@@ -40,7 +40,10 @@ const Notificacoes = () => {
 
   const load = async () => {
     if (!user) return;
-    setItems(await notificationsService.listForUser(user.id, 100));
+    const list = await notificationsService.listForUser(user.id, 100);
+    // Só mensagens dos últimos 2 dias.
+    const cutoff = Date.now() - 2 * 86400_000;
+    setItems(list.filter((n) => new Date(n.created_at).getTime() >= cutoff));
     setLoading(false);
   };
 

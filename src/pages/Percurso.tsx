@@ -357,7 +357,7 @@ const Percurso = () => {
             <Card className="mb-5 border-border/60 p-4 shadow-card">
               <div className="mb-3 flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
-                <h2 className="font-display font-semibold">Actividade — últimos {dash.days} dias</h2>
+                <h2 className="font-display font-semibold">Actividade · últimos {dash.days} dias</h2>
               </div>
               <Heatmap daily={dash.daily} days={dash.days} />
               <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">

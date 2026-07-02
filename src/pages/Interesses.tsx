@@ -99,7 +99,7 @@ const Interesses = () => {
         {areasEmBreve.length > 0 && (
           <section>
             <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Mais áreas — em breve
+              Mais áreas em breve
             </h2>
             <div className="flex flex-wrap gap-2">
               {areasEmBreve.map((a) => (

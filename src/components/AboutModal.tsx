@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { BookOpen, Shield, Trophy, Zap } from "lucide-react";
+import { BookOpen, Trophy, Zap } from "lucide-react";
 
 const VERSION = "2.0";
 
@@ -32,7 +32,6 @@ export const AboutModal = ({ trigger }: { trigger: ReactNode }) => (
             { icon: BookOpen, text: "Simulados comentados com seleção inteligente", accent: "bg-sky-100 text-sky-700" },
             { icon: Zap, text: "Trilha Aprender com vidas e sequências", accent: "bg-amber-100 text-amber-700" },
             { icon: Trophy, text: "Ligas semanais e Simulado Nacional", accent: "bg-emerald-100 text-emerald-700" },
-            { icon: Shield, text: "Dados protegidos — login apenas com Google", accent: "bg-violet-100 text-violet-700" },
           ].map((f) => (
             <li key={f.text} className="flex items-center gap-3">
               <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${f.accent}`}>
@@ -44,7 +43,7 @@ export const AboutModal = ({ trigger }: { trigger: ReactNode }) => (
         </ul>
 
         <p className="mt-5 border-t border-border/40 pt-4 text-center text-xs text-muted-foreground">
-          Desenvolvido por <span className="font-bold text-foreground">Yetuedu</span>
+          By <span className="font-bold text-foreground">Yetuedu</span>
         </p>
       </div>
     </DialogContent>

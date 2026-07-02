@@ -745,7 +745,7 @@ const Perfil = () => {
               <pushLabel.icon className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="font-display text-sm font-semibold leading-tight">Notificações — {pushLabel.text}</p>
+              <p className="font-display text-sm font-semibold leading-tight">Notificações · {pushLabel.text}</p>
               <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">{pushLabel.desc}</p>
             </div>
           </div>

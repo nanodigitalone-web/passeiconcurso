@@ -14,10 +14,10 @@ const scoreColor = (n: number) =>
 const barColor = (n: number) =>
   n >= 70 ? "bg-emerald-500" : n >= 40 ? "bg-amber-500" : "bg-red-500";
 const scoreLabel = (n: number) =>
-  n >= 85 ? "Excelente — estás muito bem preparado"
-  : n >= 70 ? "Bom — estás no caminho certo"
-  : n >= 40 ? "Em progresso — reforça as disciplinas fracas"
-  : "Início — pratica todos os dias para subir";
+  n >= 85 ? "Excelente! Estás muito bem preparado"
+  : n >= 70 ? "Bom. Estás no caminho certo"
+  : n >= 40 ? "Em progresso. Reforça as disciplinas fracas"
+  : "Início. Pratica todos os dias para subir";
 
 const Prontidao = () => {
   const { profile } = useAuth();

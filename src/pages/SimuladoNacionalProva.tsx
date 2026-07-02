@@ -89,7 +89,7 @@ const SimuladoNacionalProva = () => {
       setResult({ score: r.score, total: r.total, pontos: r.pontos });
       setPhase("result");
       refreshProfile();
-      if (auto) toast.info("Tempo esgotado — prova entregue automaticamente.");
+      if (auto) toast.info("Tempo esgotado. Prova entregue automaticamente.");
     } catch {
       toast.error("Falha ao entregar. A tentar de novo em 5s…");
       setTimeout(() => { setSubmitting(false); submit(auto); }, 5000);
@@ -186,7 +186,7 @@ const SimuladoNacionalProva = () => {
         <header className="mb-5 animate-fade-in">
           <h1 className="font-display text-2xl font-bold">{examTitle}</h1>
           <p className="text-sm text-muted-foreground">
-            {ended ? "Classificação final" : "Classificação parcial — o evento ainda decorre"}
+            {ended ? "Classificação final" : "Classificação parcial · o evento ainda decorre"}
           </p>
         </header>
 

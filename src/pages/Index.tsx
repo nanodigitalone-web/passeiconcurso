@@ -3,8 +3,9 @@ import { AppShell } from "@/components/AppShell";
 import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { resultsService, friendsService, battlesService, type FriendRow } from "@/services";
+import { resultsService, friendsService, battlesService, quizService, type FriendRow } from "@/services";
 import { notificationsService } from "@/services";
+import { getCorpo } from "@/lib/celestial";
 import { useAuth } from "@/hooks/useAuth";
 import { usePromo, useIsPromoActive } from "@/contexts/PromoContext";
 import { useEffect, useState } from "react";
@@ -59,6 +60,21 @@ const Index = () => {
         ? `/quiz/${profile!.concurso_id}/${profile!.categoria_id}`
         : "/concursos";
 
+  // Destino da trilha Aprender (mesma lógica do simulado).
+  const trilhaIds: [string, string] | null = isPlanoMode
+    ? ["plano", "meu-plano"]
+    : interessesAtivo
+      ? ["interesses", "interesses"]
+      : hasCateg
+        ? [profile!.concurso_id!, profile!.categoria_id!]
+        : null;
+  const [trilha, setTrilha] = useState<{ level: number; doneInLevel: number; perLevel: number } | null>(null);
+  useEffect(() => {
+    if (!trilhaIds) return;
+    quizService.getAprenderLevel(trilhaIds[0], trilhaIds[1]).then(setTrilha).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trilhaIds?.[0], trilhaIds?.[1]]);
+
   // ── Stats locais ────────────────────────────────────────────────────────────
   const results  = resultsService.getResults();
   const totalQ   = results.reduce((s, r) => s + r.total, 0);
@@ -106,7 +122,7 @@ const Index = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-amber-900 leading-tight">
-                {discount === 100 ? `${label} GRATUITO` : `${discount}% desconto — ${label}`}
+                {discount === 100 ? `${label} GRATUITO` : `${discount}% desconto · ${label}`}
               </p>
               <p className="text-xs text-amber-700/80 leading-tight mt-0.5">
                 Todas as funcionalidades desbloqueadas até {new Date(promo.promo!.ends_at).toLocaleDateString("pt-PT", { day: "numeric", month: "long" })}
@@ -140,7 +156,22 @@ const Index = () => {
             </span>
           )}
 
-          <div className="mt-6 flex flex-col gap-2.5">
+          {/* Stats do utilizador */}
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {[
+              { icon: Flame, value: streak > 0 ? `${streak}d` : "0", label: "Sequência" },
+              { icon: Zap, value: pontos > 0 ? pontos.toLocaleString("pt-PT") : "0", label: "Pontos" },
+              { icon: BarChart2, value: totalQ > 0 ? `${taxa}%` : "0%", label: "Acerto" },
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col items-center gap-1 rounded-2xl bg-white/10 p-3 text-center backdrop-blur-sm">
+                <s.icon className="h-4 w-4 opacity-60" />
+                <p className="font-display text-base font-bold leading-none">{s.value}</p>
+                <p className="text-[10px] opacity-60 leading-tight">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex flex-col gap-2.5">
             {/* CTA principal */}
             <Button
               asChild
@@ -179,7 +210,7 @@ const Index = () => {
             <Crown className="h-5 w-5 text-amber-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-amber-900 leading-tight">Plano activo — configura o teu modo de estudo</p>
+            <p className="text-sm font-bold text-amber-900 leading-tight">Plano activo: configura o teu modo de estudo</p>
             <p className="text-xs text-amber-700/80 mt-0.5 leading-tight">
               Escolhe as disciplinas e activa o modo de estudo por plano.
             </p>
@@ -188,37 +219,65 @@ const Index = () => {
         </Link>
       )}
 
-      {/* ── STATS ────────────────────────────────────────────────────────────── */}
-      <div className="mt-4 grid grid-cols-3 gap-2.5">
-        {[
-          {
-            icon: <Flame className="h-4 w-4" />,
-            value: streak > 0 ? `${streak}d` : "—",
-            label: "Sequência",
-            accent: streak > 0 ? "bg-orange-100 text-orange-700" : "bg-muted text-muted-foreground",
-          },
-          {
-            icon: <Zap className="h-4 w-4" />,
-            value: pontos > 0 ? pontos.toLocaleString("pt-PT") : "—",
-            label: "Pontos",
-            accent: "bg-amber-100 text-amber-700",
-          },
-          {
-            icon: <BarChart2 className="h-4 w-4" />,
-            value: totalQ > 0 ? `${taxa}%` : "—",
-            label: "Acerto",
-            accent: taxa >= 60 ? "bg-emerald-100 text-emerald-700" : totalQ > 0 ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground",
-          },
-        ].map((s) => (
-          <Card key={s.label} className="flex flex-col items-center gap-1.5 border-border/60 py-3.5 shadow-card">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${s.accent}`}>
-              {s.icon}
+      {/* ── TRILHA APRENDER (entra e joga) ───────────────────────────────────── */}
+      {trilhaIds && (() => {
+        const level = trilha?.level ?? 1;
+        const perLevel = trilha?.perLevel ?? 300;
+        const done = trilha?.doneInLevel ?? 0;
+        const pct = Math.min(100, Math.round((done / perLevel) * 100));
+        const corpo = getCorpo(level);
+        const proximos = [getCorpo(level + 1), getCorpo(level + 2)];
+        return (
+          <Link to={`/aprender/sessao/${trilhaIds[0]}/${trilhaIds[1]}`} className="mt-4 block">
+            <div
+              className="relative overflow-hidden rounded-3xl p-4 text-white shadow-elegant transition-all hover:-translate-y-0.5 active:scale-[0.99]"
+              style={{ background: `radial-gradient(ellipse at 78% 25%, ${corpo.brilho}70 0%, #0b0b1c 70%)` }}
+            >
+              {[[12, 20], [30, 68], [55, 15], [72, 75], [88, 35], [45, 45]].map(([x, y], i) => (
+                <span key={i} className="pointer-events-none absolute h-[3px] w-[3px] rounded-full bg-white"
+                  style={{ left: `${x}%`, top: `${y}%`, opacity: 0.25 + (i % 3) * 0.15 }} />
+              ))}
+
+              <div className="relative flex items-center gap-3">
+                <div
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl animate-float"
+                  style={{
+                    background: `radial-gradient(circle at 35% 35%, ${corpo.cor}cc, ${corpo.brilho})`,
+                    boxShadow: `0 0 16px ${corpo.cor}55`,
+                  }}
+                >
+                  {corpo.icone}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider opacity-50">
+                    Trilha Aprender · Nível {level}
+                  </p>
+                  <p className="font-display text-lg font-bold leading-tight">{corpo.nome}</p>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.max(2, pct)}%`, background: `linear-gradient(90deg, ${corpo.cor}, ${corpo.brilho})` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-[10px] opacity-50">{done}/{perLevel} questões</p>
+                </div>
+                <div className="flex shrink-0 flex-col items-center gap-1.5">
+                  <div className="flex -space-x-2">
+                    {proximos.map((p, i) => (
+                      <span key={i} className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm grayscale opacity-40">
+                        {p.icone}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-900 shadow-lg">
+                    <Play className="h-3 w-3 fill-slate-900" /> Jogar
+                  </span>
+                </div>
+              </div>
             </div>
-            <p className="font-display text-base font-bold leading-none">{s.value}</p>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{s.label}</p>
-          </Card>
-        ))}
-      </div>
+          </Link>
+        );
+      })()}
 
       {/* ── MENSAGEM DA PLATAFORMA (broadcast) ───────────────────────────────── */}
       {broadcastMsg && (
