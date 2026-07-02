@@ -31,15 +31,18 @@ Online: **www.passeii.com**. Criada originalmente no Lovable.
 - Backend: https://passei-api.onrender.com  (health: `/health`)
 - Repo: github.com/nanodigitalone-web/passeiconcurso (branch principal: `main`)
 
-## 3. Dev local
-- Postgres em Docker: container `passei-db`, porta **5433**
-  (`postgres://passei:passei@localhost:5433/passei`).
-- Backend: `cd server && npm run dev` (porta 8787).
+## 3. Ambiente de trabalho
+- **Não existe ambiente local** (decisão do dono, 2026-07-02): trabalha-se
+  direto na produção. A ÚNICA base de dados é a **Neon** — o `server/.env`
+  já aponta para ela.
+- Backend local (contra a Neon): `cd server && npm run dev` (porta 8787).
 - Frontend: `npm run dev` (porta 8080). Build: `npm run build`.
-- Aplicar migração: `cd server && node scripts/apply-migration.mjs <ficheiro.sql>`
-  (Neon: prefixar `DATABASE_URL="<neon>" DATABASE_SSL=true`).
+- Aplicar migração (vai direto à Neon, lê `server/.env`):
+  `cd server && node scripts/apply-migration.mjs <ficheiro.sql>`
 - **Sempre que mudar schema**: criar migração idempotente em `database/migrations/`
-  E atualizar `database/schema.sql`; aplicar em **local E Neon**.
+  E atualizar `database/schema.sql`; aplicar na **Neon**.
+- ⚠️ Produção real: testar bem (build + smoke test) antes de push — o push à
+  `main` faz deploy automático (Vercel + Render).
 
 ## 4. Funcionalidades-chave (onde estão)
 - **Motor de questões** (mistura antigas+novas, anti-viés, repetição espaçada):
@@ -81,8 +84,7 @@ académico+interesses · 009 follows · 010 interesses_ativo · 011 interesses_m
 012 reset_interesses (interesses nullable + reset ALL to NULL) ·
 013 promotions · 014 payment_amount · 015 plans/subscrições ·
 016 ligas semanais + streak freeze + Simulado Nacional.
-Todas aplicadas em **Neon**. 010–016 ainda **não confirmadas em local** (Docker
-indisponível) — aplicar quando o ambiente local estiver disponível.
+Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
 
 ## 6. Ações pendentes do DONO (externas)
 - **Rotar a ANTHROPIC_API_KEY** após terminar a geração de questões (colada no chat
@@ -114,14 +116,8 @@ indisponível) — aplicar quando o ambiente local estiver disponível.
   para nunca crashar; novos endpoints devem ter try/catch.
 - **Lovable**: o editor faz commits diretos na `main` e já re-adicionou Supabase
   (código morto). Cuidado ao integrar.
-- **Migração 010 (`interesses_ativo`) aplicada na Neon** em 2026-06-30 (via
-  psycopg2, sandbox sem `node`/`psql`). Ainda por confirmar/aplicar no Postgres
-  **local** (Docker) quando o dono voltar a correr o ambiente de dev.
-  ⚠️ A password da Neon foi colada no chat nesta sessão (autorizado pelo dono)
-  — **rotar de novo** assim que possível, como já indicado na secção 6.
-- Esta sessão correu num sandbox **sem Node/npm** instalado — as alterações
-  foram revistas manualmente (sem `npm run build`/tsc). Confirmar build antes
-  do deploy seguinte.
+- ⚠️ A password da Neon foi colada no chat (autorizado pelo dono) — **rotar**
+  assim que possível, como já indicado na secção 6.
 
 ## 8. Convenções
 - Commits e push só quando o dono pede (ele autorizou push direto à `main` no
