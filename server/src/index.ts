@@ -4,8 +4,6 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "path";
-import { fileURLToPath } from "url";
-import { spawn } from "node:child_process";
 import webpush from "web-push";
 import { authRouter } from "./routes/auth.js";
 import { profileRouter } from "./routes/profile.js";
@@ -351,36 +349,6 @@ app.post("/cron/generate-bulk", async (req, res) => {
 const port = Number(process.env.PORT) || 8787;
 app.listen(port, () => console.log(`Passei API listening on :${port}`));
 
-// ---- Geração automática de questões (worker em produção) ---------------
-// Com AUTO_GENERATE_TARGET definido (ex: "500"), o servidor lança o script
-// de geração em background no arranque. O script é retomável (conta o que já
-// existe por disciplina), por isso cada deploy/restart continua onde ficou.
-// Sai com código 0 quando todas as disciplinas atingem o alvo; noutros casos
-// é relançado após 60s. Remover a env var no Render para desligar.
-if (process.env.AUTO_GENERATE_TARGET) {
-  const target = String(Number(process.env.AUTO_GENERATE_TARGET) || 500);
-  const serverDir = fileURLToPath(new URL("..", import.meta.url));
-  const startWorker = () => {
-    console.log(`[auto-generate] a lançar geração (alvo ${target}/disciplina; node=${process.execPath}; cwd=${serverDir})`);
-    const child = spawn(process.execPath, ["scripts/generate-interests.mjs", target], {
-      cwd: serverDir,
-      stdio: "inherit",
-      env: process.env,
-    });
-    console.log(`[auto-generate] worker pid=${child.pid ?? "FALHOU"}`);
-    child.on("error", (err) => {
-      console.error(`[auto-generate] erro ao lançar worker: ${err.message}; tenta em 60s`);
-      setTimeout(startWorker, 60_000);
-    });
-    child.on("exit", (code) => {
-      if (code === 0) {
-        console.log("[auto-generate] concluído: todas as disciplinas no alvo.");
-      } else {
-        console.log(`[auto-generate] worker saiu (código ${code}); relança em 60s`);
-        setTimeout(startWorker, 60_000);
-      }
-    });
-  };
-  // Espera 30s após o arranque para não competir com o boot do serviço.
-  setTimeout(startWorker, 30_000);
-}
+// Nota: a geração de questões corre agora APENAS localmente (decisão do dono,
+// 2026-07-02) — ver scripts/generate-interests.mjs e scripts/balance-categories.mjs.
+// O worker automático em produção (AUTO_GENERATE_TARGET) foi removido.
