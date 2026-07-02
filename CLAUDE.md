@@ -121,6 +121,12 @@ Todas aplicadas na **Neon** (única BD — já não existe ambiente local).
   outras abaixo (ambos os scripts respeitam: cap 500 + menor primeiro).
   Nota: categorias grandes (medico 13.5k) são a SOMA das suas disciplinas
   (25 × 500) — o cap é por disciplina.
+  **2026-07-02 (noite)**: geração passou a BREADTH-FIRST (cada lote vai para a
+  disciplina com menos questões, recontado a cada iteração — tudo sobe junto).
+  As 5 áreas restantes (Economia, Direito, Contabilidade, Gestão, Engenharias)
+  foram ATIVADAS na app (saude:true) e entraram na geração (167 disciplinas
+  no total, ~500 cada ≈ 83k questões alvo; custo estimado ~100 USD de Haiku
+  para completar tudo). INCLUDE_ALL_AREAS=0 exclui as 5 áreas novas da geração.
 - **Disciplinas cobertas**: 75 disciplinas de saúde (Medicina 25, Enfermagem 15,
   Fisioterapia 15, Farmácia 15, Análises Clínicas 15) + 10 extra. Cada uma usa slug
   como campo `disciplina` na BD (ex: `anatomia-humana-sistemica`).
