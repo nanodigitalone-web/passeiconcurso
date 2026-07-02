@@ -37,22 +37,28 @@ accessRouter.get("/check", requireAuth, async (req: AuthedRequest, res) => {
     return res.json({ hasPaidAccess: hasPaid, expiresAt: hasPaid ? Infinity : null });
   }
 
-  // Virtual "plano" category: grant access if user has an active subscription with at least 1 discipline.
+  // Virtual "plano" category: grant access if user has ANY active subscription.
+  // Discipline filtering is handled in the content endpoint, not here.
   if (conc === "plano") {
-    const r = await query(
-      `SELECT 1 FROM user_subscriptions
-       WHERE user_id = $1 AND status = 'active' AND expires_at > now()
-         AND disciplines IS NOT NULL AND jsonb_array_length(disciplines) > 0
-       UNION ALL
-       SELECT 1 FROM subscription_members sm
-       JOIN user_subscriptions us ON us.id = sm.subscription_id
-       WHERE sm.member_user_id = $1 AND us.status = 'active' AND us.expires_at > now()
-         AND sm.disciplines IS NOT NULL AND jsonb_array_length(sm.disciplines) > 0
-       LIMIT 1`,
-      [req.userId],
-    );
-    const hasPaid = !!r.rows[0];
-    return res.json({ hasPaidAccess: hasPaid, expiresAt: hasPaid ? Infinity : null });
+    try {
+      const r = await query(
+        `SELECT 1 FROM user_subscriptions
+         WHERE user_id = $1 AND status = 'active'
+           AND (expires_at IS NULL OR expires_at > now())
+         UNION ALL
+         SELECT 1 FROM subscription_members sm
+         JOIN user_subscriptions us ON us.id = sm.subscription_id
+         WHERE sm.member_user_id = $1 AND us.status = 'active'
+           AND (us.expires_at IS NULL OR us.expires_at > now())
+         LIMIT 1`,
+        [req.userId],
+      );
+      const hasPaid = !!r.rows[0];
+      return res.json({ hasPaidAccess: hasPaid, expiresAt: hasPaid ? Infinity : null });
+    } catch (e: any) {
+      console.error("[access/check plano]", e?.message);
+      return res.json({ hasPaidAccess: false, expiresAt: null });
+    }
   }
 
   const r = await query(

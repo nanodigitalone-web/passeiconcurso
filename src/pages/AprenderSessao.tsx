@@ -147,7 +147,26 @@ const AprenderSessao = () => {
       </div>
     );
   }
-  if (questoes.length === 0) return <Navigate to="/aprender" replace />;
+  if (questoes.length === 0) {
+    if (isPlano) {
+      return (
+        <div className="min-h-screen bg-gradient-soft flex items-center justify-center px-4">
+          <div className="max-w-sm w-full rounded-3xl border border-border/60 bg-card p-8 text-center shadow-elegant">
+            <Zap className="mx-auto mb-4 h-12 w-12 text-amber-400" />
+            <h2 className="font-display text-xl font-bold mb-2">Sem disciplinas escolhidas</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Escolhe as tuas disciplinas de estudo em Planos → Meu Plano.
+            </p>
+            <button onClick={() => navigate("/planos")}
+              className="inline-flex w-full items-center justify-center rounded-full bg-gradient-primary px-4 py-2.5 text-sm font-semibold text-white">
+              Ir para Planos
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return <Navigate to="/aprender" replace />;
+  }
 
   // Entered with no lives → block practice and show the recharge countdown.
   if (lives <= 0 && !done && !revealed && idx === 0) {

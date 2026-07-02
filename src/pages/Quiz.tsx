@@ -221,7 +221,27 @@ const Quiz = () => {
   if (loading) {
     return <QuizLoader catNome={catNome} />;
   }
-  if (!questao) return <Navigate to="/concursos" replace />;
+  if (!questao) {
+    if (isPlano) {
+      return (
+        <div className="min-h-screen bg-gradient-soft flex items-center justify-center px-4">
+          <Card className="max-w-sm w-full p-8 text-center shadow-elegant">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 mx-auto mb-4">
+              <BookOpen className="h-7 w-7" />
+            </div>
+            <h2 className="font-display text-xl font-bold mb-2">Sem disciplinas escolhidas</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Ainda não escolheste as tuas disciplinas de estudo. Vai a Planos → Meu Plano para as seleccionar.
+            </p>
+            <Button className="rounded-full w-full bg-gradient-primary" onClick={() => navigate("/planos")}>
+              Ir para Planos
+            </Button>
+          </Card>
+        </div>
+      );
+    }
+    return <Navigate to="/concursos" replace />;
+  }
 
 
   const total = questoes.length;
